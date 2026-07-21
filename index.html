@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lie-utazás — a lapos gradienstől az SE(3) pózig</title>
+<meta name="description" content="Interaktív 3D-utazás a lapos gradiensektől a Riemann-gradiensen és az exponenciális leképezésen át az SO(3)/SE(3) pózokig.">
+<meta name="color-scheme" content="dark">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div class="eyebrow" id="eb"></div>
+  <h1 id="ti"></h1>
+  <div id="bo"></div>
+</div>
+
+<div id="nav">
+  <button class="nbtn" id="prev">←</button>
+  <div id="dots"></div>
+  <button class="nbtn" id="next">→</button>
+</div>
+
+<div id="hint"></div>
+<nav id="lang" aria-label="Language"></nav>
+
+<noscript>
+  <div class="noscript">Ehhez az interaktív ábrához JavaScript és WebGL kell. / This interactive visualization requires JavaScript and WebGL.</div>
+</noscript>
+
+<!-- Three.js r128 (MIT) from cdnjs, pinned by Subresource Integrity:
+     the browser refuses to run it unless the bytes match this exact hash. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+        integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Language packs. Add a new one here, e.g. <script src="content/en.js"></script> -->
+<script src="content/hu.js"></script>
+<!-- Rendering engine (language-agnostic). -->
+<script src="engine.js"></script>
+</body>
+</html>

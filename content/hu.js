@@ -1,0 +1,59 @@
+/* Magyar tartalom a Lie-utazáshoz.
+   Új nyelv hozzáadása: másold ezt a fájlt (pl. en.js), fordítsd le a szövegeket,
+   írd át a `LIE_CONTENT.hu` kulcsot a nyelv kódjára, és linkeld be az index.html-ben.
+   Az id-ket (expn, expsl, s5step, s5reset, s5ph, s5it, s5L) és a HTML-szerkezetet
+   NE változtasd — ezekre a motor épül. Csak a látható szöveget fordítsd. */
+window.LIE_CONTENT = window.LIE_CONTENT || {};
+window.LIE_CONTENT.hu = {
+  meta: {
+    htmlLang: 'hu',
+    langLabel: 'Magyar',
+    title: 'Lie-utazás — a lapos gradienstől az SE(3) pózig'
+  },
+  ui: {
+    stationWord: 'állomás',
+    prevAria: 'Előző állomás',
+    nextAria: 'Következő állomás',
+    hint: ['húzd: körbenézés', 'görgő: közelítés', '← → : utazás'],
+    noscript: 'Ehhez az interaktív ábrához JavaScript és WebGL kell. Kérlek, engedélyezd a böngésződben.'
+  },
+  // Lebegő 3D feliratok a jelenetben.
+  labels: {
+    bowl_step: 'w − α∇L',
+    s2_exit: 'R + δ — kilép',
+    s2_orthonormal: 'R^T R = I',
+    s2_retract: 'visszahúzás: ‖·‖ = 1',
+    s3_raw: 'nyers gradiens',
+    s3_proj: 'vetített (tangens)',
+    s3_drop: 'eldobjuk',
+    s4_n_prefix: 'n = ',
+    s4_err: 'sugárhiba',
+    s4_exp: 'exp(v)',
+    s6_deg_suffix: '°',
+    s6_identified: 'átellenes pontok azonosítva',
+    s6_cross_prefix: 'átlépés: ',
+    s6_cross_sep: ' — ',
+    s6_even: 'páros',
+    s6_odd: 'páratlan',
+    s7_dof: 'T ∈ SE(3) — 6 DoF'
+  },
+  // Az "iteráció" állomás (6.) ütem-feliratai.
+  s5: {
+    phases: ['1/3 · érintősík', '2/3 · exp-ív', '3/3 · lépés ⊞'],
+    phaseText: [
+      'horgony a becslésnél — δ = 0',
+      'érintősík + vetített gradiens a horgonynál',
+      'a lapos lépés ívvé csomagolva — exp(δ)'
+    ]
+  },
+  cards: [
+   {t:'Az utazás', b:'<p>Öt beszélgetésnyi levezetés, egyetlen térben. Nyolc állomás: a lapos világtól, amit a deep learningből ismersz, az <span class="m">SE(3)</span> pózokig. A lila fonál a gondolatmenet — az állomások között repülve látni fogod.</p><p>Navigálás: ← → gombok vagy billentyűk, egérrel körbenézés, görgővel közelítés.</p>'},
+   {t:'A lapos világ', b:'<p>A megszokott recept: a paramétertér <span class="m">ℝⁿ</span>, a költség egy völgy, és a <span class="m">w − α∇L</span> lépés mindig érvényes marad — nincs honnan kilépni. A gradiens ugyanabban a térben él, mint a pont.</p><p>Ezt a receptet akarjuk átmenteni a görbült világba.</p>'},
+   {t:'A kényszer', b:'<p>Mi szerint deriválunk? Egy mozgás <span class="m">R(t)</span> mentén az idő szerint: <span class="m">Ṙ</span> elemenként 9 skalárderivált. A kényszert deriválva <span class="m">Ṙ<sup>⊤</sup>R + R<sup>⊤</sup>Ṙ = 0</span> — vagyis <span class="m">R<sup>⊤</sup>Ṙ</span> ferdén szimmetrikus, és a legális sebességek a felület érintőjében fekszenek.</p><p>A nyers gradiens ezt nem tudja: az <span class="m">R + δ</span> lépés (piros) oszlopai már nem egységnyiek és nem páronként merőlegesek — <span class="m">R<sup>⊤</sup>R ≠ I</span>, az eredmény nem forgatás.</p><p>A teál pont a naiv mentés: sugárirányú visszahúzás (a hosszt normalizáljuk). Vigyázat — ez a gömb-ábrán elég, de a valódi <span class="m">SO(3)</span>-ra <em>nem</em>: egy oszlop hosszát javítja, de a három oszlop <em>páronkénti merőlegességét</em> nem állítja helyre. A teljes mentés a Gram–Schmidt vagy az exp — ez utóbbi a geodetikus, „nemes” változat, ami eleve a felületen marad.</p>'},
+   {t:'Az érintőtér — a vetítés', b:'<p>A megoldás első fele: a pontban kifeszítjük az érintősíkot, a legjobb lapos közelítést. A forgó korall vektor a nyers gradiens — „merre nőne a hiba, ha bármerre szabadon léphetnék”. Ez általában kifelé is mutat, le a gömbről. Felbontjuk: a felületre merőleges rész (piros) tiltott irányba visz, ezt <em>eldobjuk</em>; a síkban fekvő rész (teál) az, amerre a gömbön <em>tényleg</em> léphetünk.</p><p>Miért „Riemann”? Ő ismerte fel, hogy egy görbült felületen nem kell kilépni a térbe ahhoz, hogy távolságot és szöget mérjünk — elég a felületen maradó irányokat nézni. A teál árnyék tehát a valódi „lefelé” <em>a felületen belül</em>: ezt hívjuk Riemann-gradiensnek. A piros, felfelé mutató rész csak a lapos külvilág illúziója, a gömblakónak nem létezik.</p>'},
+   {t:'exp — kamatos kamat', b:'<p>A második fele: a lapos lépést vissza kell csomagolni a felületre. <span class="m">n</span> kis lépés — mindegyik a pillanatnyi érintő mentén — kamatos kamatként: <span class="m">(1 + <span class="frac"><span>v</span><span>n</span></span>)<sup>n</sup> → exp(v)</span>. Kis <span class="m">n</span>-nél a borostyán lánc kifelé feszül — a piros szaggatott a sugárhiba —, nagy <span class="m">n</span>-nél rásimul a lila ívre: a hiba másodrendű, a limeszben elhal.</p><p>És az egyezés kifejtve, a gömbön: <span class="m">exp<sub>p</sub>(v) = cos θ · p + sin θ · v̂</span>, ahol <span class="m">θ = |v|</span> — ugyanaz a cos/sin-alak, mint az Euler-képletben és a Rodrigues-formulában.</p><div class="acts" style="align-items:center"><span class="m" style="min-width:56px">n = <b id="expn" style="font-style:normal;color:var(--amber)">1</b></span><input type="range" id="expsl" min="1" max="40" value="1" style="flex:1;min-width:120px"></div>'},
+   {t:'Az iteráció', b:'<p>A gép, ütemenként vezérelve. A színek a költség (meleg = nagy hiba), a zöld pont a minimum. A gomb három ütemben visz végig egy iteráción: érintősík és vetített gradiens → exp-ív → elmozdulás és új horgony.</p><p>Mi az a <span class="m">δ</span>? A lépés az érintősíkon, <em>három közönséges szám</em>: <span class="m">δ = (δ<sub>x</sub>, δ<sub>y</sub>, δ<sub>z</sub>)</span> — mennyit forduljunk az egyes tengelyek körül. A „kalap” <span class="m">δ<sup>∧</sup></span> ezt a három számot rendezi ferdén szimmetrikus mátrixba, hogy az exp be tudja fogadni:</p><p style="text-align:center;font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:13px">δ<sup>∧</sup> = [ 0, −δ<sub>z</sub>, δ<sub>y</sub> ; δ<sub>z</sub>, 0, −δ<sub>x</sub> ; −δ<sub>y</sub>, δ<sub>x</sub>, 0 ]</p><p>Így a <span class="m">⊞</span> teljesen konkrét: <span class="m">x ⊞ δ := x · exp(δ<sup>∧</sup>)</span> — a közönséges <span class="m">+</span> általánosítása. Lapos térben pont + vektor = pont; itt sokaságpont + érintővektor = sokaságpont. A <span class="m">δ</span> minden kör végén nullára áll: a térképet a friss becslésnél terítjük ki újra.</p><div class="acts"><button class="act" id="s5step">1/3 · érintősík</button><button class="act" id="s5reset">Újra</button></div><div class="ro" id="s5ph">horgony a becslésnél — δ = 0</div><div class="ro">iteráció: <b id="s5it">0</b> &nbsp;·&nbsp; L = <b id="s5L">—</b></div>'},
+   {t:'SO(3) valódi alakja', b:'<p>Egy pont a gömb belsejében = tengely·szög: az irány a forgástengely, a középponttól mért távolság a szög, a határ a 180°. Az átellenes határpontok <em>ugyanaz</em> a forgatás — azonosítva vannak, ezért „ugrik át” a vándor.</p><p>A vándor 720°-ot jár be. Az első kör (borostyán) egyszer lépi át a határt — páratlan átlépésszám: az ilyen hurok nem húzható össze. A második körrel (teál) az átlépések száma párosra vált: a páros hurok már összehúzható. Ez a <span class="m">π₁ = ℤ/2</span> tartalma — csak az átlépések paritása számít, és ez a tányér-/övtrükk matematikája: 360° csavart hagy, 720° kibomlik.</p>'},
+   {t:'SE(3) — póz az időben', b:'<p>Forgatás + eltolás = póz: 6 szabadsági fok, egy mozgó frame a pályán. A <span class="m">⊞</span> ugyanez a recept, csak a tangenstér <span class="m">ℝ⁶</span>: három szög, három eltolás.</p><p>Innen indul a SLAM: sok ilyen póz faktorokkal összekötve, és rajtuk fut az előző állomás iterációja. (A <span class="m">v</span> és a valódi <span class="m">t</span> közti finomság — a bal Jacobi — a következő fejezet.)</p>'}
+  ]
+};
