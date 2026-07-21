@@ -8,12 +8,14 @@ window.LIE_CONTENT.hu = {
   meta: {
     htmlLang: 'hu',
     langLabel: 'Magyar',
+    flag: '🇭🇺',
     title: 'Lie-utazás — a lapos gradienstől az SE(3) pózig'
   },
   ui: {
     stationWord: 'állomás',
     prevAria: 'Előző állomás',
     nextAria: 'Következő állomás',
+    langMenuLabel: 'Nyelv',
     hint: ['húzd: körbenézés', 'görgő: közelítés', '← → : utazás'],
     noscript: 'Ehhez az interaktív ábrához JavaScript és WebGL kell. Kérlek, engedélyezd a böngésződben.'
   },

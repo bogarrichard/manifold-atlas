@@ -22,18 +22,36 @@ document.getElementById('hint').innerHTML = C.ui.hint.join('<br>');
 document.getElementById('prev').setAttribute('aria-label', C.ui.prevAria);
 document.getElementById('next').setAttribute('aria-label', C.ui.nextAria);
 
-/* language switcher (only shown when more than one language is available) */
+/* language dropdown (only shown when more than one language is available) */
 (function(){
   const codes = Object.keys(LANGS);
-  if(codes.length < 2) return;
-  const el = document.getElementById('lang');
+  const wrap = document.getElementById('lang');
+  if(codes.length < 2){ wrap.hidden = true; return; }
+  const curMeta = C.meta || {};
+
+  const btn = document.createElement('button');
+  btn.id = 'langbtn'; btn.type = 'button';
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-label', (C.ui && C.ui.langMenuLabel) || 'Language');
+  btn.innerHTML = '<span class="flag">'+(curMeta.flag||'🌐')+'</span><span class="caret">▾</span>';
+
+  const menu = document.createElement('ul');
+  menu.id = 'langmenu'; menu.setAttribute('role', 'listbox'); menu.hidden = true;
   codes.forEach(code=>{
-    const a = document.createElement('a');
-    a.textContent = (LANGS[code].meta && LANGS[code].meta.langLabel) || code;
-    a.href = '?lang=' + code;
-    if(code === LANG) a.className = 'on';
-    el.appendChild(a);
+    const m = LANGS[code].meta || {};
+    const li = document.createElement('li'); li.setAttribute('role', 'option');
+    const a = document.createElement('a'); a.href = '?lang=' + code;
+    if(code === LANG){ a.className = 'on'; li.setAttribute('aria-selected', 'true'); }
+    a.innerHTML = '<span class="flag">'+(m.flag||'🌐')+'</span><span>'+(m.langLabel||code)+'</span>';
+    li.appendChild(a); menu.appendChild(li);
   });
+
+  wrap.appendChild(btn); wrap.appendChild(menu);
+  const setOpen = v=>{ menu.hidden = !v; btn.setAttribute('aria-expanded', v?'true':'false'); };
+  btn.addEventListener('click', e=>{ e.stopPropagation(); setOpen(menu.hidden); });
+  document.addEventListener('click', e=>{ if(!wrap.contains(e.target)) setOpen(false); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !menu.hidden){ setOpen(false); btn.focus(); } });
 })();
 
 /* ---- three.js scene ---------------------------------------------------- */

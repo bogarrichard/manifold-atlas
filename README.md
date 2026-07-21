@@ -11,6 +11,7 @@ the exponential map, and SO(3)/SE(3) poses. Pure static files — no build step.
 | `style.css` | All styling. |
 | `engine.js` | Three.js scene, animations, navigation. **Contains no display text.** |
 | `content/hu.js` | Hungarian text pack (every visible string). |
+| `content/en.js` | English text pack. |
 
 The only dependency is **Three.js r128 (MIT)**, loaded from cdnjs in `index.html`
 and pinned with a Subresource Integrity (`integrity="sha512-…"`) hash — the browser
@@ -24,25 +25,32 @@ runs it only if the bytes match exactly, so the CDN can't serve tampered code.
 2. the `<html lang>` attribute
 3. `hu` as the default
 
-Each `content/<lang>.js` registers itself into `window.LIE_CONTENT.<lang>`. A language
-switcher appears automatically in the corner once more than one pack is loaded.
+Each `content/<lang>.js` registers itself into `window.LIE_CONTENT.<lang>`. A flag
+dropdown appears automatically in the top-right corner once more than one pack is loaded.
 
-## Adding a language (e.g. English)
+## Adding a language (e.g. German)
 
-1. Copy `content/hu.js` to `content/en.js`.
-2. Change the registration key: `window.LIE_CONTENT.en = { ... }` and set
-   `meta.htmlLang: 'en'`, `meta.langLabel: 'English'`, and translate `meta.title`.
+1. Copy `content/hu.js` to `content/de.js`.
+2. Change the registration key to `window.LIE_CONTENT.de = { ... }` and set the `meta`
+   fields: `htmlLang: 'de'`, `langLabel: 'Deutsch'`, `flag: '🇩🇪'`, and translate `title`.
+   Also translate `ui.langMenuLabel`.
 3. Translate every string value. **Do not touch** the HTML element `id`s inside the
    card bodies (`expn`, `expsl`, `s5step`, `s5reset`, `s5ph`, `s5it`, `s5L`) or the
    structure — the engine binds to them. Math notation (`w − α∇L`, `exp(v)`, …) usually
-   stays as-is.
-4. Add one line to `index.html`, next to the existing content pack:
+   stays as-is. Keep `s5.phases[0]` identical to the `#s5step` button text and
+   `s5.phaseText[0]` identical to the `#s5ph` text (they must match).
+4. Add one line to `index.html`, next to the existing content packs:
 
    ```html
-   <script src="content/en.js"></script>
+   <script src="content/de.js"></script>
    ```
 
-That's it — the switcher and `?lang=en` start working.
+That's it — the dropdown and `?lang=de` start working.
+
+**Note on flag emojis:** flags render as real flags on macOS, iOS, Android, and Linux,
+but **Windows** ships no flag glyphs, so there they show as two-letter codes (e.g. `GB`,
+`HU`). That's a harmless fallback; if you'd rather avoid it, set `meta.flag` to something
+non-regional (an emoji or short text) instead.
 
 ## Updating Three.js
 

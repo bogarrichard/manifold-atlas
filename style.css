@@ -52,15 +52,31 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
   cursor:pointer;transition:background .2s,transform .2s}
 .dot.on{background:var(--amber);transform:scale(1.25)}
 
-#hint{position:fixed;top:22px;right:22px;font-size:12px;color:var(--faint);
+#hint{position:fixed;top:62px;right:22px;font-size:12px;color:var(--faint);
   text-align:right;line-height:1.7;font-family:ui-monospace,Menlo,monospace}
 
-#lang{position:fixed;right:16px;bottom:22px;z-index:6;display:flex;gap:8px;
-  font-family:ui-monospace,Menlo,monospace;font-size:12px}
-#lang a{color:var(--faint);text-decoration:none;padding:4px 9px;border-radius:7px;
-  border:1px solid var(--line);background:rgba(20,26,44,0.7);transition:color .15s,border-color .15s}
-#lang a:hover{color:var(--ink);border-color:var(--amber)}
-#lang a.on{color:var(--bg);background:var(--amber);border-color:var(--amber)}
+/* language dropdown (top-right) */
+#lang{position:fixed;top:18px;right:22px;z-index:7;
+  font-family:ui-monospace,Menlo,monospace;font-size:13px}
+#langbtn{display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--ink);
+  background:rgba(20,26,44,0.85);border:1px solid var(--line);border-radius:9px;
+  padding:6px 10px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:border-color .15s}
+#langbtn:hover{border-color:var(--amber)}
+#langbtn .flag{font-size:16px;line-height:1}
+#langbtn .caret{font-size:10px;color:var(--faint);transition:transform .2s}
+#langbtn[aria-expanded="true"] .caret{transform:rotate(180deg)}
+#langmenu{list-style:none;margin:6px 0 0;padding:5px;position:absolute;right:0;min-width:150px;
+  background:rgba(20,26,44,0.96);border:1px solid var(--line);border-radius:10px;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.45)}
+#langmenu[hidden]{display:none}
+#langmenu a{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:7px;
+  color:var(--muted);text-decoration:none;white-space:nowrap}
+#langmenu a:hover{background:rgba(250,199,117,0.12);color:var(--ink)}
+#langmenu a.on{color:var(--ink)}
+#langmenu a.on::after{content:'✓';margin-left:auto;color:var(--amber)}
+#langmenu .flag{font-size:16px;line-height:1}
 
 .noscript{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
   padding:24px;text-align:center;font-size:15px;line-height:1.6;color:var(--muted)}
@@ -69,5 +85,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
   #hint{display:none}
   #hud{top:12px;left:12px;width:calc(100vw - 24px);padding:14px 16px}
   #hud h1{font-size:18px}
-  #lang{right:12px;bottom:74px}
+  /* HUD fills the top on phones, so drop the switcher to the bottom-right, opening upward */
+  #lang{top:auto;bottom:20px;right:14px}
+  #langmenu{top:auto;bottom:100%;margin:0 0 6px 0}
 }
