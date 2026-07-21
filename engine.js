@@ -546,14 +546,20 @@ function renderCard(i){
   if(i===5 && s5api){
     document.getElementById('s5step').onclick=()=>s5api.step();
     document.getElementById('s5reset').onclick=()=>s5api.reset();
-    const PH=C.s5.phases;
-    const PT=C.s5.phaseText;
+    const PH=C.s5.phases, PT=C.s5.phaseText, PM=C.s5.phaseMath||[];
+    const info=document.getElementById('s5deltainfo'), bub=document.getElementById('s5deltabubble');
+    if(info && bub){
+      info.onclick=e=>{ e.stopPropagation(); const v=bub.hidden;
+        bub.hidden=!v; info.setAttribute('aria-expanded', v?'true':'false'); };
+    }
     s5api.onchange=(it,L,ph)=>{
       const a=document.getElementById('s5it'), b=document.getElementById('s5L'),
-            s=document.getElementById('s5step'), p=document.getElementById('s5ph');
+            s=document.getElementById('s5step'), p=document.getElementById('s5ph'),
+            mm=document.getElementById('s5math');
       if(a) a.textContent=it; if(b) b.textContent=L.toFixed(3);
       if(s) s.textContent=PH[ph%3];
       if(p) p.textContent=PT[ph%3];
+      if(mm) mm.innerHTML=PM[ph%3]||'';
     };
     s5api.onchange(s5api.iter(), s5api.L(), s5api.phase());
   }
@@ -579,6 +585,19 @@ document.getElementById('next').onclick=()=>go(cur+1);
 addEventListener('keydown',e=>{
   if(e.key==='ArrowRight') go(cur+1);
   if(e.key==='ArrowLeft') go(cur-1);
+});
+
+/* close the "what is δ" bubble (station 6) on outside-click or Escape */
+document.addEventListener('click', e=>{
+  const bub=document.getElementById('s5deltabubble'), info=document.getElementById('s5deltainfo');
+  if(bub && !bub.hidden && info && !bub.contains(e.target) && !info.contains(e.target)){
+    bub.hidden=true; info.setAttribute('aria-expanded','false');
+  }
+});
+addEventListener('keydown', e=>{
+  if(e.key!=='Escape') return;
+  const bub=document.getElementById('s5deltabubble'), info=document.getElementById('s5deltainfo');
+  if(bub && !bub.hidden){ bub.hidden=true; if(info){ info.setAttribute('aria-expanded','false'); info.focus(); } }
 });
 
 const cv=document.getElementById('c');

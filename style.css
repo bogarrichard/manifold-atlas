@@ -38,6 +38,29 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 .matrix .mgrid{display:grid;grid-template-columns:repeat(3,auto);gap:7px 20px;
   padding:7px 13px;color:var(--ink);text-align:center}
 .matrix .mgrid>span{min-width:24px;white-space:nowrap}
+
+/* station 6: live per-phase formula, "what is δ" trigger, and floating bubble */
+.s5math{margin-top:12px;padding:8px 12px;border-radius:9px;text-align:center;
+  background:rgba(250,199,117,0.06);border:1px solid rgba(250,199,117,0.20);
+  font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:14px;
+  min-height:21px;line-height:1.55}
+.s5math sub,.s5math sup{font-size:.7em}
+.s5foot{position:relative;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.s5info{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:0;
+  background:none;border:none;color:var(--faint);
+  font-family:ui-monospace,Menlo,monospace;font-size:12px;transition:color .15s}
+.s5info:hover,.s5info[aria-expanded="true"]{color:var(--amber)}
+.s5info .m{color:inherit}
+.s5info .ic{font-size:13px}
+.bubble{position:absolute;top:calc(100% + 12px);left:0;right:0;z-index:8;
+  padding:14px 16px;border-radius:12px;background:rgba(17,23,40,0.97);
+  border:1px solid var(--line);box-shadow:0 16px 44px rgba(0,0,0,0.55);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  max-height:min(56vh,440px);overflow-y:auto}
+.bubble[hidden]{display:none}
+.bubble::before{content:'';position:absolute;top:-7px;left:26px;width:12px;height:12px;
+  background:rgba(17,23,40,0.97);border-left:1px solid var(--line);border-top:1px solid var(--line);
+  transform:rotate(45deg)}
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
 .act{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink);
   background:rgba(250,199,117,0.10);border:1px solid rgba(250,199,117,0.45);

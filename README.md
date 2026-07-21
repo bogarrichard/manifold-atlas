@@ -35,10 +35,12 @@ dropdown appears automatically in the top-right corner once more than one pack i
    fields: `htmlLang: 'de'`, `langLabel: 'Deutsch'`, `flag: '🇩🇪'`, and translate `title`.
    Also translate `ui.langMenuLabel`.
 3. Translate every string value. **Do not touch** the HTML element `id`s inside the
-   card bodies (`expn`, `expsl`, `s5step`, `s5reset`, `s5ph`, `s5it`, `s5L`) or the
-   structure — the engine binds to them. Math notation (`w − α∇L`, `exp(v)`, …) usually
-   stays as-is. Keep `s5.phases[0]` identical to the `#s5step` button text and
-   `s5.phaseText[0]` identical to the `#s5ph` text (they must match).
+   card bodies (`expn`, `expsl`, `s5step`, `s5reset`, `s5math`, `s5ph`, `s5it`, `s5L`,
+   `s5deltainfo`, `s5deltabubble`) or the structure — the engine binds to them. Math
+   notation (`w − α∇L`, `exp(v)`, `s5.phaseMath`, …) usually stays as-is. Keep
+   `s5.phases[0]` identical to the `#s5step` button text and `s5.phaseText[0]` identical
+   to the `#s5ph` text (they must match). On station 6, the `#s5deltabubble` popup holds
+   the "what is δ" explanation and `s5.phaseMath` is the live per-phase formula.
 4. Add one line to `index.html`, next to the existing content packs:
 
    ```html
