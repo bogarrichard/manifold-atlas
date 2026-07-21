@@ -56,7 +56,7 @@ document.getElementById('next').setAttribute('aria-label', C.ui.nextAria);
 /* ---- toolkit + journey selection --------------------------------------- */
 const K = window.LIE && LIE.kit;
 if(!K){ throw new Error('LIE.kit not loaded — include kit.js before engine.js.'); }
-const { V3, ease, clamp, RM } = K;
+const { V3, ease, clamp, RM, palette } = K;
 
 const JOURNEYS = (window.LIE && LIE.journeys) || {};
 const DEFAULT_JOURNEY = 'so3-optimization';
@@ -64,52 +64,78 @@ const journeyId = new URLSearchParams(location.search).get('journey');
 const journeyDef = (journeyId && JOURNEYS[journeyId]) || JOURNEYS[DEFAULT_JOURNEY] || Object.values(JOURNEYS)[0];
 if(!journeyDef){ throw new Error('No journey registered — include a journeys/<id>.js before engine.js.'); }
 
+/* ---- theme (dark / light / system) ------------------------------------- */
+const THEME_KEY = 'lie-theme';
+const mqlDark = matchMedia('(prefers-color-scheme: dark)');
+function storedPref(){
+  try{ const v = localStorage.getItem(THEME_KEY); return (v==='light'||v==='dark'||v==='system') ? v : 'system'; }
+  catch(e){ return 'system'; }
+}
+function resolveTheme(pref){
+  if(pref==='light' || pref==='dark') return pref;
+  return mqlDark.matches ? 'dark' : 'light';
+}
+let themePref = storedPref();
+let theme = resolveTheme(themePref);
+document.documentElement.setAttribute('data-theme', theme);
+let PAL = palette(theme);
+
 /* ---- three.js scene ---------------------------------------------------- */
 const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
-renderer.setClearColor(0x0d1220);
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x0d1220, 0.0052);
 const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 900);
 
 scene.add(new THREE.AmbientLight(0xbdc4d6, 0.75));
 const key = new THREE.DirectionalLight(0xffffff, 0.55); key.position.set(3,6,4); scene.add(key);
 
-/* ---- journey instance + layout ----------------------------------------- */
-const inst = journeyDef.build(C);
+function applySceneTheme(){
+  renderer.setClearColor(PAL.bg);
+  scene.fog = new THREE.FogExp2(PAL.fog, 0.0052);
+}
+applySceneTheme();
+
+/* ---- journey layout (theme-independent) -------------------------------- */
 const SP = journeyDef.layout.SP;
 const OFF = journeyDef.layout.OFF;
 const LOOK = SP.map(p=>p.clone().add(V3(0,0.55,0)));
 
-/* violet thread through the stations */
-const thread = (()=>{
-  const curve = new THREE.CatmullRomCurve3(SP.map(p=>p.clone().add(V3(0,-2.5,0))));
-  const m = new THREE.Mesh(new THREE.TubeGeometry(curve, 200, 0.05, 6, false),
-    new THREE.MeshBasicMaterial({color:(journeyDef.threadColor||0x7F77DD), transparent:true, opacity:0.16}));
-  scene.add(m); return m;
-})();
-/* starfield, centered on the journey's span */
-(()=>{
+/* ---- scene content: thread + starfield + stations (rebuilt on theme) --- */
+let world = null, inst = null, stations = [];
+function disposeWorld(){
+  if(!world) return;
+  world.traverse(o=>{
+    if(o.geometry) o.geometry.dispose();
+    if(o.material){ const arr = Array.isArray(o.material) ? o.material : [o.material];
+      arr.forEach(m=>{ if(m.map) m.map.dispose(); m.dispose(); }); }
+  });
+  scene.remove(world); world = null;
+}
+function buildScene(){
+  disposeWorld();
+  world = new THREE.Group(); scene.add(world);
+  // violet thread through the stations
+  const tc = new THREE.CatmullRomCurve3(SP.map(p=>p.clone().add(V3(0,-2.5,0))));
+  world.add(new THREE.Mesh(new THREE.TubeGeometry(tc, 200, 0.05, 6, false),
+    new THREE.MeshBasicMaterial({color:PAL[journeyDef.threadKey||'violet2'], transparent:true, opacity:0.16})));
+  // starfield, centered on the journey's span
   const cx = SP.reduce((s,p)=>s+p.x,0)/SP.length;
   const N=1100, pos=new Float32Array(N*3);
   for(let i=0;i<N;i++){
     const r=180+Math.random()*520, a=Math.random()*Math.PI*2, b=Math.acos(2*Math.random()-1);
     pos[3*i]=cx+r*Math.sin(b)*Math.cos(a); pos[3*i+1]=r*Math.cos(b)*0.55; pos[3*i+2]=r*Math.sin(b)*Math.sin(a);
   }
-  const g=new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos,3));
-  const p=new THREE.Points(g, new THREE.PointsMaterial({color:0x9aa4c0,size:1.1,sizeAttenuation:false,transparent:true,opacity:0.5,fog:false}));
-  scene.add(p);
-})();
-
-/* ---- stations from the journey ----------------------------------------- */
-const stations = [];
-function addStation(build){
-  const i = stations.length;
-  const group = new THREE.Group(); group.position.copy(SP[i]);
-  const st = build(group) || {};
-  st.group = group; scene.add(group); stations.push(st);
+  const sg=new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  world.add(new THREE.Points(sg, new THREE.PointsMaterial({color:PAL.star,size:1.1,sizeAttenuation:false,transparent:true,opacity:PAL.starOpacity,fog:false})));
+  // stations
+  inst = journeyDef.build(C, PAL);
+  stations = [];
+  inst.stations.forEach((b,i)=>{
+    const grp = new THREE.Group(); grp.position.copy(SP[i]);
+    const st = b(grp) || {}; st.group = grp; world.add(grp); stations.push(st);
+  });
 }
-inst.stations.forEach(b => addStation(b));
+buildScene();
 
 /* ---- HUD / navigation -------------------------------------------------- */
 const CARDS = C.cards;
@@ -154,6 +180,38 @@ addEventListener('keydown',e=>{
   if(e.key==='ArrowRight') go(cur+1);
   if(e.key==='ArrowLeft') go(cur-1);
 });
+
+/* ---- theme toggle (system / light / dark) ------------------------------ */
+const THEME_ICON = {system:'◐', light:'☀', dark:'☾'};
+const THEME_NEXT = {system:'light', light:'dark', dark:'system'};
+const themeBtn = document.createElement('button');
+themeBtn.id='themebtn'; themeBtn.type='button';
+document.getElementById('theme').appendChild(themeBtn);
+function updateThemeBtn(){
+  const tl = (C.ui && C.ui.theme) || {};
+  const name = tl[themePref] || themePref;
+  themeBtn.textContent = THEME_ICON[themePref];
+  themeBtn.title = (tl.label||'Theme') + ': ' + name;
+  themeBtn.setAttribute('aria-label', (tl.label||'Theme') + ': ' + name);
+}
+function setTheme(next){
+  if(next===theme) return;
+  theme=next;
+  document.documentElement.setAttribute('data-theme', theme);
+  PAL=palette(theme);
+  applySceneTheme();
+  buildScene();
+  renderCard(cur);
+}
+function applyPref(pref){
+  themePref=pref;
+  try{ localStorage.setItem(THEME_KEY, pref); }catch(e){}
+  setTheme(resolveTheme(pref));
+  updateThemeBtn();
+}
+themeBtn.addEventListener('click', ()=>applyPref(THEME_NEXT[themePref]));
+updateThemeBtn();
+mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resolveTheme('system')); });
 
 /* close any open "what is δ"-style bubble on outside-click or Escape */
 document.addEventListener('click', e=>{

@@ -28,17 +28,33 @@ The code is split so new journeys plug in without touching the engine:
 
   ```js
   LIE.journeys['<id>'] = {
-    id, tier, layout:{ SP, OFF }, threadColor,
-    build(content) { return { stations:[ g => {…build group…; return {tick(t){…}} }, … ],
-                              bindCard(i) { /* wire interactive HUD controls for card i */ } }; }
+    id, tier, layout:{ SP, OFF }, threadKey,
+    build(content, palette) { return { stations:[ g => {…build group…; return {tick(t){…}} }, … ],
+                                       bindCard(i) { /* wire interactive HUD controls for card i */ } }; }
   };
   ```
 
-  `SP`/`OFF` are the per-station world positions and camera offsets; `build(pack)` binds a
-  language pack and returns the station builders plus per-card wiring.
-- **`engine.js`** — picks the language and the journey (`?journey=<id>`, default
+  `SP`/`OFF` are the per-station world positions and camera offsets; `build(pack, palette)`
+  binds a language pack **and the active theme palette** and returns the station builders
+  plus per-card wiring. `threadKey` names the palette color for the connecting thread.
+- **`engine.js`** — picks the language, theme, and journey (`?journey=<id>`, default
   `so3-optimization`), builds the scene, lays the stations along `SP`, and drives the
   camera fly + animation loop. It is journey-agnostic.
+
+## Theming (dark / light / system)
+
+A `◐` button in the top-right cycles **system → light → dark**, persisted in
+`localStorage` (`lie-theme`) and applied via a `data-theme` attribute on `<html>`
+(an inline script in `<head>` sets it before first paint to avoid a flash; `system`
+follows `prefers-color-scheme` live).
+
+- **Chrome** (HUD, dropdown, buttons, matrix, bubble) themes through CSS variables:
+  `:root` holds the dark palette, `:root[data-theme="light"]` the light one.
+- **The 3D scene** has two full palettes in `kit.js` (`LIE.kit.palette(theme)`): a soft
+  light-slate variant with re-tuned marks, surfaces, grids, and stars. The engine sets
+  the clear color + fog and **rebuilds the scene** (labels re-render) on a theme change.
+  Journeys receive the active palette in `build(pack, palette)` and use `hexStr(col)` for
+  label text colors, so a new journey is theme-aware for free.
 
 Load order in `index.html` matters: `three` → content packs → `kit.js` → `journeys/*.js`
 → `engine.js`. Adding a journey = drop a `journeys/<id>.js` file and one `<script>` line.

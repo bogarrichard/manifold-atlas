@@ -11,8 +11,31 @@ LIE.kit = (function(){
   const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
   const UP = V3(0,1,0);
 
-  const COL = {teal:0x5DCAA5, violet:0xAFA9EC, violet2:0x7F77DD, coral:0xF0997B,
-               amber:0xFAC775, red:0xE24B4A, green:0x97C459, slate:0x24314e, ink:0xE8E6DF};
+  // Two full scene palettes. `dark` holds the original values (pixel-identical).
+  // `light` is a soft light-slate variant: marks are darkened/saturated so they
+  // read on a light background, and surfaces/grids/stars are lightened.
+  const PALETTES = {
+    dark: {
+      teal:0x5DCAA5, violet:0xAFA9EC, violet2:0x7F77DD, coral:0xF0997B,
+      amber:0xFAC775, red:0xE24B4A, green:0x97C459, ink:0xE8E6DF,
+      bg:0x0d1220, fog:0x0d1220,
+      sphereSurface:0x1b2b48, grid1:0x39476b, grid2:0x232e4c,
+      so3shell:0x233459, se3tube:0x51608a, costWire:0x0d1220,
+      cubeFace2:0x2c8f6c, cubeFace4:0x5a52b8,
+      star:0x9aa4c0, starOpacity:0.5
+    },
+    light: {
+      teal:0x2E9A78, violet:0x6E62C8, violet2:0x5A50C0, coral:0xD9663F,
+      amber:0xB07E16, red:0xCE382F, green:0x5B972B, ink:0x1A2233,
+      bg:0xE7ECF3, fog:0xE7ECF3,
+      sphereSurface:0xBED0DE, grid1:0xAEB9D0, grid2:0xC7D0E1,
+      so3shell:0xB6C2D9, se3tube:0x8A97B4, costWire:0xE7ECF3,
+      cubeFace2:0x2c8f6c, cubeFace4:0x5a52b8,
+      star:0x9099b2, starOpacity:0.35
+    }
+  };
+  const palette = theme => PALETTES[theme] || PALETTES.dark;
+  const hexStr = n => '#'+((n>>>0) & 0xffffff).toString(16).padStart(6,'0');
 
   function fatArrow(color, r){
     r = r||0.05;
@@ -69,13 +92,14 @@ LIE.kit = (function(){
     if(sp.material.map) sp.material.map.dispose();
     sp.material.map=tex; sp.material.needsUpdate=true;
   }
-  function baseSphere(R){
+  function baseSphere(R, PAL){
+    PAL = PAL || PALETTES.dark;
     const g = new THREE.Group();
     const surf = new THREE.Mesh(new THREE.SphereGeometry(R, 48, 36),
-      new THREE.MeshStandardMaterial({color:0x1b2b48, roughness:0.85, metalness:0.05,
+      new THREE.MeshStandardMaterial({color:PAL.sphereSurface, roughness:0.85, metalness:0.05,
         transparent:true, opacity:0.94}));
     const wire = new THREE.Mesh(new THREE.SphereGeometry(R*1.001, 24, 16),
-      new THREE.MeshBasicMaterial({color:COL.teal, wireframe:true, transparent:true, opacity:0.07}));
+      new THREE.MeshBasicMaterial({color:PAL.teal, wireframe:true, transparent:true, opacity:0.07}));
     g.add(surf); g.add(wire);
     return g;
   }
@@ -93,6 +117,6 @@ LIE.kit = (function(){
   }
   function projT(g, pu){ return g.clone().sub(pu.clone().multiplyScalar(g.dot(pu))); }
 
-  return { RM, V3, lerp, ease, clamp, UP, COL,
+  return { RM, V3, lerp, ease, clamp, UP, palette, hexStr,
            fatArrow, setArrow, makeLabel, updateLabel, baseSphere, dashedLine, expSph, projT };
 })();

@@ -16,6 +16,7 @@ window.LIE_CONTENT.hu = {
     prevAria: 'Előző állomás',
     nextAria: 'Következő állomás',
     langMenuLabel: 'Nyelv',
+    theme: { label: 'Téma', system: 'rendszer', light: 'világos', dark: 'sötét' },
     hint: ['húzd: körbenézés', 'görgő: közelítés', '← → : utazás'],
     noscript: 'Ehhez az interaktív ábrához JavaScript és WebGL kell. Kérlek, engedélyezd a böngésződben.'
   },

@@ -3,6 +3,16 @@
   --teal:#5DCAA5; --violet:#AFA9EC; --violet2:#7F77DD; --coral:#F0997B;
   --amber:#FAC775; --red:#E24B4A; --green:#97C459;
   --card:rgba(13,18,32,0.80); --line:rgba(232,230,223,0.14);
+  --panel:rgba(20,26,44,0.85); --panel-strong:rgba(17,23,40,0.97);
+  --dot:rgba(232,230,223,0.22);
+}
+:root[data-theme="light"]{
+  --bg:#E7ECF3; --ink:#1A2233; --muted:#48526A; --faint:#7A8598;
+  --teal:#2E9A78; --violet:#6E62C8; --violet2:#5A50C0; --coral:#C85A33;
+  --amber:#A9781A; --red:#CE382F; --green:#5B972B;
+  --card:rgba(255,255,255,0.82); --line:rgba(20,30,55,0.14);
+  --panel:rgba(255,255,255,0.85); --panel-strong:rgba(255,255,255,0.96);
+  --dot:rgba(20,30,55,0.22);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:var(--bg);
@@ -41,7 +51,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 
 /* station 6: live per-phase formula, "what is δ" trigger, and floating bubble */
 .s5math{margin-top:12px;padding:8px 12px;border-radius:9px;text-align:center;
-  background:rgba(250,199,117,0.06);border:1px solid rgba(250,199,117,0.20);
+  background:color-mix(in srgb, var(--amber) 8%, transparent);border:1px solid color-mix(in srgb, var(--amber) 20%, transparent);
   font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:14px;
   min-height:21px;line-height:1.55}
 .s5math sub,.s5math sup{font-size:.7em}
@@ -53,19 +63,19 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 .s5info .m{color:inherit}
 .s5info .ic{font-size:13px}
 .bubble{position:absolute;top:calc(100% + 12px);left:0;right:0;z-index:8;
-  padding:14px 16px;border-radius:12px;background:rgba(17,23,40,0.97);
+  padding:14px 16px;border-radius:12px;background:var(--panel-strong);
   border:1px solid var(--line);box-shadow:0 16px 44px rgba(0,0,0,0.55);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   max-height:min(56vh,440px);overflow-y:auto}
 .bubble[hidden]{display:none}
 .bubble::before{content:'';position:absolute;top:-7px;left:26px;width:12px;height:12px;
-  background:rgba(17,23,40,0.97);border-left:1px solid var(--line);border-top:1px solid var(--line);
+  background:var(--panel-strong);border-left:1px solid var(--line);border-top:1px solid var(--line);
   transform:rotate(45deg)}
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
 .act{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink);
-  background:rgba(250,199,117,0.10);border:1px solid rgba(250,199,117,0.45);
+  background:color-mix(in srgb, var(--amber) 12%, transparent);border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
   border-radius:9px;padding:8px 14px;cursor:pointer;transition:background .15s}
-.act:hover{background:rgba(250,199,117,0.22)}
+.act:hover{background:color-mix(in srgb, var(--amber) 22%, transparent)}
 .ro{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--faint);margin-top:10px}
 .ro b{color:var(--ink);font-weight:500}
 .slrow{display:flex;align-items:center;gap:10px;margin-top:12px}
@@ -75,24 +85,30 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #nav{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
   display:flex;align-items:center;gap:16px;z-index:5}
 .nbtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
-  background:rgba(20,26,44,0.85);color:var(--ink);font-size:17px;cursor:pointer;
+  background:var(--panel);color:var(--ink);font-size:17px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;
   -webkit-user-select:none;user-select:none}
 .nbtn:hover{border-color:var(--amber)}
 .nbtn:disabled{opacity:.3;cursor:default}
 #dots{display:flex;gap:9px}
-.dot{width:9px;height:9px;border-radius:50%;background:rgba(232,230,223,0.22);
+.dot{width:9px;height:9px;border-radius:50%;background:var(--dot);
   cursor:pointer;transition:background .2s,transform .2s}
 .dot.on{background:var(--amber);transform:scale(1.25)}
 
 #hint{position:fixed;top:62px;right:22px;font-size:12px;color:var(--faint);
   text-align:right;line-height:1.7;font-family:ui-monospace,Menlo,monospace}
 
-/* language dropdown (top-right) */
-#lang{position:fixed;top:18px;right:22px;z-index:7;
-  font-family:ui-monospace,Menlo,monospace;font-size:13px}
+/* top-right control cluster: theme toggle + language dropdown */
+#topctl{position:fixed;top:18px;right:22px;z-index:7;display:flex;gap:8px;align-items:flex-start}
+#themebtn{display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);
+  background:var(--panel);border:1px solid var(--line);border-radius:9px;
+  width:34px;height:33px;font-size:15px;line-height:1;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:border-color .15s}
+#themebtn:hover{border-color:var(--amber)}
+
+#lang{position:relative;font-family:ui-monospace,Menlo,monospace;font-size:13px}
 #langbtn{display:flex;align-items:center;gap:7px;cursor:pointer;color:var(--ink);
-  background:rgba(20,26,44,0.85);border:1px solid var(--line);border-radius:9px;
+  background:var(--panel);border:1px solid var(--line);border-radius:9px;
   padding:6px 10px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   transition:border-color .15s}
 #langbtn:hover{border-color:var(--amber)}
@@ -100,13 +116,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #langbtn .caret{font-size:10px;color:var(--faint);transition:transform .2s}
 #langbtn[aria-expanded="true"] .caret{transform:rotate(180deg)}
 #langmenu{list-style:none;margin:6px 0 0;padding:5px;position:absolute;right:0;min-width:150px;
-  background:rgba(20,26,44,0.96);border:1px solid var(--line);border-radius:10px;
+  background:var(--panel-strong);border:1px solid var(--line);border-radius:10px;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   box-shadow:0 10px 30px rgba(0,0,0,0.45)}
 #langmenu[hidden]{display:none}
 #langmenu a{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:7px;
   color:var(--muted);text-decoration:none;white-space:nowrap}
-#langmenu a:hover{background:rgba(250,199,117,0.12);color:var(--ink)}
+#langmenu a:hover{background:color-mix(in srgb, var(--amber) 12%, transparent);color:var(--ink)}
 #langmenu a.on{color:var(--ink)}
 #langmenu a.on::after{content:'✓';margin-left:auto;color:var(--amber)}
 #langmenu .flag{font-size:16px;line-height:1}
@@ -118,7 +134,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
   #hint{display:none}
   #hud{top:12px;left:12px;width:calc(100vw - 24px);padding:14px 16px}
   #hud h1{font-size:18px}
-  /* HUD fills the top on phones, so drop the switcher to the bottom-right, opening upward */
-  #lang{top:auto;bottom:20px;right:14px}
+  /* HUD fills the top on phones, so drop the controls to the bottom-right, menu opening upward */
+  #topctl{top:auto;bottom:20px;right:14px}
   #langmenu{top:auto;bottom:100%;margin:0 0 6px 0}
 }

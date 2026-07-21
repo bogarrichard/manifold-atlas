@@ -5,7 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lie-utazás — a lapos gradienstől az SE(3) pózig</title>
 <meta name="description" content="Interaktív 3D-utazás a lapos gradiensektől a Riemann-gradiensen és az exponenciális leképezésen át az SO(3)/SE(3) pózokig.">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="dark light">
+<script>
+/* set the theme before first paint to avoid a flash */
+(function(){try{var p=localStorage.getItem('lie-theme');
+  if(p!=='light'&&p!=='dark'&&p!=='system')p='system';
+  var dark=(p==='dark')||(p==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -24,7 +32,10 @@
 </div>
 
 <div id="hint"></div>
-<nav id="lang" aria-label="Language"></nav>
+<div id="topctl">
+  <div id="theme"></div>
+  <nav id="lang" aria-label="Language"></nav>
+</div>
 
 <noscript>
   <div class="noscript">Ehhez az interaktív ábrához JavaScript és WebGL kell. / This interactive visualization requires JavaScript and WebGL.</div>

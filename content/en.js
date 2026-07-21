@@ -16,6 +16,7 @@ window.LIE_CONTENT.en = {
     prevAria: 'Previous station',
     nextAria: 'Next station',
     langMenuLabel: 'Language',
+    theme: { label: 'Theme', system: 'system', light: 'light', dark: 'dark' },
     hint: ['drag: look around', 'scroll: zoom', '← → : travel'],
     noscript: 'This interactive visualization requires JavaScript and WebGL. Please enable them in your browser.'
   },

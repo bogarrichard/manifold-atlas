@@ -5,14 +5,15 @@
    and drives the tick + camera. Requires LIE.kit (loaded first).
 
    Descriptor shape:
-     { id, tier, layout:{SP,OFF}, threadColor, build(content) -> {stations, bindCard} }
-   `build` binds a language pack: `stations` are group builders, `bindCard(i)` wires
-   any interactive HUD controls for card i. */
+     { id, tier, layout:{SP,OFF}, threadKey, build(content, palette) -> {stations, bindCard} }
+   `build` binds a language pack + the active theme palette: `stations` are group
+   builders, `bindCard(i)` wires any interactive HUD controls for card i.
+   `threadKey` names the palette color used for the connecting thread. */
 window.LIE = window.LIE || {};
 LIE.journeys = LIE.journeys || {};
 LIE.journeys['so3-optimization'] = (function(){
   const K = LIE.kit;
-  const { V3, lerp, ease, clamp, RM, COL,
+  const { V3, lerp, ease, clamp, RM, hexStr,
           fatArrow, setArrow, makeLabel, updateLabel, baseSphere, dashedLine, expSph, projT } = K;
 
   // Station world positions and the camera offset used to view each one.
@@ -21,8 +22,14 @@ LIE.journeys['so3-optimization'] = (function(){
   const OFF = [V3(0,1.6,7.6), V3(0,4.4,8.6), V3(0,1.8,6.8), V3(2.2,2.2,6.2),
                V3(2.4,1.6,6.6), V3(0,2.2,7.0), V3(0,2.0,8.8), V3(0,3.2,9.6)];
 
-  function build(C){
+  function build(C, PAL){
     const LB = C.labels;
+    const COL = PAL || K.palette('dark');
+    // label text colors, as CSS strings, derived from the active palette
+    const HX = {
+      coral:hexStr(COL.coral), red:hexStr(COL.red), teal:hexStr(COL.teal),
+      amber:hexStr(COL.amber), violet:hexStr(COL.violet), green:hexStr(COL.green), ink:hexStr(COL.ink)
+    };
     let expApi = null, s5api = null;
 
     const stations = [
@@ -53,13 +60,13 @@ LIE.journeys['so3-optimization'] = (function(){
         geo.computeVertexNormals();
         const bowl=new THREE.Mesh(geo, new THREE.MeshBasicMaterial({color:COL.teal,wireframe:true,transparent:true,opacity:0.30}));
         g.add(bowl);
-        const grid=new THREE.GridHelper(7.4,14,0x39476b,0x232e4c); grid.position.y=-0.02; g.add(grid);
+        const grid=new THREE.GridHelper(7.4,14,COL.grid1,COL.grid2); grid.position.y=-0.02; g.add(grid);
         const path=[]; let x=2.55,z=1.75;
         for(let k=0;k<11;k++){ path.push(V3(x,H(x,z)+0.12,z)); x*=0.66; z*=0.66; }
         const ball=new THREE.Mesh(new THREE.SphereGeometry(0.13,14,12), new THREE.MeshBasicMaterial({color:COL.amber}));
         g.add(ball);
         const arr=fatArrow(COL.coral,0.045); g.add(arr);
-        const lbl=makeLabel(LB.bowl_step,'#F0997B',2.6); lbl.position.set(-2.2,2.5,0); g.add(lbl);
+        const lbl=makeLabel(LB.bowl_step,HX.coral,2.6); lbl.position.set(-2.2,2.5,0); g.add(lbl);
         return {tick(t){
           const cyc=(t*0.75)%12, k=Math.floor(cyc), f=ease(clamp(cyc-k,0,1));
           const a=path[Math.min(k,10)], b=path[Math.min(k+1,10)];
@@ -70,7 +77,7 @@ LIE.journeys['so3-optimization'] = (function(){
       },
       // 2 · the constraint (raw step leaves the sphere; naive retraction)
       g=>{
-        const R=1.7; g.add(baseSphere(R));
+        const R=1.7; g.add(baseSphere(R, COL));
         const pu=V3(0.35,0.62,0.70).normalize();
         const P=pu.clone().multiplyScalar(R);
         const dot=new THREE.Mesh(new THREE.SphereGeometry(0.11,14,12), new THREE.MeshBasicMaterial({color:COL.violet2}));
@@ -82,13 +89,13 @@ LIE.journeys['so3-optimization'] = (function(){
           new THREE.MeshBasicMaterial({color:COL.red,transparent:true,opacity:0.8}));
         ghost.position.copy(ghostP); g.add(ghost);
         g.add(dashedLine(ghostP, ghostP.clone().normalize().multiplyScalar(R), COL.red, 0.1));
-        const l1=makeLabel(LB.s2_exit,'#E24B4A',3.0); l1.position.copy(ghostP).add(V3(0,0.55,0)); g.add(l1);
-        const l2=makeLabel(LB.s2_orthonormal,'#5DCAA5',2.4); l2.position.set(-1.9,-1.9,0.6); g.add(l2);
+        const l1=makeLabel(LB.s2_exit,HX.red,3.0); l1.position.copy(ghostP).add(V3(0,0.55,0)); g.add(l1);
+        const l2=makeLabel(LB.s2_orthonormal,HX.teal,2.4); l2.position.set(-1.9,-1.9,0.6); g.add(l2);
         const snapP=ghostP.clone().normalize().multiplyScalar(R);
         const snap=new THREE.Mesh(new THREE.SphereGeometry(0.1,12,10),
           new THREE.MeshBasicMaterial({color:COL.teal,transparent:true,opacity:0.9}));
         g.add(snap);
-        const l3=makeLabel(LB.s2_retract,'#5DCAA5',3.0);
+        const l3=makeLabel(LB.s2_retract,HX.teal,3.0);
         l3.position.copy(snapP).add(V3(0,-0.62,0)); g.add(l3);
         return {tick(t){
           const s=1+Math.sin(t*2.6)*0.18; ghost.scale.set(s,s,s);
@@ -98,7 +105,7 @@ LIE.journeys['so3-optimization'] = (function(){
       },
       // 3 · the tangent space (project the ambient gradient)
       g=>{
-        const R=1.7; g.add(baseSphere(R));
+        const R=1.7; g.add(baseSphere(R, COL));
         const pu=V3(0.15,0.72,0.62).normalize();
         const P=pu.clone().multiplyScalar(R);
         const dot=new THREE.Mesh(new THREE.SphereGeometry(0.11,14,12), new THREE.MeshBasicMaterial({color:COL.violet2}));
@@ -113,9 +120,9 @@ LIE.journeys['so3-optimization'] = (function(){
         rim.position.copy(P); rim.quaternion.copy(disk.quaternion); g.add(rim);
         const aAmb=fatArrow(COL.coral,0.05), aTan=fatArrow(COL.teal,0.055); g.add(aAmb); g.add(aTan);
         let nLine=null, pLine=null;
-        const l1=makeLabel(LB.s3_raw,'#F0997B',3.0); g.add(l1);
-        const l2=makeLabel(LB.s3_proj,'#5DCAA5',3.2); g.add(l2);
-        const l3=makeLabel(LB.s3_drop,'#E24B4A',2.2); g.add(l3);
+        const l1=makeLabel(LB.s3_raw,HX.coral,3.0); g.add(l1);
+        const l2=makeLabel(LB.s3_proj,HX.teal,3.2); g.add(l2);
+        const l3=makeLabel(LB.s3_drop,HX.red,2.2); g.add(l3);
         return {tick(t){
           const b1=projT(V3(1,0,0),pu).normalize(), b2=pu.clone().cross(b1);
           const ang=t*0.45;
@@ -137,7 +144,7 @@ LIE.journeys['so3-optimization'] = (function(){
       },
       // 4 · exp (compound-interest chain vs. the geodesic) — exposes expApi
       g=>{
-        const R=1.7; g.add(baseSphere(R));
+        const R=1.7; g.add(baseSphere(R, COL));
         const pu=V3(-0.25,0.55,0.79).normalize();
         const P=pu.clone().multiplyScalar(R);
         const dot=new THREE.Mesh(new THREE.SphereGeometry(0.1,14,12), new THREE.MeshBasicMaterial({color:COL.violet2}));
@@ -159,9 +166,9 @@ LIE.journeys['so3-optimization'] = (function(){
         g.add(tip);
         let errLine=null;
         const axisC=pu.clone().cross(u).normalize();
-        const lbl=makeLabel(LB.s4_n_prefix+'1','#FAC775',2.0); lbl.position.copy(P).add(V3(0,1.25,0)); g.add(lbl);
-        const ler=makeLabel(LB.s4_err,'#E24B4A',2.2); g.add(ler);
-        const l2=makeLabel(LB.s4_exp,'#AFA9EC',2.0); l2.position.copy(arcPts[60]).add(V3(0.15,-0.5,0)); g.add(l2);
+        const lbl=makeLabel(LB.s4_n_prefix+'1',HX.amber,2.0); lbl.position.copy(P).add(V3(0,1.25,0)); g.add(lbl);
+        const ler=makeLabel(LB.s4_err,HX.red,2.2); g.add(ler);
+        const l2=makeLabel(LB.s4_exp,HX.violet,2.0); l2.position.copy(arcPts[60]).add(V3(0.15,-0.5,0)); g.add(l2);
         const ns=[1,2,4,8,32]; let last=-1, pts=[], nIdx=0, drawT=0;
         buildChain(1);
         function buildChain(n){
@@ -173,7 +180,7 @@ LIE.journeys['so3-optimization'] = (function(){
           }
           chord.geometry.dispose();
           chord.geometry=new THREE.BufferGeometry().setFromPoints(pts);
-          updateLabel(lbl,LB.s4_n_prefix+n,'#FAC775');
+          updateLabel(lbl,LB.s4_n_prefix+n,HX.amber);
         }
         expApi = { setN(n){ buildChain(n); drawT=0; } };
         return {tick(t){
@@ -209,7 +216,7 @@ LIE.journeys['so3-optimization'] = (function(){
         geo.setAttribute('color', new THREE.BufferAttribute(cols,3));
         g.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({vertexColors:true})));
         g.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.001,24,16),
-          new THREE.MeshBasicMaterial({color:0x0d1220,wireframe:true,transparent:true,opacity:0.10})));
+          new THREE.MeshBasicMaterial({color:COL.costWire,wireframe:true,transparent:true,opacity:0.10})));
         const minDot=new THREE.Mesh(new THREE.SphereGeometry(0.1,14,12), new THREE.MeshBasicMaterial({color:COL.green}));
         minDot.position.copy(m.clone().multiplyScalar(R*1.005)); g.add(minDot);
         const p0=V3(-0.45,-0.72,0.53).normalize();
@@ -282,7 +289,7 @@ LIE.journeys['so3-optimization'] = (function(){
       g=>{
         const S=0.8, RB=Math.PI*S;
         const shell=new THREE.Mesh(new THREE.SphereGeometry(RB,48,36),
-          new THREE.MeshStandardMaterial({color:0x233459,roughness:0.9,transparent:true,opacity:0.12}));
+          new THREE.MeshStandardMaterial({color:COL.so3shell,roughness:0.9,transparent:true,opacity:0.12}));
         g.add(shell);
         g.add(new THREE.Mesh(new THREE.SphereGeometry(RB*1.001,24,16),
           new THREE.MeshBasicMaterial({color:COL.violet2,wireframe:true,transparent:true,opacity:0.08})));
@@ -299,12 +306,12 @@ LIE.journeys['so3-optimization'] = (function(){
         const walker=new THREE.Mesh(new THREE.SphereGeometry(0.11,14,12), walkMat);
         g.add(walker);
         const cube=new THREE.Mesh(new THREE.BoxGeometry(1.05,1.05,1.05),
-          [COL.teal,0x2c8f6c,COL.violet,0x5a52b8,COL.coral,COL.amber].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:0.6})));
+          [COL.teal,COL.cubeFace2,COL.violet,COL.cubeFace4,COL.coral,COL.amber].map(c=>new THREE.MeshStandardMaterial({color:c,roughness:0.6})));
         cube.position.set(RB+2.0, 0.3, 0); g.add(cube);
-        const lbl=makeLabel('0'+LB.s6_deg_suffix,'#FAC775',1.7); lbl.position.set(RB+2.0, 1.7, 0); g.add(lbl);
-        const l2=makeLabel(LB.s6_identified,'#AFA9EC',3.6);
+        const lbl=makeLabel('0'+LB.s6_deg_suffix,HX.amber,1.7); lbl.position.set(RB+2.0, 1.7, 0); g.add(lbl);
+        const l2=makeLabel(LB.s6_identified,HX.violet,3.6);
         l2.position.copy(nax.clone().multiplyScalar(RB)).add(V3(0,0.55,0)); g.add(l2);
-        const l3=makeLabel(LB.s6_cross_prefix+'0'+LB.s6_cross_sep+LB.s6_even,'#97C459',3.2);
+        const l3=makeLabel(LB.s6_cross_prefix+'0'+LB.s6_cross_sep+LB.s6_even,HX.green,3.2);
         l3.position.set(RB+2.0, -1.1, 0); g.add(l3);
         let lastDeg=-1, lastCr=-1;
         return {tick(t){
@@ -315,10 +322,10 @@ LIE.journeys['so3-optimization'] = (function(){
           walkMat.color.setHex(th<=2*Math.PI?COL.amber:COL.teal);
           cube.quaternion.setFromAxisAngle(nax, th);
           const deg=Math.round(th*180/Math.PI/5)*5;
-          if(deg!==lastDeg){ lastDeg=deg; updateLabel(lbl, deg+LB.s6_deg_suffix, '#FAC775'); }
+          if(deg!==lastDeg){ lastDeg=deg; updateLabel(lbl, deg+LB.s6_deg_suffix, HX.amber); }
           const cr=(th>Math.PI?1:0)+(th>3*Math.PI?1:0);
           if(cr!==lastCr){ lastCr=cr;
-            updateLabel(l3,LB.s6_cross_prefix+cr+LB.s6_cross_sep+(cr%2?LB.s6_odd:LB.s6_even), cr%2?'#E24B4A':'#97C459'); }
+            updateLabel(l3,LB.s6_cross_prefix+cr+LB.s6_cross_sep+(cr%2?LB.s6_odd:LB.s6_even), cr%2?HX.red:HX.green); }
         }};
       },
       // 7 · SE(3) — a moving frame along a path
@@ -328,7 +335,7 @@ LIE.journeys['so3-optimization'] = (function(){
           curvePts.push(V3(Math.cos(s*Math.PI*3.2)*2.4, s*4.4-2.2, Math.sin(s*Math.PI*3.2)*2.4));}
         const curve=new THREE.CatmullRomCurve3(curvePts);
         g.add(new THREE.Mesh(new THREE.TubeGeometry(curve,180,0.03,6,false),
-          new THREE.MeshBasicMaterial({color:0x51608a,transparent:true,opacity:0.7})));
+          new THREE.MeshBasicMaterial({color:COL.se3tube,transparent:true,opacity:0.7})));
         function frameAt(s){
           const p=curve.getPointAt(s), T=curve.getTangentAt(s).normalize();
           let N=V3(0,1,0).cross(T);
@@ -352,7 +359,7 @@ LIE.journeys['so3-optimization'] = (function(){
           const a=fatArrow(c,0.045); live.add(a); return {a,v};
         });
         g.add(live);
-        const lbl=makeLabel(LB.s7_dof,'#E8E6DF',3.4); lbl.position.set(0,3.1,0); g.add(lbl);
+        const lbl=makeLabel(LB.s7_dof,HX.ink,3.4); lbl.position.set(0,3.1,0); g.add(lbl);
         return {tick(t){
           const s=(t*0.055)%1;
           const {p,q}=frameAt(s);
@@ -397,7 +404,7 @@ LIE.journeys['so3-optimization'] = (function(){
     id: 'so3-optimization',
     tier: 'optimization',
     layout: { SP, OFF },
-    threadColor: COL.violet2,
+    threadKey: 'violet2',
     build
   };
 })();
