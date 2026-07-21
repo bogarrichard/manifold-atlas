@@ -9,13 +9,40 @@ the exponential map, and SO(3)/SE(3) poses. Pure static files — no build step.
 | --- | --- |
 | `index.html` | Page shell: canvas + HUD markup. Language-agnostic. |
 | `style.css` | All styling. |
-| `engine.js` | Three.js scene, animations, navigation. **Contains no display text.** |
-| `content/hu.js` | Hungarian text pack (every visible string). |
-| `content/en.js` | English text pack. |
+| `kit.js` | Shared toolkit: math helpers, color palette, Three.js primitive builders. Pure factories, no scene state. Exposes `LIE.kit`. |
+| `journeys/*.js` | One file per journey. Registers a descriptor into `LIE.journeys`. Holds the station builders + layout. |
+| `engine.js` | The **journey player**: scene, camera, navigation, i18n. Runs one journey descriptor. **Contains no display text and no journey-specific geometry.** |
+| `content/hu.js` · `content/en.js` | Language text packs (every visible string). |
 
 The only dependency is **Three.js r128 (MIT)**, loaded from cdnjs in `index.html`
 and pinned with a Subresource Integrity (`integrity="sha512-…"`) hash — the browser
 runs it only if the bytes match exactly, so the CDN can't serve tampered code.
+
+## Architecture (player + journeys + kit)
+
+The code is split so new journeys plug in without touching the engine:
+
+- **`kit.js`** — reusable Three.js building blocks (`fatArrow`, `makeLabel`,
+  `baseSphere`, `expSph`, the `COL` palette, math helpers). Any journey uses these.
+- **`journeys/<id>.js`** — a journey descriptor:
+
+  ```js
+  LIE.journeys['<id>'] = {
+    id, tier, layout:{ SP, OFF }, threadColor,
+    build(content) { return { stations:[ g => {…build group…; return {tick(t){…}} }, … ],
+                              bindCard(i) { /* wire interactive HUD controls for card i */ } }; }
+  };
+  ```
+
+  `SP`/`OFF` are the per-station world positions and camera offsets; `build(pack)` binds a
+  language pack and returns the station builders plus per-card wiring.
+- **`engine.js`** — picks the language and the journey (`?journey=<id>`, default
+  `so3-optimization`), builds the scene, lays the stations along `SP`, and drives the
+  camera fly + animation loop. It is journey-agnostic.
+
+Load order in `index.html` matters: `three` → content packs → `kit.js` → `journeys/*.js`
+→ `engine.js`. Adding a journey = drop a `journeys/<id>.js` file and one `<script>` line.
+(The upcoming hub will turn the registry of journeys into a visual main menu.)
 
 ## How language selection works
 

@@ -38,7 +38,10 @@
 <!-- Language packs. Add a new one here, e.g. <script src="content/de.js"></script> -->
 <script src="content/hu.js"></script>
 <script src="content/en.js"></script>
-<!-- Rendering engine (language-agnostic). -->
+<!-- Shared toolkit (math + Three.js helpers), then journeys, then the player. -->
+<script src="kit.js"></script>
+<script src="journeys/so3-optimization.js"></script>
+<!-- Rendering engine: a generic journey player. -->
 <script src="engine.js"></script>
 </body>
 </html>
