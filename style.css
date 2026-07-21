@@ -28,6 +28,16 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
   position:relative;top:-0.1em}
 .frac span:first-child{padding:0 4px}
 .frac span:last-child{border-top:1px solid var(--muted);padding:0 4px}
+/* bracketed math matrix (a CSS grid flanked by two border-drawn brackets) */
+#hud .matline{display:flex;align-items:center;justify-content:center;gap:10px;
+  margin:15px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:15px}
+#hud .matline sub,#hud .matline sup{font-size:.66em}
+.matrix{display:inline-flex;align-items:stretch;color:var(--muted)}
+.matrix .mbracket{width:7px;flex:none;border:1.5px solid currentColor;border-right:none}
+.matrix .mbracket.right{border-left:none;border-right:1.5px solid currentColor}
+.matrix .mgrid{display:grid;grid-template-columns:repeat(3,auto);gap:7px 20px;
+  padding:7px 13px;color:var(--ink);text-align:center}
+.matrix .mgrid>span{min-width:24px;white-space:nowrap}
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
 .act{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink);
   background:rgba(250,199,117,0.10);border:1px solid rgba(250,199,117,0.45);
