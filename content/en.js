@@ -15,10 +15,22 @@ window.LIE_CONTENT.en = {
     stationWord: 'station',
     prevAria: 'Previous station',
     nextAria: 'Next station',
+    hubBackAria: 'Back to the hub',
     langMenuLabel: 'Language',
     theme: { label: 'Theme', system: 'system', light: 'light', dark: 'dark' },
-    hint: ['drag: look around', 'scroll: zoom', '← → : travel'],
+    hint: ['drag: look around', 'scroll: zoom', '← → : travel', '↑ : hub'],
     noscript: 'This interactive visualization requires JavaScript and WebGL. Please enable them in your browser.'
+  },
+  hub: {
+    eyebrow: 'the hub',
+    branchWord: 'branch',
+    intro: '<p>Welcome aboard. One solar system orbits the central frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to scout what it holds; the numbered moons mark where to touch down first. Only <em>Riemannian GD</em> is open for landing so far — the rest of the map is still being charted.</p>',
+    hint: ['drag: orbit', 'scroll: zoom', 'hover a planet · click a sphere'],
+    branches: {
+      geometry: { title: 'Geometry', summary: '<p>The spaces things live in — rotations, poses, similarities — and how they move. Six journeys from flat ℝⁿ up to Sim(3): tangent spaces, exp/log, and (for SO(3)) topology. No cost function in sight.</p>' },
+      optimization: { title: 'Optimization', summary: '<p>How we minimize a cost: gradient descent, then Gauss–Newton, then the practical variants. All of it lives happily in flat ℝⁿ — no manifold required.</p>' },
+      slam: { title: 'SLAM', summary: '<p>Where geometry and optimization meet. Riemannian GD (SO(3) × gradient descent — today’s page) and factor graphs — the residuals and weights a SLAM problem is built from — converge here into full SLAM.</p>' }
+    }
   },
   // Floating 3D labels in the scene.
   labels: {

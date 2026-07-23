@@ -90,6 +90,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
   -webkit-user-select:none;user-select:none}
 .nbtn:hover{border-color:var(--amber)}
 .nbtn:disabled{opacity:.3;cursor:default}
+.nbtn[hidden]{display:none}
+#tohub{position:fixed;left:22px;bottom:26px;z-index:5}
 #dots{display:flex;gap:9px}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--dot);
   cursor:pointer;transition:background .2s,transform .2s}

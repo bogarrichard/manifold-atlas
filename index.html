@@ -31,6 +31,7 @@
   <button class="nbtn" id="next">→</button>
 </div>
 
+<button class="nbtn" id="tohub" type="button" hidden>↑</button>
 <div id="hint"></div>
 <div id="topctl">
   <div id="theme"></div>
@@ -52,7 +53,8 @@
 <!-- Shared toolkit (math + Three.js helpers), then journeys, then the player. -->
 <script src="kit.js"></script>
 <script src="journeys/so3-optimization.js"></script>
-<!-- Rendering engine: a generic journey player. -->
+<script src="hub.js"></script>
+<!-- Rendering engine: journey player + hub mode. -->
 <script src="engine.js"></script>
 </body>
 </html>
