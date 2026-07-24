@@ -195,7 +195,11 @@ LIE.hub = (function(){
         const u=ease(clamp((now-flight.t0)/flight.dur,0,1));
         camera.position.lerpVectors(flight.from, flight.to, u);
         camera.lookAt(flight.look);
-        if(u>=1){ location.href=flight.url; return; }
+        // fire the navigation exactly once — this branch keeps running every frame
+        // (rAF is already re-armed above) for as long as the browser takes to actually
+        // unload the page, and re-assigning location.href each time restarts the
+        // navigation from scratch (repeated DNS/connection attempts)
+        if(u>=1){ if(!flight.navigated){ flight.navigated=true; location.href=flight.url; } return; }
         renderer.render(scene,camera); return;
       }
       // ease the revolution to a near-stop while hovering a planet OR a moon (to read / click it)
