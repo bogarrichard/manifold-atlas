@@ -139,7 +139,7 @@ LIE.hub = (function(){
     const target=V3(0,0,0);
     let theta=0.6, phi=1.02, radius=62;
     const ray=new THREE.Raycaster(); const pointer=new THREE.Vector2(-2,-2);
-    let flight=null, dragging=false, lx=0, ly=0, moved=false;
+    let flight=null, dragging=false, lx=0, ly=0, dx0=0, dy0=0, moved=false;
     function place(){
       const s=new THREE.Spherical(radius, phi, theta);
       camera.position.copy(target).add(V3(0,0,0).setFromSpherical(s));
@@ -154,14 +154,19 @@ LIE.hub = (function(){
         to:wp.clone().add(dir.multiplyScalar(3.4)).add(V3(0,0.4,0)), look:wp.clone(),
         url:'?journey='+j.journey+(l?('&lang='+l):'')};
     }
-    canvas.addEventListener('pointerdown',e=>{dragging=true;moved=false;lx=e.clientX;ly=e.clientY;canvas.classList.add('grabbing');canvas.setPointerCapture(e.pointerId);});
+    canvas.addEventListener('pointerdown',e=>{dragging=true;moved=false;lx=e.clientX;ly=e.clientY;dx0=e.clientX;dy0=e.clientY;canvas.classList.add('grabbing');canvas.setPointerCapture(e.pointerId);});
     canvas.addEventListener('pointermove',e=>{
       const r=canvas.getBoundingClientRect();
       pointer.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
       if(dragging){
         const dx=e.clientX-lx, dy=e.clientY-ly;
-        if(Math.abs(dx)+Math.abs(dy)>3) moved=true;
-        theta-=dx*0.006; phi=clamp(phi-dy*0.006, 0.22, Math.PI-0.22);
+        // total displacement from the press origin (not the per-move delta, which would
+        // under-count a slow multi-step drag) decides click vs. drag
+        if(!moved && Math.abs(e.clientX-dx0)+Math.abs(e.clientY-dy0)>6) moved=true;
+        // only actually orbit the camera once a real drag is confirmed — otherwise a few px
+        // of unavoidable hand/trackpad jitter during a click nudges the view just enough to
+        // carry the moon out from under the cursor, so the hover check misses it on release
+        if(moved){ theta-=dx*0.006; phi=clamp(phi-dy*0.006, 0.22, Math.PI-0.22); }
         lx=e.clientX; ly=e.clientY;
       }
     });
