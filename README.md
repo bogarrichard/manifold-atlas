@@ -14,9 +14,9 @@ the exponential map, and SO(3)/SE(3) poses. Pure static files — no build step.
 | `engine.js` | The **journey player**: scene, camera, navigation, i18n. Runs one journey descriptor. **Contains no display text and no journey-specific geometry.** |
 | `content/hu.js` · `content/en.js` | Language text packs (every visible string). |
 
-The only dependency is **Three.js r128 (MIT)**, loaded from cdnjs in `index.html`
-and pinned with a Subresource Integrity (`integrity="sha512-…"`) hash — the browser
-runs it only if the bytes match exactly, so the CDN can't serve tampered code.
+The only dependency is **Three.js r128 (MIT)**, vendored locally at
+`vendor/three.min.js` (license header intact) so that hub↔journey navigation — a
+full page reload — never depends on a third-party CDN round-trip.
 
 ## Architecture (player + journeys + kit)
 
@@ -99,9 +99,8 @@ non-regional (an emoji or short text) instead.
 
 ## Updating Three.js
 
-In `index.html`, change the version in the CDN URL **and** replace the `integrity`
-hash to match (cdnjs lists the SRI hash for every file, or compute it with
-`openssl dgst -sha512 -binary three.min.js | openssl base64 -A`). If the hash and
-file don't match, the browser silently refuses to load it. The code uses only stable
-Three.js APIs (geometries, `Sprite`, `ArrowHelper`, `CatmullRomCurve3`,
-`TubeGeometry`), so minor version bumps are low-risk; test after upgrading.
+Replace `vendor/three.min.js` with the new build (e.g. from cdnjs) and keep its
+`@license` header intact — that's the MIT copyright/permission notice, required to
+stay with the code. The code uses only stable Three.js APIs (geometries, `Sprite`,
+`ArrowHelper`, `CatmullRomCurve3`, `TubeGeometry`), so minor version bumps are
+low-risk; test after upgrading.

@@ -42,11 +42,9 @@
   <div class="noscript">Ehhez az interaktív ábrához JavaScript és WebGL kell. / This interactive visualization requires JavaScript and WebGL.</div>
 </noscript>
 
-<!-- Three.js r128 (MIT) from cdnjs, pinned by Subresource Integrity:
-     the browser refuses to run it unless the bytes match this exact hash. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
-        integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- Three.js r128 (MIT), vendored locally so hub<->journey navigation (a full page
+     reload) never depends on a third-party CDN round-trip. -->
+<script src="vendor/three.min.js"></script>
 <!-- Language packs. Add a new one here, e.g. <script src="content/de.js"></script> -->
 <script src="content/hu.js"></script>
 <script src="content/en.js"></script>
