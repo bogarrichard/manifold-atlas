@@ -77,13 +77,16 @@ LIE.kit = (function(){
       } else toks.push({t:text[i],s:0});
     }
     let F=46;
-    const wOf=f=>{let w=0; toks.forEach(k=>{ctx.font='italic '+Math.round(k.s?f*0.62:f)+'px Georgia, serif'; w+=ctx.measureText(k.t).width;}); return w;};
+    // give superscripts a little breathing room from their base (^ token => s:1),
+    // counted in both the width pass and the draw pass so centering stays correct
+    const wOf=f=>{let w=0; toks.forEach(k=>{ctx.font='italic '+Math.round(k.s?f*0.62:f)+'px Georgia, serif'; if(k.s) w+=f*0.06; w+=ctx.measureText(k.t).width;}); return w;};
     let W=wOf(F); if(W>470){ F=F*470/W; W=wOf(F); }
     let x=(512-W)/2;
     ctx.textAlign='left'; ctx.textBaseline='middle';
     ctx.fillStyle=color||'#FAC775';
     toks.forEach(k=>{
       ctx.font='italic '+Math.round(k.s?F*0.62:F)+'px Georgia, serif';
+      if(k.s) x+=F*0.06;
       ctx.fillText(k.t, x, k.s?46:66);
       x+=ctx.measureText(k.t).width;
     });

@@ -196,7 +196,9 @@ if(hubMode){
   buildScene();
   rethemeContent = ()=>{ buildScene(); renderCard(cur); };
 
-  const CARDS = C.cards;
+  // a journey may ship its own per-language cards (self-contained prototypes do);
+  // otherwise fall back to the shared content-pack cards.
+  const CARDS = (journeyDef.cards && (journeyDef.cards[LANG] || journeyDef.cards.hu || journeyDef.cards.en)) || C.cards;
   let cur=0, travel=null;
   let yaw=0, pitch=0, zoomF=1;
   const hud=document.getElementById('hud'), eb=document.getElementById('eb'),
@@ -239,18 +241,23 @@ if(hubMode){
     if(e.key==='ArrowUp') goHub();
   });
 
-  /* close any open "what is δ"-style bubble on outside-click; Escape closes it too,
-     or — if it's already closed — backs out to the hub. */
+  /* close any open explanatory bubble (a "what is δ"-style popover) on outside-click;
+     Escape closes it too, or — if none is open — backs out to the hub. Generic over any
+     .bubble whose trigger carries aria-controls="<bubble id>", so journeys can add their
+     own bubbles without touching the engine. Only one card (hence one bubble) is live. */
+  const openBubble = ()=>document.querySelector('.bubble:not([hidden]), .pop:not([hidden])');
+  const bubbleTrigger = bub=>bub ? document.querySelector('[aria-controls="'+bub.id+'"]') : null;
   document.addEventListener('click', e=>{
-    const bub=document.getElementById('s5deltabubble'), info=document.getElementById('s5deltainfo');
-    if(bub && !bub.hidden && info && !bub.contains(e.target) && !info.contains(e.target)){
-      bub.hidden=true; info.setAttribute('aria-expanded','false');
+    const bub=openBubble(); if(!bub) return;
+    const info=bubbleTrigger(bub);
+    if(!bub.contains(e.target) && !(info && info.contains(e.target))){
+      bub.hidden=true; if(info) info.setAttribute('aria-expanded','false');
     }
   });
   addEventListener('keydown', e=>{
     if(e.key!=='Escape') return;
-    const bub=document.getElementById('s5deltabubble'), info=document.getElementById('s5deltainfo');
-    if(bub && !bub.hidden){ bub.hidden=true; if(info){ info.setAttribute('aria-expanded','false'); info.focus(); } return; }
+    const bub=openBubble();
+    if(bub){ bub.hidden=true; const info=bubbleTrigger(bub); if(info){ info.setAttribute('aria-expanded','false'); info.focus(); } return; }
     goHub();
   });
 

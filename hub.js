@@ -17,10 +17,10 @@ LIE.hub = (function(){
   // the shells are periodic with different speeds, an exact collision is only a matter of time.
   const BRANCHES = [
     {id:'geometry', title:'Geometry', root:'geo', orbit:{A:9.0,  B:7.0,  ph:2.4, w:0.130}, spin:0.22, tilt:[1.05,0.45],
-     journeys:[{k:'flat',title:'ℝⁿ'},{k:'so2',title:'SO(2)'},{k:'se2',title:'SE(2)'},
+     journeys:[{k:'flat',title:'ℝⁿ',journey:'geometry-flat'},{k:'so2',title:'SO(2)'},{k:'se2',title:'SE(2)'},
                {k:'so3',title:'SO(3)'},{k:'se3',title:'SE(3)'},{k:'sim3',title:'Sim(3)'}]},
     {id:'optimization', title:'Optimization', root:'opt', orbit:{A:20.0, B:17.5, ph:3.8, w:0.070}, spin:0.28, tilt:[1.30,-0.5],
-     journeys:[{k:'gd',title:'gradient descent'},{k:'gn',title:'Gauss–Newton'},{k:'lm',title:'LM · robust'}]},
+     journeys:[{k:'gd',title:'gradient descent',journey:'optimization-gd'},{k:'gn',title:'Gauss–Newton'},{k:'lm',title:'LM · robust'}]},
     {id:'slam', title:'SLAM', root:'conv', orbit:{A:30.5, B:27.5, ph:0.2, w:0.040}, spin:0.24, tilt:[0.9,0.7],
      journeys:[{k:'riemann',title:'Riemannian GD',journey:'so3-optimization',today:true},
                {k:'fg',title:'factor graphs'},{k:'slam',title:'SLAM'}]},

@@ -33,6 +33,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #hud p+p{margin-top:8px}
 .m{font-family:Georgia,serif;font-style:italic;color:var(--ink)}
 .m sup,.m sub{font-size:.68em}
+.m sup{margin-left:.06em}   /* keep exponents off their base, e.g. ℝⁿ, 0.82ᵏ */
 .frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;
   line-height:1.15;font-family:Georgia,serif;font-style:italic;margin:0 3px;font-size:.82em;
   position:relative;top:-0.1em}
@@ -71,6 +72,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 .bubble::before{content:'';position:absolute;top:-7px;left:26px;width:12px;height:12px;
   background:var(--panel-strong);border-left:1px solid var(--line);border-top:1px solid var(--line);
   transform:rotate(45deg)}
+
+/* inline concept link in the body text (dashed underline); its explanation opens as a
+   footnote panel (.bubble) at the foot of the card. display:inline so the link sits on
+   the text baseline and never nudges the line (no "text jump"). */
+.termbtn{font:inherit;display:inline;color:var(--amber);background:none;border:none;
+  padding:0;margin:0;cursor:pointer;border-bottom:1px dashed currentColor}
+.termbtn:hover,.termbtn[aria-expanded="true"]{color:var(--coral)}
+.termbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:2px}
+
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
 .act{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink);
   background:color-mix(in srgb, var(--amber) 12%, transparent);border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
