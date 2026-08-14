@@ -1,13 +1,18 @@
-# Lie Journey — interactive visualization
+# Manifold Atlas — interactive 3D journeys
 
-An interactive 3D explainer: from flat gradient descent to Riemannian gradients,
-the exponential map, and SO(3)/SE(3) poses. Pure static files — no build step.
+An interactive 3D explainer for the geometry that robotics runs on, told as a set of
+guided journeys: flat ℝⁿ and gradient descent, Lie groups (SO(3)/SE(3)), Riemannian
+gradients and the exponential map, and the place where those two lines meet — SLAM.
+
+A solar-system hub is the landing view: each branch (**Geometry**, **Optimization**,
+**SLAM**) is a planet, each journey a moon orbiting it. Pure static files — no build step.
 
 ## Files
 
 | File | Role |
 | --- | --- |
 | `index.html` | Page shell: canvas + HUD markup. Language-agnostic. |
+| `hub.js` | The solar-system main menu: branches as planets, journeys as moons. Shown when the URL carries no `?journey=`. |
 | `style.css` | All styling. |
 | `kit.js` | Shared toolkit: math helpers, color palette, Three.js primitive builders. Pure factories, no scene state. Exposes `LIE.kit`. |
 | `journeys/*.js` | One file per journey. Registers a descriptor into `LIE.journeys`. Holds the station builders + layout. |
@@ -43,9 +48,9 @@ The code is split so new journeys plug in without touching the engine:
   `SP`/`OFF` are the per-station world positions and camera offsets; `build(pack, palette)`
   binds a language pack **and the active theme palette** and returns the station builders
   plus per-card wiring. `threadKey` names the palette color for the connecting thread.
-- **`engine.js`** — picks the language, theme, and journey (`?journey=<id>`, default
-  `so3-optimization`), builds the scene, lays the stations along `SP`, and drives the
-  camera fly + animation loop. It is journey-agnostic.
+- **`engine.js`** — picks the language, theme, and journey (`?journey=<id>`; with no
+  `journey` in the URL it runs the hub instead), builds the scene, lays the stations
+  along `SP`, and drives the camera fly + animation loop. It is journey-agnostic.
 
 ## Theming (dark / light / system)
 
@@ -63,14 +68,14 @@ follows `prefers-color-scheme` live).
   label text colors, so a new journey is theme-aware for free.
 
 Load order in `index.html` matters: `three` → content packs → `kit.js` → `journeys/*.js`
-→ `engine.js`. Adding a journey = drop a `journeys/<id>.js` file and one `<script>` line.
-(The upcoming hub will turn the registry of journeys into a visual main menu.)
+→ `hub.js` → `engine.js`. Adding a journey = drop a `journeys/<id>.js` file and one
+`<script>` line; the hub picks it up from the registry as a new moon on its branch.
 
 ## How language selection works
 
 `engine.js` reads the active language, in order of preference:
 
-1. `?lang=xx` in the URL (e.g. `lie/?lang=en`)
+1. `?lang=xx` in the URL (e.g. `?lang=en`)
 2. the `<html lang>` attribute
 3. `hu` as the default
 
@@ -122,3 +127,19 @@ Replace `vendor/three.min.js` with the new build (e.g. from cdnjs) and keep its
 stay with the code. The code uses only stable Three.js APIs (geometries, `Sprite`,
 `ArrowHelper`, `CatmullRomCurve3`, `TubeGeometry`), so minor version bumps are
 low-risk; test after upgrading.
+
+## Running it locally
+
+There is no build step, but the page must be served over HTTP (opening `index.html`
+straight from the filesystem trips the browser's `file://` restrictions):
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000/`.
+
+## License
+
+GPLv3 — see [LICENSE](LICENSE). The vendored `vendor/three.min.js` is Three.js,
+MIT-licensed, with its `@license` header intact.
