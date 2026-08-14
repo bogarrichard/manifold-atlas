@@ -35,7 +35,10 @@ document.getElementById('next').setAttribute('aria-label', C.ui.nextAria);
   codes.forEach(code=>{
     const m = LANGS[code].meta || {};
     const li = document.createElement('li'); li.setAttribute('role', 'option');
-    const a = document.createElement('a'); a.href = '?lang=' + code;
+    // keep the rest of the query (notably ?journey=) so switching language stays
+    // on the current journey instead of dropping back to the default one
+    const q = new URLSearchParams(location.search); q.set('lang', code);
+    const a = document.createElement('a'); a.href = '?' + q.toString();
     if(code === LANG){ a.className = 'on'; li.setAttribute('aria-selected', 'true'); }
     a.innerHTML = '<span class="flag">'+(m.flag||'🌐')+'</span><span>'+(m.langLabel||code)+'</span>';
     li.appendChild(a); menu.appendChild(li);
