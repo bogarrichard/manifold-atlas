@@ -24,7 +24,7 @@ window.LIE_CONTENT.en = {
   hub: {
     eyebrow: 'the hub',
     branchWord: 'branch',
-    intro: '<p>Welcome aboard. One solar system orbits the central frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to scout what it holds; the numbered moons mark where to touch down first. As a prototype, the first stops of <em>Geometry</em> (ℝⁿ) and <em>Optimization</em> (gradient descent) are open for landing too, alongside <em>Riemannian GD</em> — the rest of the map is still being charted.</p>',
+    intro: '<p>Welcome aboard. One solar system orbits the central frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to scout what it holds; the numbered moons mark where to touch down first. As a prototype, the first stops of <em>Geometry</em> (ℝⁿ) and <em>Optimization</em> (gradient descent) are open for landing too, alongside <em>Riemannian GD</em>; the <em>SE(3)</em> moon of Geometry now holds the full chapter on poses — the rest of the map is still being charted.</p>',
     hint: ['drag: orbit', 'scroll: zoom', 'hover a planet · click a sphere'],
     branches: {
       geometry: { title: 'Geometry', summary: '<p>The spaces things live in — rotations, poses, similarities — and how they move. Six journeys from flat ℝⁿ up to Sim(3): tangent spaces, exp/log, and (for SO(3)) topology. No cost function in sight.</p>' },

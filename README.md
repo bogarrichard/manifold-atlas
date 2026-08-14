@@ -34,6 +34,12 @@ The code is split so new journeys plug in without touching the engine:
   };
   ```
 
+  Registered so far: `so3-optimization` (Riemannian GD, 8 stations, text in the content
+  packs), `geometry-flat` (ℝⁿ), `optimization-gd` (gradient descent), and `geometry-se3`
+  (poses: the pose/transformation duality, chaining, the order of R and t, twists, the
+  screw motion, the left Jacobian, log, the adjoint, and pose interpolation — 10
+  stations, cards in-file).
+
   `SP`/`OFF` are the per-station world positions and camera offsets; `build(pack, palette)`
   binds a language pack **and the active theme palette** and returns the station builders
   plus per-card wiring. `threadKey` names the palette color for the connecting thread.

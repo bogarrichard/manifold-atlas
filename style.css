@@ -63,7 +63,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 .s5info:hover,.s5info[aria-expanded="true"]{color:var(--amber)}
 .s5info .m{color:inherit}
 .s5info .ic{font-size:13px}
-.bubble{position:absolute;top:calc(100% + 12px);left:0;right:0;z-index:8;
+/* The panel hangs under the card. Under a tall card that would drop it below the fold —
+   and the page never scrolls — so clamp the top to whatever still leaves room for a
+   full-height panel. It then overlaps the foot of the card, which is fine: it is opaque. */
+.bubble{position:absolute;top:min(calc(100% + 12px), calc(100vh - min(56vh,440px) - 40px));
+  left:0;right:0;z-index:8;
   padding:14px 16px;border-radius:12px;background:var(--panel-strong);
   border:1px solid var(--line);box-shadow:0 16px 44px rgba(0,0,0,0.55);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
