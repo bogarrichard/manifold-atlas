@@ -23,18 +23,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #c{position:fixed;inset:0;display:block;cursor:grab}
 #c.grabbing{cursor:grabbing}
 
-#hud{position:fixed;top:22px;left:22px;width:min(420px,calc(100vw - 44px));
+/* The card owns a good third of the viewport; the engine shifts the camera frustum right
+   by half the card so the scene stays centered in what is left instead of hiding behind
+   the text. The lower bound is the width the card had before it was made proportional;
+   the upper one keeps the measure readable (a line much past ~90 characters is hard to
+   track back to the next one). */
+#hud{position:fixed;top:22px;left:22px;
+  width:clamp(460px, calc(38vw - 22px), 700px);max-width:calc(100vw - 44px);
   background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:18px 20px 16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  padding:20px 24px 18px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:opacity .35s ease, transform .35s ease}
 #hud.fade{opacity:0;transform:translateY(6px)}
-.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
-  letter-spacing:.14em;color:var(--amber);margin-bottom:8px}
+.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+  letter-spacing:.14em;color:var(--amber);margin-bottom:9px}
 #hud h1{font-family:Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",
     "Noto Serif JP","Yu Mincho",serif;font-weight:500;
-  font-size:21px;line-height:1.3;margin-bottom:10px;color:var(--ink)}
-#hud p{font-size:13.5px;line-height:1.66;color:var(--muted)}
-#hud p+p{margin-top:8px}
+  font-size:28px;line-height:1.26;margin-bottom:13px;color:var(--ink)}
+#hud p{font-size:17px;line-height:1.7;color:var(--muted)}
+#hud p+p{margin-top:10px}
 .m{font-family:Georgia,serif;font-style:italic;color:var(--ink)}
 .m sup,.m sub{font-size:.68em}
 .m sup{margin-left:.06em}   /* keep exponents off their base, e.g. ℝⁿ, 0.82ᵏ */
@@ -45,7 +51,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 .frac span:last-child{border-top:1px solid var(--muted);padding:0 4px}
 /* bracketed math matrix (a CSS grid flanked by two border-drawn brackets) */
 #hud .matline{display:flex;align-items:center;justify-content:center;gap:10px;
-  margin:15px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:15px}
+  margin:16px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:18.5px}
 #hud .matline sub,#hud .matline sup{font-size:.66em}
 .matrix{display:inline-flex;align-items:stretch;color:var(--muted)}
 .matrix .mbracket{width:7px;flex:none;border:1.5px solid currentColor;border-right:none}
@@ -57,29 +63,41 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 /* station 6: live per-phase formula, "what is δ" trigger, and floating bubble */
 .s5math{margin-top:12px;padding:8px 12px;border-radius:9px;text-align:center;
   background:color-mix(in srgb, var(--amber) 8%, transparent);border:1px solid color-mix(in srgb, var(--amber) 20%, transparent);
-  font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:14px;
-  min-height:21px;line-height:1.55}
+  font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:17.5px;
+  min-height:27px;line-height:1.55}
 .s5math sub,.s5math sup{font-size:.7em}
 .s5foot{position:relative;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .s5info{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:0;
   background:none;border:none;color:var(--faint);
-  font-family:ui-monospace,Menlo,monospace;font-size:12px;transition:color .15s}
+  font-family:ui-monospace,Menlo,monospace;font-size:14px;transition:color .15s}
 .s5info:hover,.s5info[aria-expanded="true"]{color:var(--amber)}
 .s5info .m{color:inherit}
 .s5info .ic{font-size:13px}
 /* The panel hangs under the card. Under a tall card that would drop it below the fold —
    and the page never scrolls — so clamp the top to whatever still leaves room for a
-   full-height panel. It then overlaps the foot of the card, which is fine: it is opaque. */
+   full-height panel. It then overlaps the foot of the card, which is fine: it is opaque.
+   `--bubmax` is the room the engine measured below the card; past that the panel would
+   run off the bottom of the window, and it scrolls internally instead. */
 .bubble{position:absolute;top:min(calc(100% + 12px), calc(100vh - min(56vh,440px) - 40px));
   left:0;right:0;z-index:8;
   padding:14px 16px;border-radius:12px;background:var(--panel-strong);
   border:1px solid var(--line);box-shadow:0 16px 44px rgba(0,0,0,0.55);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  max-height:min(56vh,440px);overflow-y:auto}
+  max-height:min(56vh,440px,var(--bubmax,440px));overflow-y:auto}
 .bubble[hidden]{display:none}
 .bubble::before{content:'';position:absolute;top:-7px;left:26px;width:12px;height:12px;
   background:var(--panel-strong);border-left:1px solid var(--line);border-top:1px solid var(--line);
   transform:rotate(45deg)}
+/* A card taller than the viewport scrolls instead of running off the bottom — the engine
+   sets `.scrolls` for that (and when the room under the card is too small for a floating
+   panel). Scrolling clips whatever hangs past the card's box, and the panel above hangs
+   below the foot, so there it drops into the flow instead and the engine scrolls it into
+   view on open. Cards that fit keep `overflow:visible`, and with it the floating panel. */
+/* 100px = the 22px top offset + 78px kept clear for the ↑ button in the bottom-left
+   corner; `BOTTOM_KEEP` in engine.js is the same 78 (keep the two in step). */
+#hud.scrolls{max-height:calc(100vh - 100px);overflow-y:auto;overscroll-behavior:contain}
+#hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
+#hud.scrolls .bubble::before{display:none}
 
 /* inline concept link in the body text (dashed underline); its explanation opens as a
    footnote panel (.bubble) at the foot of the card. display:inline so the link sits on
@@ -90,15 +108,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 .termbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:2px}
 
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-.act{font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--ink);
+.act{font-family:ui-monospace,Menlo,monospace;font-size:15px;color:var(--ink);
   background:color-mix(in srgb, var(--amber) 12%, transparent);border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
   border-radius:9px;padding:8px 14px;cursor:pointer;transition:background .15s}
 .act:hover{background:color-mix(in srgb, var(--amber) 22%, transparent)}
-.ro{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--faint);margin-top:10px}
+.ro{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:var(--faint);margin-top:10px}
 .ro b{color:var(--ink);font-weight:500}
 .slrow{display:flex;align-items:center;gap:10px;margin-top:12px}
 .slrow input[type=range]{flex:1;accent-color:var(--amber)}
-.slrow label{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);min-width:52px}
+.slrow label{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:var(--muted);min-width:62px}
 
 #nav{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
   display:flex;align-items:center;gap:16px;z-index:5}
@@ -152,8 +170,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 
 @media (max-width:640px){
   #hint{display:none}
-  #hud{top:12px;left:12px;width:calc(100vw - 24px);padding:14px 16px}
-  #hud h1{font-size:18px}
+  #hud{top:12px;left:12px;width:calc(100vw - 24px);padding:15px 17px}
+  #hud.scrolls{max-height:calc(100vh - 90px)}   /* 12px top + the same 78px kept clear */
+  #hud h1{font-size:23px}
+  #hud p{font-size:16.5px}
   /* HUD fills the top on phones, so drop the controls to the bottom-right, menu opening upward */
   #topctl{top:auto;bottom:20px;right:14px}
   #langmenu{top:auto;bottom:100%;margin:0 0 6px 0}

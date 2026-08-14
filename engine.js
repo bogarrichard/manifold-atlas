@@ -126,11 +126,49 @@ updateThemeBtn();
 mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resolveTheme('system')); });
 
 /* ---- resize (shared) --------------------------------------------------- */
+/* The canvas covers the whole window, but the text card owns the left third of it.
+   Shifting the frustum right by half the card's footprint re-centers a station in the
+   free two thirds, so the 1:2 text:3D split holds visually and nothing important ends
+   up behind the card. Two cases get no offset: below the mobile breakpoint the card is
+   a top banner spanning the full width, so there is no free column to center in; and the
+   hub's outermost orbit already fills the viewport, so shifting it would swing the far
+   planet off the right edge. */
+const hudEl = document.getElementById('hud');
+function viewShift(){
+  if(hubMode || innerWidth <= 640) return 0;
+  const r = hudEl.getBoundingClientRect();
+  return r.right / 2;
+}
 function resize(){
   camera.aspect=innerWidth/innerHeight;
+  const s=viewShift();
+  // setViewOffset re-derives aspect from the full size, so the image is not stretched
+  if(s>0) camera.setViewOffset(innerWidth, innerHeight, -s, 0, innerWidth, innerHeight);
+  else camera.clearViewOffset();
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
+  syncHudScroll();
 }
+/* The longest cards do not fit a short viewport. Those get `.scrolls`, which makes the
+   card a scroll box — and since a scroll box clips whatever hangs out of it, the CSS then
+   moves the footnote panels into the flow. A card that fits keeps `overflow:visible` and
+   with it the floating panel, whose height is clamped here to the room actually left below
+   the card; when even that is too small to read, the card takes the inline treatment too.
+   Measured off the flow content: `scrollHeight` counts an open floating panel, which hangs
+   below the card on purpose, and would report a card that fits as overflowing. */
+const boEl = document.getElementById('bo');
+const PANEL_MIN = 200;      // a floating panel shorter than this is not worth reading
+const BOTTOM_KEEP = 78;     // room under the card for the ↑ button; mirrors `.scrolls` in the CSS
+function syncHudScroll(){
+  const pb = parseFloat(getComputedStyle(hudEl).paddingBottom) || 0;
+  const top = hudEl.offsetTop;
+  const need = boEl.offsetTop + boEl.offsetHeight + pb;
+  const avail = innerHeight - top - BOTTOM_KEEP;
+  const room = innerHeight - (top + Math.min(need, avail)) - 24;  // the 12px gap under the card, and as much again below
+  hudEl.style.setProperty('--bubmax', Math.max(0, room) + 'px');
+  hudEl.classList.toggle('scrolls', need > avail || room < PANEL_MIN);
+}
+if(window.ResizeObserver) new ResizeObserver(syncHudScroll).observe(boEl);
 addEventListener('resize',resize); resize();
 
 /* ========================================================================
@@ -215,6 +253,7 @@ if(hubMode){
     eb.textContent=C.ui.stationWord+' '+(i+1)+' / '+CARDS.length;
     ti.textContent=CARDS[i].t;
     bo.innerHTML=CARDS[i].b;
+    hud.scrollTop=0;   // a long previous card may have left the box scrolled down
     [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
     document.getElementById('prev').disabled=(i===0);
     document.getElementById('next').disabled=(i===CARDS.length-1);
@@ -257,6 +296,19 @@ if(hubMode){
       bub.hidden=true; if(info) info.setAttribute('aria-expanded','false');
     }
   });
+  /* In a scrolling card the panel is in the flow at the very bottom (see `.scrolls` in the
+     CSS), so opening one from a term near the top would look like nothing happened. The
+     journeys' own toggles stop propagation, so this listens in the capture phase — and
+     reads the resulting state one frame later, once they have run. */
+  document.addEventListener('click', e=>{
+    if(!e.target.closest) return;
+    const trig=e.target.closest('[aria-controls]'); if(!trig) return;
+    const bub=document.getElementById(trig.getAttribute('aria-controls')); if(!bub) return;
+    requestAnimationFrame(()=>{
+      if(!bub.hidden && hud.classList.contains('scrolls'))
+        bub.scrollIntoView({block:'nearest', behavior:'smooth'});
+    });
+  }, true);
   addEventListener('keydown', e=>{
     if(e.key!=='Escape') return;
     const bub=openBubble();
