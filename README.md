@@ -12,7 +12,7 @@ the exponential map, and SO(3)/SE(3) poses. Pure static files — no build step.
 | `kit.js` | Shared toolkit: math helpers, color palette, Three.js primitive builders. Pure factories, no scene state. Exposes `LIE.kit`. |
 | `journeys/*.js` | One file per journey. Registers a descriptor into `LIE.journeys`. Holds the station builders + layout. |
 | `engine.js` | The **journey player**: scene, camera, navigation, i18n. Runs one journey descriptor. **Contains no display text and no journey-specific geometry.** |
-| `content/hu.js` · `content/en.js` | Language text packs (every visible string). |
+| `content/hu.js` · `content/en.js` · `content/ja.js` | Language text packs (every visible string). |
 
 The only dependency is **Three.js r128 (MIT)**, vendored locally at
 `vendor/three.min.js` (license header intact) so that hub↔journey navigation — a
@@ -76,6 +76,13 @@ Load order in `index.html` matters: `three` → content packs → `kit.js` → `
 
 Each `content/<lang>.js` registers itself into `window.LIE_CONTENT.<lang>`. A flag
 dropdown appears automatically in the top-right corner once more than one pack is loaded.
+Shipped packs: `hu` (default), `en`, `ja`.
+
+Self-contained journeys keep their own `cards: { hu, en, ja }` block; the engine picks
+`cards[LANG]` and falls back to `hu`, then `en`, then the shared pack. A missing block is
+therefore silent — the journey just shows another language, and if that block has fewer
+cards than the journey has stations, the extra stations become unreachable (the dots and
+the ← → range come from the card count).
 
 ## Adding a language (e.g. German)
 
@@ -95,6 +102,11 @@ dropdown appears automatically in the top-right corner once more than one pack i
    ```html
    <script src="content/de.js"></script>
    ```
+
+5. Add a `de:` card array to every journey that ships its own cards
+   (`journeys/geometry-flat.js`, `journeys/optimization-gd.js`, `journeys/geometry-se3.js`),
+   with **the same count** as the existing arrays and the same element `id`s inside the
+   card bodies (`gf*`, `og*`, `se3*` — the footnote toggles and the sliders bind to them).
 
 That's it — the dropdown and `?lang=de` start working.
 

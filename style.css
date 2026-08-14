@@ -16,7 +16,10 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;overflow:hidden;background:var(--bg);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  /* the CJK families at the tail only kick in for Japanese glyphs (the Latin fonts
+     before them carry no kana/kanji), so Latin rendering is unchanged */
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans",
+    "Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;color:var(--ink)}
 #c{position:fixed;inset:0;display:block;cursor:grab}
 #c.grabbing{cursor:grabbing}
 
@@ -27,7 +30,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #hud.fade{opacity:0;transform:translateY(6px)}
 .eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
   letter-spacing:.14em;color:var(--amber);margin-bottom:8px}
-#hud h1{font-family:Georgia,"STIX Two Text","Times New Roman",serif;font-weight:500;
+#hud h1{font-family:Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",
+    "Noto Serif JP","Yu Mincho",serif;font-weight:500;
   font-size:21px;line-height:1.3;margin-bottom:10px;color:var(--ink)}
 #hud p{font-size:13.5px;line-height:1.66;color:var(--muted)}
 #hud p+p{margin-top:8px}
