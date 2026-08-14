@@ -65,6 +65,7 @@ if(!hubMode){
   journeyDef = (journeyId && JOURNEYS[journeyId]) || JOURNEYS[DEFAULT_JOURNEY] || Object.values(JOURNEYS)[0];
   if(!journeyDef){ throw new Error('No journey registered — include a journeys/<id>.js before engine.js.'); }
 }
+document.body.classList.toggle('hub', hubMode);
 
 /* ---- theme (dark / light / system) ------------------------------------- */
 const THEME_KEY = 'lie-theme';
@@ -126,24 +127,32 @@ updateThemeBtn();
 mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resolveTheme('system')); });
 
 /* ---- resize (shared) --------------------------------------------------- */
-/* The canvas covers the whole window, but the text card owns the left third of it.
-   Shifting the frustum right by half the card's footprint re-centers a station in the
-   free two thirds, so the 1:2 text:3D split holds visually and nothing important ends
-   up behind the card. Two cases get no offset: below the mobile breakpoint the card is
-   a top banner spanning the full width, so there is no free column to center in; and the
-   hub's outermost orbit already fills the viewport, so shifting it would swing the far
-   planet off the right edge. */
+/* The canvas covers the whole window, but the text card eats into it. Shifting the
+   frustum re-centers the scene in what is left, so nothing important ends up hidden
+   behind the card. Journeys shift sideways (the card sits on the left, full-height);
+   the hub shifts vertically (the card is now a bottom mission bar, full-width) — a
+   fixed amount rather than the card's measured height, so hovering a branch (which
+   changes the card's content, hence its height) does not jiggle the framing. Below the
+   mobile breakpoint both cards go full-width bars and there is no free column/row left
+   to center in, so neither shifts. The hub also skips the *sideways* shift regardless of
+   width: its outermost orbit already fills the viewport, so nudging it sideways would
+   swing the far planet off the edge. */
 const hudEl = document.getElementById('hud');
+const HUB_LIFT = 120;   // px the hub scene shifts up, verified empirically against the orbits
+// Returns the (ox, oy) pair to hand straight to camera.setViewOffset — signs verified
+// empirically (a positive ox pushes content left, a positive oy pushes it up), not
+// derived from the setViewOffset docs, which describe the sub-rectangle it reads from a
+// larger virtual sensor rather than the on-screen effect that has.
 function viewShift(){
-  if(hubMode || innerWidth <= 640) return 0;
-  const r = hudEl.getBoundingClientRect();
-  return r.right / 2;
+  if(innerWidth <= 640) return {ox:0, oy:0};
+  if(hubMode) return {ox:0, oy:HUB_LIFT};         // positive oy => content moves up
+  return {ox:-(hudEl.getBoundingClientRect().right / 2), oy:0};  // negative ox => content moves right
 }
 function resize(){
   camera.aspect=innerWidth/innerHeight;
   const s=viewShift();
   // setViewOffset re-derives aspect from the full size, so the image is not stretched
-  if(s>0) camera.setViewOffset(innerWidth, innerHeight, -s, 0, innerWidth, innerHeight);
+  if(s.ox||s.oy) camera.setViewOffset(innerWidth, innerHeight, s.ox, s.oy, innerWidth, innerHeight);
   else camera.clearViewOffset();
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth,innerHeight);
@@ -158,15 +167,19 @@ function resize(){
    below the card on purpose, and would report a card that fits as overflowing. */
 const boEl = document.getElementById('bo');
 const PANEL_MIN = 200;      // a floating panel shorter than this is not worth reading
-const BOTTOM_KEEP = 78;     // room under the card for the ↑ button; mirrors `.scrolls` in the CSS
+const BOTTOM_KEEP = 78;     // room under a journey card for the ↑ button; mirrors `.scrolls` in the CSS
 function syncHudScroll(){
   const pb = parseFloat(getComputedStyle(hudEl).paddingBottom) || 0;
   const top = hudEl.offsetTop;
   const need = boEl.offsetTop + boEl.offsetHeight + pb;
-  const avail = innerHeight - top - BOTTOM_KEEP;
+  // the hub card has no ↑ button competing for room below it, and is bottom-anchored
+  // besides, so there is no bottom margin to reserve
+  const avail = innerHeight - top - (hubMode ? 0 : BOTTOM_KEEP);
   const room = innerHeight - (top + Math.min(need, avail)) - 24;  // the 12px gap under the card, and as much again below
   hudEl.style.setProperty('--bubmax', Math.max(0, room) + 'px');
-  hudEl.classList.toggle('scrolls', need > avail || room < PANEL_MIN);
+  // the hub has no floating footnote panel to reserve room for — it never needs `room`
+  // (which is near-zero anyway: the hub card sits close to the bottom edge on purpose)
+  hudEl.classList.toggle('scrolls', need > avail || (!hubMode && room < PANEL_MIN));
 }
 if(window.ResizeObserver) new ResizeObserver(syncHudScroll).observe(boEl);
 addEventListener('resize',resize); resize();

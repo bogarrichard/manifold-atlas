@@ -9,7 +9,7 @@ window.LIE_CONTENT.en = {
     htmlLang: 'en',
     langLabel: 'English',
     flag: '🇬🇧',
-    title: 'Lie journey — from flat gradients to SE(3) poses'
+    title: 'Manifold Atlas — from flat gradients to SE(3) poses'
   },
   ui: {
     stationWord: 'station',
@@ -22,8 +22,9 @@ window.LIE_CONTENT.en = {
     noscript: 'This interactive visualization requires JavaScript and WebGL. Please enable them in your browser.'
   },
   hub: {
-    eyebrow: 'the hub',
-    branchWord: 'branch',
+    eyebrow: 'star chart',
+    branchWord: 'sector',
+    title: 'Manifold Atlas',
     intro: '<p>Welcome aboard. One solar system orbits the central frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to scout what it holds; the numbered moons mark where to touch down first. As a prototype, the first stops of <em>Geometry</em> (ℝⁿ) and <em>Optimization</em> (gradient descent) are open for landing too, alongside <em>Riemannian GD</em>; the <em>SE(3)</em> moon of Geometry now holds the full chapter on poses — the rest of the map is still being charted.</p>',
     hint: ['drag: orbit', 'scroll: zoom', 'hover a planet · click a sphere'],
     branches: {

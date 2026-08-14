@@ -39,7 +39,7 @@ LIE.hub = (function(){
 
     // top-left card
     const eb=document.getElementById('eb'), ti=document.getElementById('ti'), bo=document.getElementById('bo');
-    const DEF = { eb:HUB.eyebrow||'', ti:(C.meta&&C.meta.title)||'', bo:HUB.intro||'' };
+    const DEF = { eb:HUB.eyebrow||'', ti:HUB.title||(C.meta&&C.meta.title)||'', bo:HUB.intro||'' };
     let cardBranch = undefined;
     function setCard(br){
       const id = br ? br.id : null;
@@ -95,8 +95,8 @@ LIE.hub = (function(){
         core.userData={isPlanet:true, branch:br, branchId:br.id, h:0}; planet.add(core); cores.push(core); pickables.push(core);
         planet.add(new THREE.Mesh(new THREE.SphereGeometry(coreR*1.35,20,16),
           new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.10})));
-        const blabel=makeLabel(brInfo(br.id).title||br.title, hexStr(col), 3.6);
-        blabel.position.set(0, coreR+1.3, 0); blabel.material.opacity=0.9; planet.add(blabel);
+        const blabel=makeLabel(brInfo(br.id).title||br.title, hexStr(col), 9.5);
+        blabel.position.set(0, coreR+1.7, 0); blabel.material.opacity=0.9; planet.add(blabel);
 
         const ringG=new THREE.Group(); ringG.rotation.set(br.tilt[0], br.tilt[1], 0); planet.add(ringG);
         planet.userData.ringG = ringG;
@@ -116,11 +116,17 @@ LIE.hub = (function(){
               new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.85}));
             anchor.add(tr); sphere.userData.todayRing=tr;
           }
-          const num=numberBadge(String(idx+1), hexStr(col), 0.92);
+          const num=numberBadge(String(idx+1), hexStr(col), 1.5);
           num.position.set(0, 1.02, 0); anchor.add(num);
-          const title=makeLabel(j.title, hexStr(col), 3.8);
-          title.position.set(0, 1.85, 0); title.material.opacity=0; anchor.add(title);
-          sphere.userData={journey:j, col, live, title, branchId:br.id, t:0};
+          const title=makeLabel(j.title, hexStr(col), 11.5);
+          title.position.set(0, 2.6, 0); title.material.opacity=0; anchor.add(title);
+          // live moons — the ones you can actually land on — read like a mission-select
+          // list: their name is up at a baseline dim without hovering, brightening to full
+          // on hover. The not-yet-built ones stay hover-only: there are more of them packed
+          // into the same ring, and at this label size showing all of them at once would
+          // overlap into noise.
+          const base = live ? 0.62 : 0;
+          sphere.userData={journey:j, col, live, title, base, branchId:br.id, t:base, h:0};
           spheres.push(sphere); pickables.push(sphere); byKey[br.id+':'+j.k]=sphere;
         });
       });
@@ -225,10 +231,11 @@ LIE.hub = (function(){
       place(); pick();
       // moon hover: title fade + spinning today ring
       spheres.forEach(sp=>{
-        const u=sp.userData, tg=(sp===hoverMoon)?1:0;
-        u.t+=(tg-u.t)*Math.min(1,dt*12);
+        const u=sp.userData, on=sp===hoverMoon;
+        u.t+=((on?1:u.base)-u.t)*Math.min(1,dt*12);
+        u.h+=((on?1:0)-u.h)*Math.min(1,dt*12);
         u.title.material.opacity=u.t; u.title.visible=u.t>0.02;
-        sp.scale.setScalar(1 + u.t*0.28);
+        sp.scale.setScalar(1 + u.h*0.28);
         if(u.todayRing) u.todayRing.rotation.z=T*0.6;
       });
       renderer.render(scene,camera);

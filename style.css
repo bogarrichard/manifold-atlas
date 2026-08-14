@@ -34,6 +34,24 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
   padding:20px 24px 18px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:opacity .35s ease, transform .35s ease}
 #hud.fade{opacity:0;transform:translateY(6px)}
+
+/* The hub trades the journeys' tall side card for a wide mission bar pinned along the
+   bottom, mission-select style: title and status line centered, body copy in a readable
+   centered column, corner brackets standing in for a HUD frame. The engine mirrors this
+   with a fixed vertical shift of the 3D view (`HUB_LIFT`), pushing the solar system up
+   into the freed space instead of leaving it centered behind the bar. */
+body.hub #hud{top:auto;left:50%;bottom:26px;transform:translateX(-50%);
+  width:clamp(560px, 62vw, 1100px);max-width:calc(100vw - 48px);
+  padding:24px 40px 22px;text-align:center}
+body.hub #hud::before,body.hub #hud::after{content:'';position:absolute;
+  width:22px;height:22px;border:2px solid var(--amber);opacity:.5;pointer-events:none}
+body.hub #hud::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:14px 0 0 0}
+body.hub #hud::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 14px 0}
+body.hub .eyebrow{text-align:center;text-transform:uppercase;font-size:12px}
+body.hub #hud h1{text-align:center;text-transform:uppercase;letter-spacing:.04em;
+  text-shadow:0 0 22px color-mix(in srgb, var(--amber) 45%, transparent)}
+body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:auto}
+
 .eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
   letter-spacing:.14em;color:var(--amber);margin-bottom:9px}
 #hud h1{font-family:Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",
@@ -98,6 +116,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #hud.scrolls{max-height:calc(100vh - 100px);overflow-y:auto;overscroll-behavior:contain}
 #hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
 #hud.scrolls .bubble::before{display:none}
+/* The hub card has no ↑ button to keep clear of, so it only needs symmetric top/bottom
+   breathing room — this should be rare in practice now that `syncHudScroll` no longer
+   applies the (journey-only) floating-panel headroom check to the hub. */
+body.hub #hud.scrolls{max-height:calc(100vh - 48px)}
 
 /* inline concept link in the body text (dashed underline); its explanation opens as a
    footnote panel (.bubble) at the foot of the card. display:inline so the link sits on
@@ -177,4 +199,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
   /* HUD fills the top on phones, so drop the controls to the bottom-right, menu opening upward */
   #topctl{top:auto;bottom:20px;right:14px}
   #langmenu{top:auto;bottom:100%;margin:0 0 6px 0}
+  /* The hub keeps its own bottom-anchored bar (same specificity as the desktop rule above,
+     so this wins on source order alone) rather than falling back to the journeys' top
+     banner — just narrower padding and smaller corner brackets for the tighter width. */
+  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 15px}
+  body.hub #hud::before,body.hub #hud::after{width:16px;height:16px}
 }

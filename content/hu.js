@@ -9,7 +9,7 @@ window.LIE_CONTENT.hu = {
     htmlLang: 'hu',
     langLabel: 'Magyar',
     flag: '🇭🇺',
-    title: 'Lie-utazás — a lapos gradienstől az SE(3) pózig'
+    title: 'Manifold Atlas — a lapos gradienstől az SE(3) pózig'
   },
   ui: {
     stationWord: 'állomás',
@@ -22,8 +22,9 @@ window.LIE_CONTENT.hu = {
     noscript: 'Ehhez az interaktív ábrához JavaScript és WebGL kell. Kérlek, engedélyezd a böngésződben.'
   },
   hub: {
-    eyebrow: 'a központ',
-    branchWord: 'ág',
+    eyebrow: 'csillagtérkép',
+    branchWord: 'szektor',
+    title: 'Manifold Atlas',
     intro: '<p>Üdv a fedélzeten! Egy naprendszer kering a központi keret körül, bolygóin sorban bejárható világokkal. Kezdd a <b>Geometriával</b> és az <b>Optimalizálással</b>, majd kövesd a pályákat oda, ahol találkoznak — ott bontakozik ki az igazi tanulság.</p><p>Vidd az egeret egy bolygó fölé, hogy felderítsd, mit rejt. A számozott holdak mutatják, hol érdemes landolni először. Prototípusként már a <em>Geometria</em> (ℝⁿ) és az <em>Optimalizálás</em> (gradiens-módszer) első állomása is nyitott a landoláshoz, a <em>Riemann-gradiens</em> mellett; a Geometria <em>SE(3)</em> holdján pedig a pózok teljes fejezete vár — a térkép többi része még feltérképezés alatt áll.</p>',
     hint: ['húzd: körbeforgás', 'görgő: közelítés', 'bolygó fölé · gömbre kattints'],
     branches: {
