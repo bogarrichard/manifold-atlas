@@ -18,20 +18,15 @@ if(C.meta && C.meta.title) document.title = C.meta.title;
 document.getElementById('prev').setAttribute('aria-label', C.ui.prevAria);
 document.getElementById('next').setAttribute('aria-label', C.ui.nextAria);
 
-/* language dropdown (only shown when more than one language is available) */
+/* Language list (only shown when more than one pack is loaded). It lives inside the
+   top-right menu panel, so it is a plain always-visible list — a dropdown nested in a
+   dropdown would need two clicks to reach one link. */
 (function(){
   const codes = Object.keys(LANGS);
-  const wrap = document.getElementById('lang');
-  if(codes.length < 2){ wrap.hidden = true; return; }
-  const curMeta = C.meta || {};
-  const btn = document.createElement('button');
-  btn.id = 'langbtn'; btn.type = 'button';
-  btn.setAttribute('aria-haspopup', 'listbox');
-  btn.setAttribute('aria-expanded', 'false');
-  btn.setAttribute('aria-label', (C.ui && C.ui.langMenuLabel) || 'Language');
-  btn.innerHTML = '<span class="flag">'+(curMeta.flag||'🌐')+'</span><span class="caret">▾</span>';
+  const sec = document.getElementById('msec-lang');
+  if(codes.length < 2){ sec.hidden = true; return; }
   const menu = document.createElement('ul');
-  menu.id = 'langmenu'; menu.setAttribute('role', 'listbox'); menu.hidden = true;
+  menu.id = 'langmenu'; menu.setAttribute('role', 'listbox');
   codes.forEach(code=>{
     const m = LANGS[code].meta || {};
     const li = document.createElement('li'); li.setAttribute('role', 'option');
@@ -43,11 +38,7 @@ document.getElementById('next').setAttribute('aria-label', C.ui.nextAria);
     a.innerHTML = '<span class="flag">'+(m.flag||'🌐')+'</span><span>'+(m.langLabel||code)+'</span>';
     li.appendChild(a); menu.appendChild(li);
   });
-  wrap.appendChild(btn); wrap.appendChild(menu);
-  const setOpen = v=>{ menu.hidden = !v; btn.setAttribute('aria-expanded', v?'true':'false'); };
-  btn.addEventListener('click', e=>{ e.stopPropagation(); setOpen(menu.hidden); });
-  document.addEventListener('click', e=>{ if(!wrap.contains(e.target)) setOpen(false); });
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !menu.hidden){ setOpen(false); btn.focus(); } });
+  document.getElementById('lang').appendChild(menu);
 })();
 
 /* ---- toolkit + mode selection ------------------------------------------ */
@@ -107,7 +98,9 @@ document.getElementById('theme').appendChild(themeBtn);
 function updateThemeBtn(){
   const tl = (C.ui && C.ui.theme) || {};
   const name = tl[themePref] || themePref;
-  themeBtn.textContent = THEME_ICON[themePref];
+  // inside the menu the button has room to say where it currently stands, not just show a glyph
+  themeBtn.innerHTML = '<span class="ticon" aria-hidden="true">'+THEME_ICON[themePref]+'</span><span></span>';
+  themeBtn.lastChild.textContent = name;
   themeBtn.title = (tl.label||'Theme') + ': ' + name;
   themeBtn.setAttribute('aria-label', (tl.label||'Theme') + ': ' + name);
 }
@@ -126,6 +119,29 @@ themeBtn.addEventListener('click', ()=>applyPref(THEME_NEXT[themePref]));
 updateThemeBtn();
 mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resolveTheme('system')); });
 
+/* ---- top-right menu: theme + language + the control legend ------------- */
+(function(){
+  const ui = C.ui || {}, tl = ui.theme || {};
+  const btn = document.getElementById('menubtn');
+  const panel = document.getElementById('menupanel');
+  const cluster = document.getElementById('topctl');
+  btn.setAttribute('aria-label', ui.menuLabel || 'Menu');
+  btn.title = ui.menuLabel || 'Menu';
+  document.getElementById('mtheme-h').textContent = tl.label || 'Theme';
+  document.getElementById('mlang-h').textContent = ui.langMenuLabel || 'Language';
+  document.getElementById('mhint-h').textContent = ui.controlsLabel || 'Controls';
+  const setOpen = v=>{ panel.hidden = !v; btn.setAttribute('aria-expanded', v?'true':'false'); };
+  btn.addEventListener('click', e=>{ e.stopPropagation(); setOpen(panel.hidden); });
+  document.addEventListener('click', e=>{ if(!panel.hidden && !cluster.contains(e.target)) setOpen(false); });
+  // Escape closes the menu first and stops there — the journey's own Escape handler backs
+  // out to the hub, which would be a surprise when you only meant to dismiss this panel.
+  // Document fires before the window-level handler, so stopping propagation here is enough.
+  document.addEventListener('keydown', e=>{
+    if(e.key!=='Escape' || panel.hidden) return;
+    e.stopPropagation(); setOpen(false); btn.focus();
+  });
+})();
+
 /* ---- resize (shared) --------------------------------------------------- */
 /* The canvas covers the whole window, but the text card eats into it. Shifting the
    frustum re-centers the scene in what is left, so nothing important ends up hidden
@@ -138,14 +154,22 @@ mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resol
    width: its outermost orbit already fills the viewport, so nudging it sideways would
    swing the far planet off the edge. */
 const hudEl = document.getElementById('hud');
-const HUB_LIFT = 120;   // px the hub scene shifts up, verified empirically against the orbits
+/* px the hub scene shifts up. The bar now has a *fixed* height (2/5 of the viewport, set in
+   the CSS), so this can be derived from it instead of hard-coded: lifting by half the space
+   the bar occupies centers the solar system in what is left. Deriving it no longer risks the
+   jitter the old fixed value was guarding against — the height cannot change under a hover
+   any more. Falls back to the measured height only if the card has not been laid out yet. */
+function hubLift(){
+  const h = hudEl.getBoundingClientRect().height || innerHeight * 0.40;
+  return Math.round((h + 26) / 2);   // 26px = the bar's bottom offset in the CSS
+}
 // Returns the (ox, oy) pair to hand straight to camera.setViewOffset — signs verified
 // empirically (a positive ox pushes content left, a positive oy pushes it up), not
 // derived from the setViewOffset docs, which describe the sub-rectangle it reads from a
 // larger virtual sensor rather than the on-screen effect that has.
 function viewShift(){
   if(innerWidth <= 640) return {ox:0, oy:0};
-  if(hubMode) return {ox:0, oy:HUB_LIFT};         // positive oy => content moves up
+  if(hubMode) return {ox:0, oy:hubLift()};        // positive oy => content moves up
   return {ox:-(hudEl.getBoundingClientRect().right / 2), oy:0};  // negative ox => content moves right
 }
 function resize(){
@@ -189,6 +213,7 @@ addEventListener('resize',resize); resize();
    ===================================================================== */
 if(hubMode){
   document.getElementById('hint').innerHTML = (C.hub && C.hub.hint || []).join('<br>');
+  // hidden on the map; hub.js brings the nav strip back as the planet view's carousel control
   document.getElementById('nav').style.display = 'none';
   const eb=document.getElementById('eb'), ti=document.getElementById('ti'), bo=document.getElementById('bo');
   eb.textContent = (C.hub && C.hub.eyebrow) || '';

@@ -26,16 +26,25 @@
 </div>
 
 <div id="nav">
-  <button class="nbtn" id="prev">←</button>
+  <button class="nbtn" id="prev">⬅︎</button>
   <div id="dots"></div>
-  <button class="nbtn" id="next">→</button>
+  <button class="nbtn" id="next">➡︎</button>
 </div>
 
-<button class="nbtn" id="tohub" type="button" hidden>↑</button>
-<div id="hint"></div>
+<button class="nbtn" id="tohub" type="button" hidden>⬆︎</button>
+
+<!-- Single top-right affordance: a hamburger that opens theme, language and the
+     control legend. Keeping them folded away means the corner stays clear of the
+     scene, and the legend no longer has to be repeated inside a journey card. -->
 <div id="topctl">
-  <div id="theme"></div>
-  <nav id="lang" aria-label="Language"></nav>
+  <button id="menubtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menupanel">
+    <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+  </button>
+  <div id="menupanel" hidden>
+    <div class="msec" id="msec-theme"><h2 id="mtheme-h"></h2><div id="theme"></div></div>
+    <div class="msec" id="msec-lang"><h2 id="mlang-h"></h2><nav id="lang" aria-label="Language"></nav></div>
+    <div class="msec" id="msec-hint"><h2 id="mhint-h"></h2><div id="hint"></div></div>
+  </div>
 </div>
 
 <noscript>

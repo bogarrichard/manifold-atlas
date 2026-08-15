@@ -17,6 +17,8 @@ window.LIE_CONTENT.hu = {
     nextAria: 'Következő állomás',
     hubBackAria: 'Vissza a központba',
     langMenuLabel: 'Nyelv',
+    menuLabel: 'Menü',
+    controlsLabel: 'Irányítás',
     theme: { label: 'Téma', system: 'rendszer', light: 'világos', dark: 'sötét' },
     hint: ['húzd: körbenézés', 'görgő: közelítés', '← → : utazás', '↑ : központ'],
     noscript: 'Ehhez az interaktív ábrához JavaScript és WebGL kell. Kérlek, engedélyezd a böngésződben.'
@@ -25,12 +27,31 @@ window.LIE_CONTENT.hu = {
     eyebrow: 'csillagtérkép',
     branchWord: 'szektor',
     title: 'Manifold Atlas',
-    intro: '<p>Üdv a fedélzeten! Egy naprendszer kering a központi referenciakeret körül, bolygóin sorban bejárható világokkal. Kezdd a <b>Geometriával</b> és az <b>Optimalizálással</b>, majd kövesd a pályákat oda, ahol találkoznak — ott bontakozik ki az igazi tanulság.</p><p>Vidd az egeret egy bolygó fölé, hogy felderítsd, mit rejt. A számozott holdak mutatják, hol érdemes landolni először. Prototípusként már a <em>Geometria</em> (ℝⁿ) és az <em>Optimalizálás</em> (gradiens-módszer) első állomása is nyitott a landoláshoz, a <em>Riemann-gradiens</em> mellett; a Geometria <em>SE(3)</em> holdján pedig a pózok teljes fejezete vár — a térkép többi része még feltérképezés alatt áll.</p>',
-    hint: ['húzd: körbeforgás', 'görgő: közelítés', 'bolygó fölé · gömbre kattints'],
+    intro: '<p>Üdv a fedélzeten! Egy naprendszer kering a központi referenciakeret körül, bolygóin sorban bejárható világokkal. Kezdd a <b>Geometriával</b> és az <b>Optimalizálással</b>, majd kövesd a pályákat oda, ahol találkoznak — ott bontakozik ki az igazi tanulság.</p><p>Vidd az egeret egy bolygó fölé, hogy megnézd, mit rejt, majd kattints rá: közelebb repülsz, és a holdgyűrűje körhintává rendeződik. A <b>← →</b> gombokkal tekered a következő úticélra, a kiválasztott hold ismertetője pedig itt jelenik meg. Az elöl álló holdra kattintva landolsz; a <b>↑</b> visszahoz a térképhez.</p><p>A világos gömbök már bejárhatók, a halványak még feltérképezés alatt állnak.</p>',
+    hint: ['húzd: körbeforgás', 'görgő: közelítés', 'bolygóra kattints', '← → : holdgyűrű'],
+    moonWord: 'úticél',
     branches: {
-      geometry: { title: 'Geometria', summary: '<p>A terek, amikben a dolgok élnek — forgatások, pózok, hasonlóságok — és ahogy mozognak. Hat utazás a lapos ℝⁿ-től a Sim(3)-ig: érintőterek, exp/log, és (az SO(3)-nál) topológia. Költségfüggvény sehol.</p>' },
-      optimization: { title: 'Optimalizálás', summary: '<p>Ahogy egy költséget minimalizálunk: gradiens-módszer, majd Gauss–Newton, majd a gyakorlati változatok. Mindez elfér a lapos ℝⁿ-ben — sokaság nem kell hozzá.</p>' },
-      slam: { title: 'SLAM', summary: '<p>Ahol a geometria és az optimalizálás összeér. A Riemann-gradiens (SO(3) × gradiens-módszer — a mai oldal) és a faktorgráfok — a reziduumok és súlyaik, amikből egy SLAM-feladat felépül — itt fut össze teljes SLAM-má.</p>' }
+      geometry: { title: 'Geometria', summary: '<p>A terek, amikben a dolgok élnek — forgatások, pózok, hasonlóságok — és ahogy mozognak. Hat utazás a lapos ℝⁿ-től a Sim(3)-ig: érintőterek, exp/log, és (az SO(3)-nál) topológia. Költségfüggvény sehol.</p>',
+        moons: {
+          flat: { title: 'ℝⁿ — a lapos tér', summary: '<p>A lapos alapeset: a tér, amit már ismersz. Az érintőtér maga a tér, a lépés puszta összeadás, és nincs honnan kilépni.</p><p>Ez a mérce, amihez minden görbült eset mérve lesz — ezért érdemes vele kezdeni.</p>' },
+          so2: { title: 'SO(2) — forgatás a síkon', summary: '<p>Az első görbült tér, de a legszelídebb: <em>kommutatív</em>. Itt még nincs body/world különbség.</p><p>Pont ez a haszna — amikor SO(3)-ban megjelenik a distinkció, tudni fogod, hogy a nem-kommutativitásból jött, nem a görbületből.</p>' },
+          se2: { title: 'SE(2) — mozgás a síkon', summary: '<p>Forgatás és eltolás együtt, két dimenzióban. Az első eset, ahol a két komponens egymásba szól.</p><p>Itt derül ki, hogy a sorrend számít: elforgatni majd tolni nem ugyanaz, mint tolni majd forgatni.</p>' },
+          so3: { title: 'SO(3) — forgatások 3D-ben', summary: '<p>A tér, ami az egész elméletet indokolja. Nem-kommutatív, kompakt, és a valódi alakja nem gömb, hanem ℝP³.</p><p>Itt van a lehetetlenségi tétel is: nincs globális, szingularitásmentes háromszámos koordináta — a gimbal lock nem bosszúság, hanem következmény.</p>' },
+          se3: { title: 'SE(3) — a póz', summary: '<p>Forgatás + eltolás: 6 szabadsági fok, és a SLAM geometriai váza.</p><p>Tíz állomás: a póz/transzformáció kettősség, a referenciakeretek láncolása, a sorrend, a csavarmozgás, a bal Jacobi, az adjungált és az interpoláció.</p>' },
+          sim3: { title: 'Sim(3) — hasonlóság', summary: '<p>A póz mellé egy hetedik szabadsági fok: a skála.</p><p>Monokuláris SLAM-ben pontosan ennyi a bizonytalanság két rekonstrukció között — egy merev mozgás és egy ismeretlen nagyítás.</p>' }
+        } },
+      optimization: { title: 'Optimalizálás', summary: '<p>Ahogy egy költséget minimalizálunk: gradiens-módszer, majd Gauss–Newton, majd a gyakorlati változatok. Mindez elfér a lapos ℝⁿ-ben — sokaság nem kell hozzá.</p>',
+        moons: {
+          gd: { title: 'Gradiens-módszer', summary: '<p>A völgy, a gradiens és az iteráció — végig lapos ℝ²-ben, zárt alakban végigszámolva.</p><p>Ez az a motor, amit a Riemann-gradiens majd a görbült SO(3)-ra emel. Előbb lássuk működni ott, ahol semmi nem bonyolítja.</p>' },
+          gn: { title: 'Gauss–Newton', summary: '<p>A reziduum linearizálása, és ami belőle kiesik: <span class="m">H δ = −g</span>.</p><p>Nem recept, hanem a parabola alja. És mivel a görbületet is használja, nem csak az irányt, sokkal gyorsabb a gradiens-módszernél.</p>' },
+          lm: { title: 'LM · robusztus', summary: '<p>Amikor a Gauss–Newton lépés túl bátor: csillapítás egy λ-val, ami a két módszer közt hangol.</p><p>És a robusztus kernelek — mert ha a zaj nem Gauss, akkor a négyzetösszeg nem pontatlan, hanem elvileg rossz.</p>' }
+        } },
+      slam: { title: 'SLAM', summary: '<p>Ahol a geometria és az optimalizálás összeér. A Riemann-gradiens és a faktorgráfok — a reziduumok és súlyaik, amikből egy SLAM-feladat felépül — itt fut össze teljes SLAM-má.</p>',
+        moons: {
+          riemann: { title: 'Riemann-gradiens', summary: '<p>Az első valódi ütközés: a lapos gradiens-módszer találkozik a görbült SO(3)-mal.</p><p>A kényszer, a nyers gradiens vetítése, az exp mint visszacsomagolás, és a sokaságon futó iteráció — a teljes lánc, egy ívben.</p>' },
+          fg: { title: 'Faktorgráfok', summary: '<p>A mérések gráfja: változó-csúcsok és faktor-csúcsok. Nem külön formalizmus — <em>ez a MAP-becslés képe</em>.</p><p>És itt derül ki, miért oldható meg egyáltalán egy nagy feladat: a gráf ritka.</p>' },
+          slam: { title: 'SLAM', summary: '<p>A teljes lánc egyben: pózok, landmarkok, hurokzárás és skála.</p><p>Minden, ami eddig külön ágon futott, itt találkozik — és kiderül, hogy a nehézségek nem összeadódnak, hanem ugyanannak a néhány állításnak a következményei.</p>' }
+        } }
     }
   },
   // Lebegő 3D feliratok a jelenetben.
@@ -69,7 +90,7 @@ window.LIE_CONTENT.hu = {
     ]
   },
   cards: [
-   {t:'Az utazás', b:'<p>Öt beszélgetésnyi levezetés, egyetlen térben. Ez az utazás a <em>találkozás</em>: a lapos optimalizálás és a görbült <span class="m">SO(3)</span> itt ér össze — nyolc állomás a kényszertől a vetítésen és az <span class="m">exp</span>-en át a topológiáig.</p><p>A lapos alapokat a <em>Geometry · ℝⁿ</em> és az <em>Optimization · gradiens-módszer</em> utazása építi fel; itt csak felidézzük őket. A lila fonál a gondolatmenet — az állomások között repülve látni fogod.</p><p>Navigálás: ← → gombok vagy billentyűk, egérrel körbenézés, görgővel közelítés.</p>'},
+   {t:'A referenciakeret', b:'<p>Három egymásra merőleges, egységnyi hosszú tengely — ennyi egy <em>referenciakeret</em>. Minden szám, amit ebben az utazásban leírunk, valamelyik ilyen keret tengelyei mentén olvasódik le.</p><p>Egy <em>forgatás</em> az, ami az egyik keretet a másikba viszi. A jelenetben a triád éppen ezt csinálja: nem a tér mozdul, csak azt cseréljük, honnan nézzük.</p><p>Innen nő ki az egész utazás egyetlen kérdésből: <strong>hogyan lépjünk egy forgatáson egy kicsit odébb</strong> úgy, hogy az eredmény forgatás maradjon? Lapos térben ez a kérdés fel sem merül. Itt ez a nehéz rész.</p>'},
    {t:'A lapos világ', b:'<p>A megszokott recept, egyetlen bekezdésben: a paramétertér <span class="m">ℝⁿ</span>, a költség egy völgy, és a <span class="m">w − α∇L</span> lépés mindig érvényes marad — nincs honnan kilépni.</p><p>Ezt a <em>Geometry · ℝⁿ</em> és az <em>Optimization · gradiens-módszer</em> utazása építi fel részletesen. Innen egyetlen dolog kell: <strong>a gradiens ugyanabban a térben él, mint a pont.</strong> A következő állomáson pontosan ez romlik el.</p>'},
    {t:'A kényszer', b:'<p>Mi szerint deriválunk? Egy mozgás <span class="m">R(t)</span> mentén az idő szerint: <span class="m">Ṙ</span> elemenként 9 skalárderivált. A kényszert deriválva <span class="m">Ṙ<sup>⊤</sup>R + R<sup>⊤</sup>Ṙ = 0</span> — vagyis <span class="m">R<sup>⊤</sup>Ṙ</span> ferdén szimmetrikus, és a legális sebességek a felület érintőjében fekszenek.</p><p>A nyers gradiens ezt nem tudja: az <span class="m">R + δ</span> lépés (piros) oszlopai már nem egységnyiek és nem páronként merőlegesek — <span class="m">R<sup>⊤</sup>R ≠ I</span>, az eredmény nem forgatás.</p><p>A teál pont a naiv mentés: sugárirányú visszahúzás (a hosszt normalizáljuk). Vigyázat — ez a gömb-ábrán elég, de a valódi <span class="m">SO(3)</span>-ra <em>nem</em>: egy oszlop hosszát javítja, de a három oszlop <em>páronkénti merőlegességét</em> nem állítja helyre. A teljes mentés a Gram–Schmidt vagy az exp — ez utóbbi a geodetikus, „nemes” változat, ami eleve a felületen marad.</p>'},
    {t:'A vetítés — a Riemann-gradiens', b:'<p>A megoldás első fele: a pontban kifeszítjük az érintősíkot, a legjobb lapos közelítést. A forgó korall vektor a nyers gradiens — „merre nőne a hiba, ha bármerre szabadon léphetnék”. Ez általában kifelé is mutat, le a gömbről. Felbontjuk: a felületre merőleges rész (piros) tiltott irányba visz, ezt <em>eldobjuk</em>; a síkban fekvő rész (teál) az, amerre a gömbön <em>tényleg</em> léphetünk.</p><p>Miért „Riemann”? Ő ismerte fel, hogy egy görbült felületen nem kell kilépni a térbe ahhoz, hogy távolságot és szöget mérjünk — elég a felületen maradó irányokat nézni. A teál árnyék tehát a valódi „lefelé” <em>a felületen belül</em>: ezt hívjuk Riemann-gradiensnek. A piros, felfelé mutató rész csak a lapos külvilág illúziója, a gömblakónak nem létezik.</p>'},
