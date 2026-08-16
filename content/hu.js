@@ -27,8 +27,9 @@ window.LIE_CONTENT.hu = {
     eyebrow: 'csillagtérkép',
     branchWord: 'szektor',
     title: 'Manifold Atlas',
-    intro: '<p>Üdv a fedélzeten! Egy naprendszer kering a központi referenciakeret körül, bolygóin sorban bejárható világokkal. Kezdd a <b>Geometriával</b> és az <b>Optimalizálással</b>, majd kövesd a pályákat oda, ahol találkoznak — ott bontakozik ki az igazi tanulság.</p><p>Vidd az egeret egy bolygó fölé, hogy megnézd, mit rejt, majd kattints rá: közelebb repülsz, és a holdgyűrűje körhintává rendeződik. A <b>← →</b> gombokkal tekered a következő úticélra, a kiválasztott hold ismertetője pedig itt jelenik meg. Az elöl álló holdra kattintva landolsz; a <b>↑</b> visszahoz a térképhez.</p><p>A világos gömbök már bejárhatók, a halványak még feltérképezés alatt állnak.</p>',
-    hint: ['húzd: körbeforgás', 'görgő: közelítés', 'bolygóra kattints', '← → : holdgyűrű'],
+    intro: '<p>Üdv a fedélzeten! Egy naprendszer kering a központi referenciakeret körül, bolygóin sorban bejárható világokkal. Kezdd a <b>Geometriával</b> és az <b>Optimalizálással</b>, majd kövesd a pályákat oda, ahol találkoznak — ott bontakozik ki az igazi tanulság.</p><p>Vidd az egeret egy bolygó fölé, hogy megnézd, mit rejt, vagy tekerd oda a <b>← →</b> gombokkal. A <b>↑</b> beléptet: közelebb repülsz, és a holdgyűrűje körhintává rendeződik, ugyanazokkal a gombokkal tovább tekerhető, a kiválasztott hold ismertetője pedig itt jelenik meg. Az elöl álló holdra kattintva vagy ismét <b>↑</b>-vel landolsz; a <b>↓</b> mindig egy szinttel visszább visz — a térképig.</p><p>Mind a tizenkét hold bejárható. A rövidebbek három állomásosak: inkább kevesebbet mondanak, de azt hiánytalanul — ahol egy téma mélyebbre nyúlik, az utolsó kártya megmondja, hol áll meg, és melyik hold viszi tovább.</p>',
+    hintSystem: ['húzd: körbeforgás', 'görgő: közelítés', '← → : bolygók', '↑ belépés · ↓ törlés'],
+    hintPlanet: ['húzd: körbeforgás', 'görgő: közelítés', '← → : holdgyűrű', '↑ belépés · ↓ kilépés'],
     moonWord: 'úticél',
     branches: {
       geometry: { title: 'Geometria', summary: '<p>A terek, amikben a dolgok élnek — forgatások, pózok, hasonlóságok — és ahogy mozognak. Hat utazás a lapos ℝⁿ-től a Sim(3)-ig: érintőterek, exp/log, és (az SO(3)-nál) topológia. Költségfüggvény sehol.</p>',

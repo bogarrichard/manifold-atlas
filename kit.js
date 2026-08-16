@@ -57,16 +57,16 @@ LIE.kit = (function(){
     g.userData.cyl.scale.set(1, Math.max(L-0.22,0.02), 1);
     g.userData.cone.position.y = L-0.12;
   }
-  function makeLabel(text, color, w){
+  function makeLabel(text, color, w, opts){
     w = w||3.2;
     const cv = document.createElement('canvas'); cv.width=512; cv.height=128;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({transparent:true, depthTest:false}));
     sp.userData.cv=cv;
     sp.scale.set(w, w*0.25, 1);
-    updateLabel(sp, text, color);
+    updateLabel(sp, text, color, opts);
     return sp;
   }
-  function updateLabel(sp, text, color){
+  function updateLabel(sp, text, color, opts){
     const cv=sp.userData.cv, ctx=cv.getContext('2d');
     ctx.clearRect(0,0,512,128);
     const toks=[];
@@ -83,11 +83,25 @@ LIE.kit = (function(){
     let W=wOf(F); if(W>470){ F=F*470/W; W=wOf(F); }
     let x=(512-W)/2;
     ctx.textAlign='left'; ctx.textBaseline='middle';
+    // Optional halo behind the fill — the same stroke-then-fill technique numberBadge
+    // (hub.js) already uses, generalized here so any label can opt in without changing
+    // the ~30 call sites across the journeys that don't pass `opts`. Stronger and
+    // thicker than numberBadge's, because the worst case here is a label sitting
+    // directly over a surface in its own exact color, not just a starfield.
+    // `haloColor` defaults to black, but a caller using a dark-on-light `color` (e.g.
+    // light-theme ink, which is near-black) should pass the theme's own background
+    // color instead — a black halo behind already-near-black text barely separates
+    // the two, while the background color guarantees fill/halo stay distinguishable
+    // in either theme, by the same logic that makes ink itself contrast with the bg.
+    const halo = opts && opts.halo;
+    if(halo){ ctx.lineWidth=Math.max(3, F*0.13); ctx.strokeStyle=(opts.haloColor||'rgba(0,0,0,0.55)'); ctx.lineJoin='round'; }
     ctx.fillStyle=color||'#FAC775';
     toks.forEach(k=>{
       ctx.font='italic '+Math.round(k.s?F*0.62:F)+'px Georgia, serif';
       if(k.s) x+=F*0.06;
-      ctx.fillText(k.t, x, k.s?46:66);
+      const y = k.s?46:66;
+      if(halo) ctx.strokeText(k.t, x, y);
+      ctx.fillText(k.t, x, y);
       x+=ctx.measureText(k.t).width;
     });
     const tex=new THREE.CanvasTexture(cv);

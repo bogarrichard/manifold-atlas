@@ -17,13 +17,17 @@ LIE.hub = (function(){
   // the shells are periodic with different speeds, an exact collision is only a matter of time.
   const BRANCHES = [
     {id:'geometry', title:'Geometry', root:'geo', orbit:{A:9.0,  B:7.0,  ph:2.4, w:0.130}, spin:0.22, tilt:[1.05,0.45],
-     journeys:[{k:'flat',title:'ℝⁿ',journey:'geometry-flat'},{k:'so2',title:'SO(2)'},{k:'se2',title:'SE(2)'},
-               {k:'so3',title:'SO(3)'},{k:'se3',title:'SE(3)',journey:'geometry-se3'},{k:'sim3',title:'Sim(3)'}]},
+     journeys:[{k:'flat',title:'ℝⁿ',journey:'geometry-flat'},{k:'so2',title:'SO(2)',journey:'geometry-so2'},
+               {k:'se2',title:'SE(2)',journey:'geometry-se2'},{k:'so3',title:'SO(3)',journey:'geometry-so3'},
+               {k:'se3',title:'SE(3)',journey:'geometry-se3'},{k:'sim3',title:'Sim(3)',journey:'geometry-sim3'}]},
     {id:'optimization', title:'Optimization', root:'opt', orbit:{A:20.0, B:17.5, ph:3.8, w:0.070}, spin:0.28, tilt:[1.30,-0.5],
-     journeys:[{k:'gd',title:'gradient descent',journey:'optimization-gd'},{k:'gn',title:'Gauss–Newton'},{k:'lm',title:'LM · robust'}]},
+     journeys:[{k:'gd',title:'gradient descent',journey:'optimization-gd'},
+               {k:'gn',title:'Gauss–Newton',journey:'optimization-gn'},
+               {k:'lm',title:'LM · robust',journey:'optimization-lm'}]},
     {id:'slam', title:'SLAM', root:'conv', orbit:{A:30.5, B:27.5, ph:0.2, w:0.040}, spin:0.24, tilt:[0.9,0.7],
      journeys:[{k:'riemann',title:'Riemannian GD',journey:'so3-optimization'},
-               {k:'fg',title:'factor graphs'},{k:'slam',title:'SLAM'}]},
+               {k:'fg',title:'factor graphs',journey:'slam-factor-graph'},
+               {k:'slam',title:'SLAM',journey:'slam-pipeline'}]},
   ];
   const CROSS = [
     ['geometry:so3','slam:riemann'], ['optimization:gd','slam:riemann'],
@@ -32,7 +36,7 @@ LIE.hub = (function(){
 
   function run(ctx){
     const { THREE, kit, scene, camera, renderer, canvas, C } = ctx;
-    const { V3, lerp, ease, clamp, RM, makeLabel, fatArrow, setArrow, hexStr } = kit;
+    const { V3, lerp, ease, clamp, RM, makeLabel, updateLabel, fatArrow, setArrow, hexStr } = kit;
     let PAL = ctx.PAL;
     const HUB = C.hub || {};
     const brInfo = id => (HUB.branches && HUB.branches[id]) || {};
@@ -42,6 +46,7 @@ LIE.hub = (function(){
     const eb=document.getElementById('eb'), ti=document.getElementById('ti'), bo=document.getElementById('bo');
     const navWrap=document.getElementById('nav'), dotsWrap=document.getElementById('dots');
     const backBtn=document.getElementById('tohub');
+    const hintEl=document.getElementById('hint');   // engine.js sets an initial value; syncFocus() owns it from here
     const dots=[];
     const DEF = { eb:HUB.eyebrow||'', ti:HUB.title||(C.meta&&C.meta.title)||'', bo:HUB.intro||'' };
     let cardKey = undefined;
@@ -81,17 +86,6 @@ LIE.hub = (function(){
       scene.remove(world); world=null; gizmo=null; planets=[]; cores=[]; spheres=[]; threads=[]; pickables=[]; byKey={}; hoverMoon=null; hoverPlanet=null;
     }
     function ringPts(r,seg){ const p=[]; for(let i=0;i<=seg;i++){const a=i/seg*Math.PI*2; p.push(V3(Math.cos(a)*r,Math.sin(a)*r,0));} return p; }
-    function numberBadge(txt, color, size){
-      const cv=document.createElement('canvas'); cv.width=cv.height=72;
-      const g=cv.getContext('2d');
-      g.font='bold 52px ui-monospace, SFMono-Regular, Menlo, monospace';
-      g.textAlign='center'; g.textBaseline='middle';
-      g.lineWidth=6; g.strokeStyle='rgba(0,0,0,0.28)'; g.strokeText(txt,36,39);
-      g.fillStyle=color; g.fillText(txt,36,39);
-      const tex=new THREE.CanvasTexture(cv); tex.minFilter=THREE.LinearFilter;
-      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
-      sp.scale.set(size,size,1); return sp;
-    }
     const orbitPos = (o,ph)=>V3(Math.cos(ph)*o.A, 0, -Math.sin(ph)*o.B); // -sin z => same sense as +Y gizmo spin
 
     function build(){
@@ -117,7 +111,11 @@ LIE.hub = (function(){
         core.userData={isPlanet:true, branch:br, branchId:br.id, planet, h:0}; planet.add(core); cores.push(core); pickables.push(core);
         planet.add(new THREE.Mesh(new THREE.SphereGeometry(coreR*1.35,20,16),
           new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.10})));
-        const blabel=makeLabel(brInfo(br.id).title||br.title, hexStr(col), 9.5);
+        // Neutral ink, not the branch hue — matches the same convention every journey
+        // already uses (structural labels in ink, saturated color reserved for accents)
+        // and guarantees the name never shares its color with the sphere/ring it floats
+        // near. The halo backs that up against any backdrop, not just a same-hue one.
+        const blabel=makeLabel(brInfo(br.id).title||br.title, hexStr(PAL.ink), 9.5, {halo:true, haloColor:hexStr(PAL.bg)+'8c'});
         blabel.position.set(0, coreR+1.7, 0); blabel.material.opacity=0.9;
         blabel.userData.isPlanetLabel=true;   // dropped outright in another planet's view
         planet.add(blabel);
@@ -135,18 +133,30 @@ LIE.hub = (function(){
           anchor.add(sphere);
           anchor.add(new THREE.Mesh(new THREE.SphereGeometry(0.72,16,12),
             new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:live?0.12:0.05})));
-          const num=numberBadge(String(idx+1), hexStr(col), 1.5);
-          num.position.set(0, 1.02, 0); anchor.add(num);
-          const title=makeLabel(j.title, hexStr(col), 11.5);
-          title.position.set(0, 2.6, 0); title.material.opacity=0;
-          title.userData.isMoonTitle=true;   // the moon loop owns this opacity, not dimPass
+          // One label carries both jobs a badge and a title used to split between them: the
+          // bare number ("1") is always on, every moon, live or locked, in system view and
+          // planet view alike — exactly what the old always-visible numberBadge did. The
+          // moment this moon becomes the selected one, its text is re-baked to also carry
+          // the name ("1: ℝⁿ"), so there is only ever one object, one style, to read.
+          // Positioned radially — along the same line as the moon's own position, since
+          // anchor has no rotation, only position, so an anchor-local (cos a, sin a) offset
+          // is a further step along that line (see anchor.position above) — so the selected
+          // moon's label, wound to local angle −π/2 by the carousel and tilted low-and-near
+          // by PRESENT_TILT, always lands below it.
+          const labelBase = String(idx+1), labelFull = (idx+1)+': '+j.title;
+          const haloColor = hexStr(PAL.bg)+'8c';
+          const title = makeLabel(labelBase, hexStr(PAL.ink), 11.5, {halo:true, haloColor});
+          title.position.set(Math.cos(a)*1.7, Math.sin(a)*1.7, 0);
+          title.userData.labelBase=labelBase; title.userData.labelFull=labelFull;
+          title.userData.labelHaloColor=haloColor; title.userData.labelState='base';
           anchor.add(title);
-          // Moon names are never drawn in the system view — only planets are named there.
-          // A ring of six labels at the size needed to read them from the default camera
-          // distance is unreadable noise, and the mission bar now carries the same text
-          // properly. They fade in only inside the planet view, where there is room.
+          // Moon *names* are never drawn in the system view — only planets are named there,
+          // and only one moon's label ever grows a name, the selected one in planet view
+          // (see the moon loop below). The bare number stays on regardless of view or
+          // selection, same as it always has, so a ring of six numbers reads as an ordered
+          // map without six full names turning into noise at the default camera distance.
           // `a` (the moon's angle on its ring) is what the carousel spins against.
-          sphere.userData={journey:j, col, live, title, a, idx, branchId:br.id, planet, t:0, h:0};
+          sphere.userData={journey:j, col, live, title, a, idx, branchId:br.id, planet, h:0};
           spheres.push(sphere); pickables.push(sphere); byKey[br.id+':'+j.k]=sphere;
         });
       });
@@ -175,6 +185,13 @@ LIE.hub = (function(){
     let focusT=0;               // 0..1 eased; drives the ring's reorientation and the dim
     let spinCur=0;              // the carousel's current angle (continuous, not wrapped)
     let inFocus=new Set();      // objects belonging to the focused planet — kept bright
+    // Arrow-selected planet in system view. Planets sit on wildly different orbit radii
+    // (9 vs 20 vs 30.5 world units) rather than one shared ring, so this is the map-level
+    // "carousel": stepping + camera-easing + the card following, reusing exactly what
+    // already happens on hover — not a literal tilted-ring visual, which would mean either
+    // faking the planets onto a shared radius or leaving the map's real proportions behind.
+    // Survives the mouse moving elsewhere (mouse hover only *previews* over it, see pick()).
+    let selPlanet=null;
 
     const FOCUS_OFF = V3(0, 4.5, 23);  // where the camera sits relative to the focused planet
     // Ring lean in planet view: front moon low and near. Close to -π/2 (fully horizontal,
@@ -184,7 +201,11 @@ LIE.hub = (function(){
     const PRESENT_TILT = -1.3;
 
     const target=V3(0,0,0);
-    let theta=0.6, phi=1.02, radius=62;
+    // phi close to π/2 (the equator) is a flatter, more head-on default elevation — the
+    // focused planet reads clearer front-on than from the steeper original 1.02 (~32°
+    // above horizontal). Still short of a fully flat π/2 so the orbital plane keeps some
+    // depth instead of collapsing into a line.
+    let theta=0.6, phi=1.30, radius=62;
     const ray=new THREE.Raycaster(); const pointer=new THREE.Vector2(-2,-2);
     let flight=null, dragging=false, lx=0, ly=0, dx0=0, dy0=0, moved=false;
     let trans=null;                     // timed camera move between the two views
@@ -227,8 +248,12 @@ LIE.hub = (function(){
     }
     function exitPlanet(){
       if(mode!=='planet') return;
+      // land back on the map with the planet just left still selected, so ←/→ continues
+      // browsing from here and ↑ re-enters it — the same "where you were" continuity a
+      // moon carousel gives you for free by staying in the same planet.
+      selPlanet=focus.planet;
       beginTrans(); mode='system'; focus=null; inFocus=new Set();
-      setCard(null,null); syncFocus();
+      setCard(selPlanet.userData.branch, null); syncFocus();
     }
     function step(d){
       if(mode!=='planet') return;
@@ -236,22 +261,51 @@ LIE.hub = (function(){
       focus.idx=(focus.idx+d+n)%n;
       syncFocus();
     }
-    // reflect the current selection into the bar and the nav affordances
+    function stepPlanet(d){
+      const n=planets.length; if(!n) return;
+      const cur=selPlanet||hoverPlanet;
+      const idx=cur ? planets.indexOf(cur) : -1;
+      selPlanet=planets[((idx<0?0:idx+d)%n+n)%n];
+      syncFocus();
+    }
+    // reflect the current selection into the bar and the nav affordances. The nav strip
+    // (prev/next + dots) is up at both hub levels now, not just inside a planet — it steps
+    // planets in system view and moons in planet view, same widget either way, so the
+    // affordance for "you can step sideways here" doesn't disappear at the map level where
+    // ←/→ now also do something.
     function syncFocus(){
-      navWrap.style.display = mode==='planet' ? '' : 'none';
+      navWrap.style.display = '';
       backBtn.hidden = mode!=='planet';
-      if(mode!=='planet'){ dotsWrap.innerHTML=''; dots.length=0; return; }
-      const ms=moonsOf(focus.br);
-      // rebuilt per entry rather than reused: a different planet means different moons
+      // its action is exitPlanet(), which now lives on ↓ (not ↑) — the icon has to agree,
+      // or clicking it and pressing the key the icon suggests would do opposite things
+      backBtn.textContent = '⬇︎';
+      const hint = mode==='planet' ? HUB.hintPlanet : HUB.hintSystem;
+      if(hint) hintEl.innerHTML = hint.join('<br>');
       dotsWrap.innerHTML=''; dots.length=0;
-      ms.forEach((sp,i)=>{
-        const d=document.createElement('button');
-        d.type='button'; d.title=sp.userData.journey.title;
-        d.className='dot'+(i===focus.idx?' on':'')+(sp.userData.live?'':' locked');
-        d.onclick=()=>{ focus.idx=i; syncFocus(); };
-        dotsWrap.appendChild(d); dots.push(d);
-      });
-      setCard(null, ms[focus.idx].userData);
+      if(mode==='planet'){
+        const ms=moonsOf(focus.br);
+        ms.forEach((sp,i)=>{
+          const d=document.createElement('button');
+          d.type='button'; d.title=sp.userData.journey.title;
+          d.className='dot'+(i===focus.idx?' on':'')+(sp.userData.live?'':' locked');
+          d.onclick=()=>{ focus.idx=i; syncFocus(); };
+          dotsWrap.appendChild(d); dots.push(d);
+        });
+        setCard(null, ms[focus.idx].userData);
+      } else {
+        // rebuilt on every call rather than reused: cheap (3 planets), and keeps the
+        // "on" dot in sync with selPlanet without a separate diffing path
+        planets.forEach((p,i)=>{
+          const d=document.createElement('button');
+          d.type='button'; d.title=p.userData.branch.title;
+          d.className='dot'+(p===selPlanet?' on':'');
+          d.onclick=()=>{ selPlanet=p; syncFocus(); };
+          dotsWrap.appendChild(d); dots.push(d);
+        });
+        // same priority as pick()'s per-frame fallback below (hover previews over a
+        // keyboard selection) so this doesn't flicker against the next frame's pick()
+        const p=hoverPlanet||selPlanet; setCard(p?p.userData.branch:null, null);
+      }
     }
     function enter(sp){
       const j=sp.userData.journey, wp=new THREE.Vector3(); sp.getWorldPosition(wp);
@@ -300,15 +354,31 @@ LIE.hub = (function(){
       if(mode==='planet') return;              // the planet view frames itself; zoom is the map's tool
       radius=clamp(radius*(1+Math.sign(e.deltaY)*0.08), 16, 85);
     },{passive:false});
+    // Up = go deeper (enter), down = back out (exit) — the same pair at both levels of the
+    // hub. Inside a planet this reverses the old ↑-exits convention (moved to ↓, alongside
+    // Escape, which always backs out); ↑ is new here, alongside the Enter key that already
+    // landed on the front moon. At the map level, ←/→ step the arrow-selected planet the
+    // same way ←/→ already step the selected moon; ↓ has nothing further out to back into,
+    // so it clears the selection instead.
     addEventListener('keydown', e=>{
-      if(mode!=='planet') return;
-      if(e.key==='ArrowRight'){ step(1); e.preventDefault(); }
-      else if(e.key==='ArrowLeft'){ step(-1); e.preventDefault(); }
-      else if(e.key==='ArrowUp' || e.key==='Escape'){ exitPlanet(); e.preventDefault(); }
-      else if(e.key==='Enter'){ const m=selMoon(); if(m && m.userData.live) enter(m); }
+      if(mode==='planet'){
+        if(e.key==='ArrowRight'){ step(1); e.preventDefault(); }
+        else if(e.key==='ArrowLeft'){ step(-1); e.preventDefault(); }
+        else if(e.key==='ArrowDown' || e.key==='Escape'){ exitPlanet(); e.preventDefault(); }
+        else if(e.key==='ArrowUp' || e.key==='Enter'){
+          const m=selMoon(); if(m && m.userData.live) enter(m); e.preventDefault();
+        }
+        return;
+      }
+      if(e.key==='ArrowRight'){ stepPlanet(1); e.preventDefault(); }
+      else if(e.key==='ArrowLeft'){ stepPlanet(-1); e.preventDefault(); }
+      else if(e.key==='ArrowUp'){
+        const p=selPlanet||hoverPlanet; if(p) enterPlanet(p, 0); e.preventDefault();
+      }
+      else if(e.key==='ArrowDown'){ selPlanet=null; setCard(null,null); e.preventDefault(); }
     });
-    navWrap.querySelector('#prev').onclick=()=>step(-1);
-    navWrap.querySelector('#next').onclick=()=>step(1);
+    navWrap.querySelector('#prev').onclick=()=>{ if(mode==='planet') step(-1); else stepPlanet(-1); };
+    navWrap.querySelector('#next').onclick=()=>{ if(mode==='planet') step(1); else stepPlanet(1); };
     backBtn.onclick=()=>exitPlanet();
     function pick(){
       ray.setFromCamera(pointer, camera);
@@ -320,8 +390,10 @@ LIE.hub = (function(){
       hoverMoon   = (hit && !hit.userData.isPlanet) ? hit : null;
       const clickable = hoverMoon || hoverPlanet;
       canvas.style.cursor = clickable ? 'pointer' : 'grab';
-      // the bar follows the hover only on the map; inside a planet it belongs to the selection
-      if(mode!=='planet') setCard(hoverPlanet ? hoverPlanet.userData.branch : null, null);
+      // the bar follows the hover only on the map; inside a planet it belongs to the selection.
+      // Falls back to the arrow-selected planet when the mouse isn't over anything, so moving
+      // the cursor away doesn't blank out a selection made with the keyboard.
+      if(mode!=='planet'){ const p=hoverPlanet||selPlanet; setCard(p?p.userData.branch:null, null); }
     }
 
     syncFocus();   // start on the map: nav strip and back button stay out of the way
@@ -346,7 +418,7 @@ LIE.hub = (function(){
       }
       // The system eases to a near-stop while a planet is hovered, and to a full stop inside
       // the planet view — a carousel you are reading should not also be drifting across the sky.
-      const tgtSpeed = mode==='planet' ? 0 : (hoverPlanet ? 0.05 : 1);
+      const tgtSpeed = mode==='planet' ? 0 : ((hoverPlanet||selPlanet) ? 0.05 : 1);
       orbitSpeed += (tgtSpeed-orbitSpeed)*Math.min(1,dt*3);
       orbitTime += RM?0:dt*orbitSpeed;
       focusT += ((mode==='planet'?1:0)-focusT)*Math.min(1, dt*(RM?60:4.5));
@@ -371,6 +443,26 @@ LIE.hub = (function(){
         }
       });
       world.updateMatrixWorld(true);
+      // Arrow-selecting a planet swings the camera's azimuth to bring it to the front —
+      // the map-level "carousel". Only ← / → drive this (not mouse hover, which keeps its
+      // existing lighter touch: slow the orbit, show the card, leave the camera alone) so
+      // keyboard navigation reads as a deliberate turn while a stray hover doesn't yank the
+      // view around. Skipped while actively dragging — fighting the user's own orbit input
+      // would feel like the camera resisting them.
+      if(selPlanet && mode==='system' && !dragging){
+        selPlanet.getWorldPosition(_a);
+        // No offset: the camera's own azimuth should MATCH the planet's, not oppose it.
+        // Matching puts camera, then planet, then the origin along the same ray (camera is
+        // always farther out than any orbit radius), so the planet sits *between* the camera
+        // and the gizmo — in front. A +π offset here was verified empirically to put the
+        // planet on the far side of the origin instead — centered on screen either way, but
+        // behind the gizmo rather than in front of it.
+        const thetaTarget = Math.atan2(_a.x, _a.z);
+        let dTheta=(thetaTarget-theta)%(Math.PI*2);
+        if(dTheta> Math.PI) dTheta-=Math.PI*2;
+        if(dTheta<-Math.PI) dTheta+=Math.PI*2;
+        theta += dTheta*Math.min(1, dt*(RM?60:3));
+      }
       // convergence threads follow the moving moons; faint by default, light up on MOON hover
       threads.forEach(th=>{
         th.sa.getWorldPosition(_a); th.sb.getWorldPosition(_b);
@@ -383,20 +475,23 @@ LIE.hub = (function(){
         const m=th.line.material; m.opacity += (want-m.opacity)*Math.min(1,dt*8);
       });
       place(); pick();
-      /* Exactly one moon name is ever drawn: the selected one, inside the planet view.
-         Showing its neighbours too — even faintly — puts six labels back on one ring and
-         re-creates the crowding this view was meant to fix. The numbered badges already
-         carry the ordering, and the bar carries the words. The selected moon also swells,
-         which is what marks it as the thing Enter/click will land on. */
+      /* Exactly one moon's label ever carries a name: the selected one, inside the planet
+         view — everywhere else the label reads as just its number. Baking that name in
+         (rather than showing/hiding a second sprite) is a plain state transition, not a
+         per-frame cost: it only re-draws the instant `chosen` actually flips. The selected
+         moon also swells, which is what marks it as the thing Enter/click will land on. */
       spheres.forEach(sp=>{
         const u=sp.userData;
         const mine = !!focus && u.planet===focus.planet;
         const chosen = mine && u.idx===focus.idx;
-        const tTitle = chosen ? focusT : 0;
+        const wantState = chosen ? 'full' : 'base';
+        if(u.title.userData.labelState !== wantState){
+          const text = wantState==='full' ? u.title.userData.labelFull : u.title.userData.labelBase;
+          updateLabel(u.title, text, hexStr(PAL.ink), {halo:true, haloColor:u.title.userData.labelHaloColor});
+          u.title.userData.labelState = wantState;
+        }
         const tSwell = (chosen ? 1 : 0)*focusT + (sp===hoverMoon ? 0.5 : 0);
-        u.t+=(tTitle-u.t)*Math.min(1,dt*10);
         u.h+=(tSwell-u.h)*Math.min(1,dt*10);
-        u.title.material.opacity=u.t; u.title.visible=u.t>0.02;
         sp.scale.setScalar(1 + u.h*0.42);
       });
       dimPass(dt);
@@ -414,7 +509,6 @@ LIE.hub = (function(){
       const k = focusT;
       world.traverse(o=>{
         const m=o.material; if(!m || m.opacity===undefined) return;
-        if(o.userData && o.userData.isMoonTitle) return;   // driven by the moon loop above
         if(m.userData.base===undefined){
           m.userData.base=m.opacity;
           // An opaque material ignores `opacity` outright, so the gizmo arrows and any other
@@ -440,7 +534,7 @@ LIE.hub = (function(){
     // A retheme disposes every material and rebuilds, so anything holding object references
     // — the focus set, the selected moon — would be pointing at dead geometry. Drop back to
     // the map rather than trying to re-resolve it.
-    return { retheme(newPAL){ PAL=newPAL; mode='system'; focus=null; inFocus=new Set();
+    return { retheme(newPAL){ PAL=newPAL; mode='system'; focus=null; selPlanet=null; inFocus=new Set();
                               focusT=0; build(); setCard(null,null); syncFocus(); },
              onResize(){} };
   }

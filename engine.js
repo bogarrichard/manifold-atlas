@@ -212,7 +212,9 @@ addEventListener('resize',resize); resize();
    HUB MODE
    ===================================================================== */
 if(hubMode){
-  document.getElementById('hint').innerHTML = (C.hub && C.hub.hint || []).join('<br>');
+  // hub.js's syncFocus() owns this from here on (it swaps system/planet hints); this initial
+  // value only covers the instant before that first runs, so it always starts in system mode
+  document.getElementById('hint').innerHTML = (C.hub && C.hub.hintSystem || []).join('<br>');
   // hidden on the map; hub.js brings the nav strip back as the planet view's carousel control
   document.getElementById('nav').style.display = 'none';
   const eb=document.getElementById('eb'), ti=document.getElementById('ti'), bo=document.getElementById('bo');

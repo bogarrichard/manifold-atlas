@@ -20,8 +20,11 @@ each one a scene plus a card of text and interactive controls.
 
 ## Controls
 
-- **Hub** — drag to orbit the camera, hover a planet or moon to read its summary
-  (the orbits ease to a near-stop while you read), click a moon to enter its journey.
+- **Hub** — drag to orbit the camera; hover or `←`/`→` a planet to read its summary (the
+  orbits ease to a near-stop while it's selected). `↑` or a click enters it: its moons line
+  up as a carousel, steered the same way, with the front moon's summary in the bar. Land on
+  it with another `↑`, `Enter`, or a click; `↓`, `Esc`, or empty space backs out one level
+  — all the way to the map.
 - **Journey** — `←` / `→` or the dots move between stations, `↑` or `Esc` backs out
   to the hub. `Esc` first closes an open popup, if there is one.
 - **Language** — the flag dropdown in the top-right, or `?lang=xx` in the URL.

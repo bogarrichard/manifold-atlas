@@ -27,8 +27,9 @@ window.LIE_CONTENT.en = {
     eyebrow: 'star chart',
     branchWord: 'sector',
     title: 'Manifold Atlas',
-    intro: '<p>Welcome aboard. One solar system orbits the central reference frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to see what it holds, then click it: you fly closer and its moons line up as a carousel. <b>← →</b> wind it to the next destination, and the selected moon’s abstract appears here. Click the moon at the front to land; <b>↑</b> takes you back to the map.</p><p>The bright spheres are open — the dim ones are still being charted.</p>',
-    hint: ['drag: orbit', 'scroll: zoom', 'click a planet', '← → : moon ring'],
+    intro: '<p>Welcome aboard. One solar system orbits the central reference frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to see what it holds, or wind to one with <b>← →</b>. <b>↑</b> enters: you fly closer and its moons line up as a carousel, wound the same way, with the selected moon’s abstract appearing here. Click the moon at the front, or press <b>↑</b> again, to land; <b>↓</b> always backs out one level — all the way to the map.</p><p>All twelve moons are open. The shorter ones run to three stations: they say less, but they say it completely — where a subject runs deeper, the last card says where it stops and which moon carries it on.</p>',
+    hintSystem: ['drag: orbit', 'scroll: zoom', '← → : planets', '↑ enter · ↓ deselect'],
+    hintPlanet: ['drag: orbit', 'scroll: zoom', '← → : moon ring', '↑ enter · ↓ exit'],
     moonWord: 'destination',
     branches: {
       geometry: { title: 'Geometry', summary: '<p>The spaces things live in — rotations, poses, similarities — and how they move. Six journeys from flat ℝⁿ up to Sim(3): tangent spaces, exp/log, and (for SO(3)) topology. No cost function in sight.</p>',
