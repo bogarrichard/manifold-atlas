@@ -117,6 +117,46 @@ function applyPref(pref){
 }
 themeBtn.addEventListener('click', ()=>applyPref(THEME_NEXT[themePref]));
 updateThemeBtn();
+
+/* ---- text size (default / large / larger) ------------------------------
+   Same cycling-button shape as the theme toggle above, and the same reason for it: one
+   control that shows where it currently stands rather than a picker that has to be
+   opened to find out. The three steps scale `--text-scale`, which every fluid font-size
+   in style.css (`clamp(...) * var(--text-scale)`) multiplies in — so this stacks with,
+   rather than replaces, the viewport-based scaling already there. Default is 1 (matches
+   every size already chosen for the "default" case), not tied to any OS-level signal:
+   unlike color scheme, there is no cross-browser media query for a user's preferred text
+   scale to default to, so "unless you ask, nothing changes" is the honest default. */
+const TEXTSIZE_KEY = 'lie-textsize';
+const TEXT_SCALE = { default: 1, large: 1.15, larger: 1.3 };
+const TEXT_SCALE_NEXT = { default: 'large', large: 'larger', larger: 'default' };
+function storedTextSizePref(){
+  try{ const v = localStorage.getItem(TEXTSIZE_KEY); return TEXT_SCALE[v] ? v : 'default'; }
+  catch(e){ return 'default'; }
+}
+let textSizePref = storedTextSizePref();
+document.documentElement.style.setProperty('--text-scale', TEXT_SCALE[textSizePref]);
+const textSizeBtn = document.createElement('button');
+textSizeBtn.id='textsizebtn'; textSizeBtn.type='button';
+document.getElementById('textsize').appendChild(textSizeBtn);
+function updateTextSizeBtn(){
+  const tl = (C.ui && C.ui.textSize) || {};
+  const name = tl[textSizePref] || textSizePref;
+  // the icon's own size grows with each step — the control demonstrates its own effect
+  // rather than relying on a label alone to say what "large" means
+  textSizeBtn.innerHTML = '<span class="ticon tsicon tsicon-'+textSizePref+'" aria-hidden="true">A</span><span></span>';
+  textSizeBtn.lastChild.textContent = name;
+  textSizeBtn.title = (tl.label||'Text size') + ': ' + name;
+  textSizeBtn.setAttribute('aria-label', (tl.label||'Text size') + ': ' + name);
+}
+function applyTextSizePref(pref){
+  textSizePref = pref;
+  try{ localStorage.setItem(TEXTSIZE_KEY, pref); }catch(e){}
+  document.documentElement.style.setProperty('--text-scale', TEXT_SCALE[pref]);
+  updateTextSizeBtn();
+}
+textSizeBtn.addEventListener('click', ()=>applyTextSizePref(TEXT_SCALE_NEXT[textSizePref]));
+updateTextSizeBtn();
 mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resolveTheme('system')); });
 
 /* ---- top-right menu: theme + language + the control legend ------------- */
@@ -128,6 +168,7 @@ mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resol
   btn.setAttribute('aria-label', ui.menuLabel || 'Menu');
   btn.title = ui.menuLabel || 'Menu';
   document.getElementById('mtheme-h').textContent = tl.label || 'Theme';
+  document.getElementById('mtextsize-h').textContent = (ui.textSize && ui.textSize.label) || 'Text size';
   document.getElementById('mlang-h').textContent = ui.langMenuLabel || 'Language';
   document.getElementById('mhint-h').textContent = ui.controlsLabel || 'Controls';
   const setOpen = v=>{ panel.hidden = !v; btn.setAttribute('aria-expanded', v?'true':'false'); };
@@ -154,22 +195,46 @@ mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resol
    width: its outermost orbit already fills the viewport, so nudging it sideways would
    swing the far planet off the edge. */
 const hudEl = document.getElementById('hud');
-/* px the hub scene shifts up. The bar now has a *fixed* height (2/5 of the viewport, set in
-   the CSS), so this can be derived from it instead of hard-coded: lifting by half the space
-   the bar occupies centers the solar system in what is left. Deriving it no longer risks the
-   jitter the old fixed value was guarding against — the height cannot change under a hover
-   any more. Falls back to the measured height only if the card has not been laid out yet. */
-function hubLift(){
-  const h = hudEl.getBoundingClientRect().height || innerHeight * 0.40;
-  return Math.round((h + 26) / 2);   // 26px = the bar's bottom offset in the CSS
+/* Confirmed on a real device, independent of any of the above: the very first paint of
+   #hud after page load can come back completely blank — no background, no border, no
+   text — while #nav/#topctl (static markup, not their own scroll container) paint
+   correctly from the first frame. The very next station's fade transition (which toggles
+   this same element's class, forcing a style recalc) fixes it on its own, which is why
+   the bug is easy to miss testing past the first screen. #hud is the only fixed-position
+   element here that is ALSO its own overflow:auto scroll container with content and a
+   custom property (`--bubmax`) set by JS before that first paint — a combination some
+   engines mishandle on the very first frame. Forcing an extra reflow right after that
+   content lands closes the gap between "the DOM is correct" and "the browser actually
+   painted it". */
+function forceRepaint(el){
+  el.style.display='none';
+  void el.offsetHeight;
+  el.style.display='';
+}
+/* px the scene shifts up, off a bottom-anchored card — the hub bar always, and now (once
+   the mobile breakpoint hits) a journey's card too, since it also docks to the bottom
+   there. The card has a *fixed* height on that edge (the hub bar's is set in the CSS; a
+   mobile journey card is capped by `.scrolls`), so this can be derived from it instead of
+   hard-coded: lifting by half the space it occupies centers the rest of the scene in what
+   is left. Deriving it also means a hover-driven height change on desktop never needs to
+   fight a stale fixed value. The `bottom` offset itself is read live too (12px on mobile,
+   26px for the hub on desktop) rather than hard-coded, so it can never drift out of step
+   with the CSS. Falls back to a rough guess only if the card has not been laid out yet. */
+function bottomLift(){
+  const h = hudEl.getBoundingClientRect().height || innerHeight * (hubMode ? 0.40 : 0.50);
+  const gap = parseFloat(getComputedStyle(hudEl).bottom) || 12;
+  return Math.round((h + gap) / 2);
 }
 // Returns the (ox, oy) pair to hand straight to camera.setViewOffset — signs verified
 // empirically (a positive ox pushes content left, a positive oy pushes it up), not
 // derived from the setViewOffset docs, which describe the sub-rectangle it reads from a
 // larger virtual sensor rather than the on-screen effect that has.
 function viewShift(){
-  if(innerWidth <= 640) return {ox:0, oy:0};
-  if(hubMode) return {ox:0, oy:hubLift()};        // positive oy => content moves up
+  // Below the mobile breakpoint both cards go full-width bottom bars (see style.css), so
+  // there is no free side column to center in either — but lifting the scene up and out
+  // from under whichever one is showing still applies the same way it does for the hub on
+  // desktop, hence sharing bottomLift() rather than returning {0,0} here.
+  if(innerWidth <= 640 || hubMode) return {ox:0, oy:bottomLift()};   // positive oy => content moves up
   return {ox:-(hudEl.getBoundingClientRect().right / 2), oy:0};  // negative ox => content moves right
 }
 function resize(){
@@ -219,7 +284,10 @@ function syncHudScroll(){
   // (which is near-zero anyway: the hub card sits close to the bottom edge on purpose)
   hudEl.classList.toggle('scrolls', need > avail || (!hubMode && room < PANEL_MIN));
 }
-if(window.ResizeObserver) new ResizeObserver(syncHudScroll).observe(boEl);
+// resize() (not just syncHudScroll()) so the mobile edgeLift() shift — which reads the
+// card's live height — stays correct as a station's content changes it, not only on an
+// actual window resize; resize() already calls syncHudScroll() itself at its tail.
+if(window.ResizeObserver) new ResizeObserver(resize).observe(boEl);
 addEventListener('resize',resize); resize();
 
 /* ========================================================================
@@ -238,6 +306,7 @@ if(hubMode){
 
   const hubApi = LIE.hub.run({ THREE, kit:K, scene, camera, renderer, canvas:cv, C, PAL });
   rethemeContent = ()=>{ hubApi.retheme(PAL); };
+  requestAnimationFrame(()=>forceRepaint(hudEl));   // see forceRepaint's comment above
 
 /* ========================================================================
    JOURNEY MODE
@@ -335,7 +404,7 @@ if(hubMode){
   let yaw=0, pitch=0, zoomF=1;
   const hud=document.getElementById('hud'), eb=document.getElementById('eb'),
         ti=document.getElementById('ti'), bo=document.getElementById('bo'),
-        dots=document.getElementById('dots');
+        dots=document.getElementById('dots'), dotctr=document.getElementById('dotctr');
   // real <button>s, matching the hub's strip: a <div> is not focusable, cannot be
   // activated from the keyboard, and announces nothing — yet these dots are the only
   // way to jump straight to a station.
@@ -348,6 +417,7 @@ if(hubMode){
   });
   function renderCard(i){
     eb.textContent=C.ui.stationWord+' '+(i+1)+' / '+CARDS.length;
+    dotctr.textContent=(i+1)+' / '+CARDS.length;   // the dot row's mobile stand-in (style.css)
     ti.textContent=CARDS[i].t;
     bo.innerHTML=CARDS[i].b + (i===CARDS.length-1 ? whatNext() : '');
     hud.scrollTop=0;   // a long previous card may have left the box scrolled down
@@ -428,13 +498,39 @@ if(hubMode){
   });
 
   let dragging=false,lx=0,ly=0;
-  cv.addEventListener('pointerdown',e=>{dragging=true;lx=e.clientX;ly=e.clientY;cv.classList.add('grabbing');cv.setPointerCapture(e.pointerId);});
+  // A second simultaneous pointer means a pinch, not a drag — tracked by id so either
+  // finger can lift first without confusing which one is still down. `wheel` (below)
+  // covers zoom for a mouse; touch has no wheel event, so this is the touch equivalent.
+  const touches=new Map();
+  let pinchD0=null, zoom0=null;
+  function pinchDist(){
+    const p=[...touches.values()]; return Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y);
+  }
+  cv.addEventListener('pointerdown',e=>{
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    cv.setPointerCapture(e.pointerId);
+    if(touches.size===2){ dragging=false; pinchD0=pinchDist(); zoom0=zoomF; return; }
+    if(touches.size>2) return;   // a stray third touch: ignore, keep the pinch running
+    dragging=true; lx=e.clientX; ly=e.clientY; cv.classList.add('grabbing');
+  });
   cv.addEventListener('pointermove',e=>{
+    if(!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(touches.size===2){
+      if(!travel && pinchD0) zoomF=clamp(zoom0*(pinchD0/pinchDist()), 0.55, 2.1);
+      return;
+    }
     if(!dragging||travel) return;
     yaw+=(e.clientX-lx)*0.005; pitch+=(e.clientY-ly)*0.004;
     pitch=clamp(pitch,-1.1,1.1); lx=e.clientX; ly=e.clientY;
   });
-  cv.addEventListener('pointerup',e=>{dragging=false;cv.classList.remove('grabbing');});
+  function endTouch(e){
+    touches.delete(e.pointerId);
+    if(touches.size<2) pinchD0=null;
+    dragging=false; cv.classList.remove('grabbing');
+  }
+  cv.addEventListener('pointerup',endTouch);
+  cv.addEventListener('pointercancel',endTouch);
   cv.addEventListener('wheel',e=>{
     if(travel) return;
     e.preventDefault();
@@ -443,6 +539,7 @@ if(hubMode){
 
   renderCard(0);
   { const p=camPose(0); camera.position.copy(p.pos); camera.lookAt(p.look); }
+  requestAnimationFrame(()=>forceRepaint(hudEl));   // see forceRepaint's comment above
 
   const clock=new THREE.Clock();
   function loop(){

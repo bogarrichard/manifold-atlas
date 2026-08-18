@@ -24,6 +24,7 @@ window.LIE_CONTENT.en = {
     menuLabel: 'Menu',
     controlsLabel: 'Controls',
     theme: { label: 'Theme', system: 'system', light: 'light', dark: 'dark' },
+    textSize: { label: 'Text size', default: 'default', large: 'large', larger: 'larger' },
     hint: ['drag: look around', 'scroll: zoom', '← → : travel', '↓ Esc : hub'],
     noscript: 'This interactive visualization requires JavaScript and WebGL. Please enable them in your browser.'
   },

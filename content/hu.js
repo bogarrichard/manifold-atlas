@@ -24,6 +24,7 @@ window.LIE_CONTENT.hu = {
     menuLabel: 'Menü',
     controlsLabel: 'Irányítás',
     theme: { label: 'Téma', system: 'rendszer', light: 'világos', dark: 'sötét' },
+    textSize: { label: 'Betűméret', default: 'alap', large: 'nagy', larger: 'nagyobb' },
     hint: ['húzd: körbenézés', 'görgő: közelítés', '← → : utazás', '↓ Esc : központ'],
     noscript: 'Ehhez az interaktív ábrához JavaScript és WebGL kell. Kérlek, engedélyezd a böngésződben.'
   },

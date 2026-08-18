@@ -24,6 +24,7 @@ window.LIE_CONTENT.ja = {
     menuLabel: 'メニュー',
     controlsLabel: '操作',
     theme: { label: 'テーマ', system: 'システム', light: 'ライト', dark: 'ダーク' },
+    textSize: { label: '文字サイズ', default: '標準', large: '大', larger: '特大' },
     hint: ['ドラッグ: 見回す', 'スクロール: ズーム', '← → : 移動', '↓ Esc : ハブ'],
     noscript: 'このインタラクティブな図には JavaScript と WebGL が必要です。ブラウザで有効にしてください。'
   },

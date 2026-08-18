@@ -45,6 +45,7 @@ LIE.hub = (function(){
     // the mission bar, plus the nav strip the planet view borrows from the journey player
     const eb=document.getElementById('eb'), ti=document.getElementById('ti'), bo=document.getElementById('bo');
     const navWrap=document.getElementById('nav'), dotsWrap=document.getElementById('dots');
+    const dotctrEl=document.getElementById('dotctr');
     const backBtn=document.getElementById('tohub');
     const enterBtn=document.getElementById('toenter');
     const hintEl=document.getElementById('hint');   // engine.js sets an initial value; syncFocus() owns it from here
@@ -319,15 +320,21 @@ LIE.hub = (function(){
     }
     function syncFocus(){
       navWrap.style.display = '';
-      backBtn.hidden = mode!=='planet';
+      /* Always present, never `hidden` — it used to vanish outright at the map level,
+         which meant `enterBtn` (its neighbour, always shown) visibly jumped left to fill
+         the gap and jumped back right the moment a planet was entered. `disabled` keeps
+         its slot in the layout permanently reserved instead, so the button to its right
+         never shifts — the same reasoning the comment below already applies to `enterBtn`
+         itself, just now applied consistently to both. */
+      backBtn.hidden = false;
+      backBtn.disabled = mode!=='planet';
       // its action is exitPlanet(), which lives on ↓/Esc — the icon has to agree, or
       // clicking it and pressing the key the icon suggests would do opposite things.
       // Same glyph the journey player's back button carries: one "back out" arrow sitewide.
       backBtn.textContent = '⬇︎';
       /* The mouse counterpart of ↑/Enter, and the only one of the pair that shows at both
-         hub levels — at the map level there is nothing to back out to, so ⬇︎ stays hidden
-         while ⬆︎ does not. Disabled rather than hidden when there is no target (nothing
-         selected on the map, a not-yet-built moon in a planet): a control that vanishes and
+         hub levels. Disabled rather than hidden when there is no target (nothing selected
+         on the map, a not-yet-built moon in a planet): a control that vanishes and
          reappears as you arrow along the ring is more distracting than one that greys out,
          and `.nbtn:disabled` no longer lights up under the cursor. */
       const goDeeper = enterTarget();
@@ -351,6 +358,7 @@ LIE.hub = (function(){
           d.onclick=()=>{ focus.idx=i; syncFocus(); };
           dotsWrap.appendChild(d); dots.push(d);
         });
+        dotctrEl.textContent=(focus.idx+1)+' / '+ms.length;   // the dot row's mobile stand-in
         setCard(null, ms[focus.idx].userData);
       } else {
         // rebuilt on every call rather than reused: cheap (3 planets), and keeps the
@@ -367,6 +375,8 @@ LIE.hub = (function(){
         // same priority as pick()'s per-frame fallback below (hover previews over a
         // keyboard selection) so this doesn't flicker against the next frame's pick()
         const p=hoverPlanet||selPlanet; setCard(p?p.userData.branch:null, null);
+        // no dot lit means no counter either — nothing to count up to yet
+        dotctrEl.textContent = p ? (planets.indexOf(p)+1)+' / '+planets.length : '';
       }
     }
     function enter(sp){
@@ -377,10 +387,39 @@ LIE.hub = (function(){
         to:wp.clone().add(dir.multiplyScalar(3.4)).add(V3(0,0.4,0)), look:wp.clone(),
         url:'?journey='+j.journey+(l?('&lang='+l):'')};
     }
-    canvas.addEventListener('pointerdown',e=>{dragging=true;moved=false;lx=e.clientX;ly=e.clientY;dx0=e.clientX;dy0=e.clientY;canvas.classList.add('grabbing');canvas.setPointerCapture(e.pointerId);});
-    canvas.addEventListener('pointermove',e=>{
+    // A second simultaneous pointer means a pinch, not a drag/tap — tracked by id so
+    // either finger can lift first without confusing which one is still down.
+    const touches=new Map();
+    let pinchD0=null, radius0=null;
+    function pinchDist(){
+      const p=[...touches.values()]; return Math.hypot(p[0].x-p[1].x, p[0].y-p[1].y);
+    }
+    function setPointerFromEvent(e){
       const r=canvas.getBoundingClientRect();
       pointer.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+    }
+    canvas.addEventListener('pointerdown',e=>{
+      touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      canvas.setPointerCapture(e.pointerId);
+      if(touches.size===2){ dragging=false; pinchD0=pinchDist(); radius0=radius; return; }
+      if(touches.size>2) return;   // a stray third touch: ignore, keep the pinch running
+      dragging=true; moved=false; lx=e.clientX; ly=e.clientY; dx0=e.clientX; dy0=e.clientY;
+      canvas.classList.add('grabbing');
+      // A tap has no pointermove before it, so pick()'s hover state (normally refreshed
+      // once per animation frame off the *last* pointermove) would still be whatever it
+      // was before this tap — stale, or the (-2,-2) off-screen sentinel on a device that
+      // has never fired a mouse move at all. Resolving synchronously here, and again on
+      // release below, makes tap-to-select work independently of frame timing.
+      setPointerFromEvent(e); pick();
+    });
+    canvas.addEventListener('pointermove',e=>{
+      if(!touches.has(e.pointerId)) return;
+      touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      setPointerFromEvent(e);
+      if(touches.size===2){
+        if(mode!=='planet' && pinchD0) radius=clamp(radius0*(pinchD0/pinchDist()), 16, 85);
+        return;
+      }
       if(dragging){
         const dx=e.clientX-lx, dy=e.clientY-ly;
         // total displacement from the press origin (not the per-move delta, which would
@@ -394,12 +433,15 @@ LIE.hub = (function(){
       }
     });
     canvas.addEventListener('pointerup',e=>{
+      touches.delete(e.pointerId);
+      if(touches.size<2) pinchD0=null;
       dragging=false; canvas.classList.remove('grabbing');
       // a drag moved `theta` by hand, so the direction committed at the last keypress may
       // now point most of the way round the wrong way — re-aim short from where the user
       // actually left the camera
       if(moved) aimAtSel();
       if(moved || flight) return;
+      setPointerFromEvent(e); pick();   // resolve at the release point, not the last move
       if(mode==='planet'){
         // inside a planet: the front moon lands, any other one winds the carousel to itself
         if(hoverMoon){
@@ -414,6 +456,10 @@ LIE.hub = (function(){
       // system view: both a planet and a moon open that planet — a moon just picks its own slot
       if(hoverMoon) enterPlanet(hoverMoon.userData.planet, hoverMoon.userData.idx);
       else if(hoverPlanet) enterPlanet(hoverPlanet.userData.planet, 0);
+    });
+    canvas.addEventListener('pointercancel',e=>{
+      touches.delete(e.pointerId); if(touches.size<2) pinchD0=null;
+      dragging=false; canvas.classList.remove('grabbing');
     });
     canvas.addEventListener('wheel',e=>{
       e.preventDefault();
