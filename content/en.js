@@ -35,6 +35,7 @@ window.LIE_CONTENT.en = {
     hintSystem: ['drag: orbit', 'scroll: zoom', '← → : planets', '↑ ⏎ : enter · ↓ Esc : deselect'],
     hintPlanet: ['drag: orbit', 'scroll: zoom', '← → : moon ring', '↑ ⏎ : enter · ↓ Esc : exit'],
     moonWord: 'destination',
+    enterAria: 'Enter',
     branches: {
       geometry: { title: 'Geometry', summary: '<p>The spaces things live in — rotations, poses, similarities — and how they move. Six journeys from flat ℝ<sup>n</sup> up to Sim(3): tangent spaces, exp/log, and (for SO(3)) topology. No cost function in sight.</p>',
         moons: {

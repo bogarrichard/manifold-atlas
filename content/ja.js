@@ -35,6 +35,7 @@ window.LIE_CONTENT.ja = {
     hintSystem: ['ドラッグ: 回転', 'スクロール: ズーム', '← → : 惑星', '↑ ⏎ : 入る · ↓ Esc : 選択解除'],
     hintPlanet: ['ドラッグ: 回転', 'スクロール: ズーム', '← → : 衛星リング', '↑ ⏎ : 入る · ↓ Esc : 出る'],
     moonWord: '目的地',
+    enterAria: '入る',
     branches: {
       geometry: { title: '幾何', summary: '<p>ものが住む空間 — 回転、位置姿勢、相似 — と、その動き方。平坦な ℝ<sup>n</sup> から Sim(3) まで六つの旅: 接空間、exp/log、そして（SO(3) では）トポロジー。コスト関数はどこにも出てきません。</p>',
         moons: {

@@ -46,6 +46,7 @@ LIE.hub = (function(){
     const eb=document.getElementById('eb'), ti=document.getElementById('ti'), bo=document.getElementById('bo');
     const navWrap=document.getElementById('nav'), dotsWrap=document.getElementById('dots');
     const backBtn=document.getElementById('tohub');
+    const enterBtn=document.getElementById('toenter');
     const hintEl=document.getElementById('hint');   // engine.js sets an initial value; syncFocus() owns it from here
     const dots=[];
     const DEF = { eb:HUB.eyebrow||'', ti:HUB.title||(C.meta&&C.meta.title)||'', bo:HUB.intro||'' };
@@ -253,6 +254,7 @@ LIE.hub = (function(){
       // moon carousel gives you for free by staying in the same planet.
       selPlanet=focus.planet;
       beginTrans(); mode='system'; focus=null; inFocus=new Set();
+      aimAtSel();
       setCard(selPlanet.userData.branch, null); syncFocus();
     }
     function step(d){
@@ -261,11 +263,46 @@ LIE.hub = (function(){
       focus.idx=(focus.idx+d+n)%n;
       syncFocus();
     }
+    /* Where the camera is swinging to, as a *continuous* angle rather than one wrapped to
+       (-π, π]. `theta` eases toward it, and the direction is decided **once**, when the
+       selection changes — never re-derived per frame.
+
+       What shipped took the shortest arc from the live `theta` to the selected planet's live
+       azimuth on *every frame*. The three planets orbit at different speeds (w = 0.130 /
+       0.070 / 0.040), so the target keeps drifting while the camera turns; when a step
+       starts near a 180° separation, that drift can carry the target across the ±π seam
+       mid-swing, inverting the shortest direction so the camera reverses halfway through
+       its turn. Measured: rare (1 case in 2927 near-π starts) but real, and free to remove.
+
+       Deciding once and unwrapping the *goal* (not `theta`) onto its nearest continuous
+       representative each frame keeps the turn monotone: it still tracks the planet as it
+       drifts, but it can no longer change its mind about which way round it is going.
+
+       Note this keeps swings bounded to ≤180°, at the cost of `→` not always turning the
+       same way — the planets sit at arbitrary, independently drifting azimuths, so a strict
+       always-turn-right carousel would instead have to accept swings of up to ~360°. Short
+       and monotone beat consistent and occasionally near-full-circle. */
+    let thetaGoal = null;
+    const TAU = Math.PI*2;
+    const shortArc = (from,to)=>{ let d=(to-from)%TAU;
+      if(d> Math.PI) d-=TAU; if(d<-Math.PI) d+=TAU; return d; };
+    // No offset: the camera's own azimuth should MATCH the planet's, not oppose it. Matching
+    // puts camera, then planet, then the origin along the same ray (the camera is always
+    // farther out than any orbit radius), so the planet sits *between* the camera and the
+    // gizmo — in front. A +π offset here was verified empirically to put the planet on the
+    // far side of the origin instead — centred on screen either way, but behind the gizmo.
+    const _az=new THREE.Vector3();   // own scratch: `_a` is declared further down and is
+                                     // reused as the threads loop's temporary
+    const planetAzimuth = p=>{ p.getWorldPosition(_az); return Math.atan2(_az.x, _az.z); };
+    function aimAtSel(){
+      thetaGoal = selPlanet ? theta + shortArc(theta, planetAzimuth(selPlanet)) : null;
+    }
     function stepPlanet(d){
       const n=planets.length; if(!n) return;
       const cur=selPlanet||hoverPlanet;
       const idx=cur ? planets.indexOf(cur) : -1;
       selPlanet=planets[((idx<0?0:idx+d)%n+n)%n];
+      aimAtSel();
       syncFocus();
     }
     // reflect the current selection into the bar and the nav affordances. The nav strip
@@ -273,6 +310,13 @@ LIE.hub = (function(){
     // planets in system view and moons in planet view, same widget either way, so the
     // affordance for "you can step sideways here" doesn't disappear at the map level where
     // ←/→ now also do something.
+    /* What ↑ / Enter / the ⬆︎ button would act on right now, or null. Deliberately shared
+       so the button can never offer something the key would refuse (a locked moon) or sit
+       dead while the key still works. */
+    function enterTarget(){
+      if(mode==='planet'){ const m=selMoon(); return (m && m.userData.live) ? m : null; }
+      return selPlanet || hoverPlanet || null;
+    }
     function syncFocus(){
       navWrap.style.display = '';
       backBtn.hidden = mode!=='planet';
@@ -280,6 +324,19 @@ LIE.hub = (function(){
       // clicking it and pressing the key the icon suggests would do opposite things.
       // Same glyph the journey player's back button carries: one "back out" arrow sitewide.
       backBtn.textContent = '⬇︎';
+      /* The mouse counterpart of ↑/Enter, and the only one of the pair that shows at both
+         hub levels — at the map level there is nothing to back out to, so ⬇︎ stays hidden
+         while ⬆︎ does not. Disabled rather than hidden when there is no target (nothing
+         selected on the map, a not-yet-built moon in a planet): a control that vanishes and
+         reappears as you arrow along the ring is more distracting than one that greys out,
+         and `.nbtn:disabled` no longer lights up under the cursor. */
+      const goDeeper = enterTarget();
+      enterBtn.hidden = false;
+      enterBtn.disabled = !goDeeper;
+      enterBtn.setAttribute('aria-label', (HUB.enterAria||'Enter'));
+      enterBtn.title = HUB.enterAria||'Enter';
+      enterBtn.onclick = ()=>{ const t=enterTarget(); if(!t) return;
+        if(mode==='planet') enter(t); else enterPlanet(t, 0); };
       const hint = mode==='planet' ? HUB.hintPlanet : HUB.hintSystem;
       if(hint) hintEl.innerHTML = hint.join('<br>');
       dotsWrap.innerHTML=''; dots.length=0;
@@ -304,7 +361,7 @@ LIE.hub = (function(){
           d.className='dot'+(p===selPlanet?' on':'');
           d.setAttribute('aria-label', (HUB.branchWord||'')+' '+(i+1)+' / '+planets.length+' — '+p.userData.branch.title);
           if(p===selPlanet) d.setAttribute('aria-current','true');
-          d.onclick=()=>{ selPlanet=p; syncFocus(); };
+          d.onclick=()=>{ selPlanet=p; aimAtSel(); syncFocus(); };
           dotsWrap.appendChild(d); dots.push(d);
         });
         // same priority as pick()'s per-frame fallback below (hover previews over a
@@ -338,6 +395,10 @@ LIE.hub = (function(){
     });
     canvas.addEventListener('pointerup',e=>{
       dragging=false; canvas.classList.remove('grabbing');
+      // a drag moved `theta` by hand, so the direction committed at the last keypress may
+      // now point most of the way round the wrong way — re-aim short from where the user
+      // actually left the camera
+      if(moved) aimAtSel();
       if(moved || flight) return;
       if(mode==='planet'){
         // inside a planet: the front moon lands, any other one winds the carousel to itself
@@ -371,18 +432,18 @@ LIE.hub = (function(){
         else if(e.key==='ArrowLeft'){ step(-1); e.preventDefault(); }
         else if(e.key==='ArrowDown' || e.key==='Escape'){ exitPlanet(); e.preventDefault(); }
         else if(e.key==='ArrowUp' || e.key==='Enter'){
-          const m=selMoon(); if(m && m.userData.live) enter(m); e.preventDefault();
+          const m=enterTarget(); if(m) enter(m); e.preventDefault();
         }
         return;
       }
       if(e.key==='ArrowRight'){ stepPlanet(1); e.preventDefault(); }
       else if(e.key==='ArrowLeft'){ stepPlanet(-1); e.preventDefault(); }
       else if(e.key==='ArrowUp' || e.key==='Enter'){
-        const p=selPlanet||hoverPlanet; if(p) enterPlanet(p, 0); e.preventDefault();
+        const p=enterTarget(); if(p) enterPlanet(p, 0); e.preventDefault();
       }
       // nothing further out to back into at the map level, so the back-out pair clears
       // the selection instead — but it is still the same pair, not a third convention
-      else if(e.key==='ArrowDown' || e.key==='Escape'){ selPlanet=null; setCard(null,null); e.preventDefault(); }
+      else if(e.key==='ArrowDown' || e.key==='Escape'){ selPlanet=null; thetaGoal=null; setCard(null,null); e.preventDefault(); }
     });
     navWrap.querySelector('#prev').onclick=()=>{ if(mode==='planet') step(-1); else stepPlanet(-1); };
     navWrap.querySelector('#next').onclick=()=>{ if(mode==='planet') step(1); else stepPlanet(1); };
@@ -401,6 +462,11 @@ LIE.hub = (function(){
       // Falls back to the arrow-selected planet when the mouse isn't over anything, so moving
       // the cursor away doesn't blank out a selection made with the keyboard.
       if(mode!=='planet'){ const p=hoverPlanet||selPlanet; setCard(p?p.userData.branch:null, null); }
+      // hover is re-derived every frame and never routes through syncFocus(), so the ⬆︎
+      // button's enabled state has to be refreshed here or it goes stale the moment you
+      // hover a planet with nothing arrow-selected. Written only on an actual change.
+      const can = !!enterTarget();
+      if(enterBtn.disabled === can) enterBtn.disabled = !can;
     }
 
     syncFocus();   // start on the map: nav strip and back button stay out of the way
@@ -457,18 +523,13 @@ LIE.hub = (function(){
       // view around. Skipped while actively dragging — fighting the user's own orbit input
       // would feel like the camera resisting them.
       if(selPlanet && mode==='system' && !dragging){
-        selPlanet.getWorldPosition(_a);
-        // No offset: the camera's own azimuth should MATCH the planet's, not oppose it.
-        // Matching puts camera, then planet, then the origin along the same ray (camera is
-        // always farther out than any orbit radius), so the planet sits *between* the camera
-        // and the gizmo — in front. A +π offset here was verified empirically to put the
-        // planet on the far side of the origin instead — centered on screen either way, but
-        // behind the gizmo rather than in front of it.
-        const thetaTarget = Math.atan2(_a.x, _a.z);
-        let dTheta=(thetaTarget-theta)%(Math.PI*2);
-        if(dTheta> Math.PI) dTheta-=Math.PI*2;
-        if(dTheta<-Math.PI) dTheta+=Math.PI*2;
-        theta += dTheta*Math.min(1, dt*(RM?60:3));
+        if(thetaGoal===null) aimAtSel();
+        // Track the planet's drift *continuously*: unwrap the live azimuth to the nearest
+        // representative of the goal we already committed to, never to `theta`. Unwrapping
+        // to `theta` is what let a slow orbit drag the swing back across the ±π seam and
+        // reverse the camera mid-turn.
+        thetaGoal += shortArc(thetaGoal, planetAzimuth(selPlanet));
+        theta += (thetaGoal-theta)*Math.min(1, dt*(RM?60:3));
       }
       // convergence threads follow the moving moons; faint by default, light up on MOON hover
       threads.forEach(th=>{

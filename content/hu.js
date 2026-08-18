@@ -35,6 +35,7 @@ window.LIE_CONTENT.hu = {
     hintSystem: ['húzd: körbeforgás', 'görgő: közelítés', '← → : bolygók', '↑ ⏎ : belépés · ↓ Esc : törlés'],
     hintPlanet: ['húzd: körbeforgás', 'görgő: közelítés', '← → : holdgyűrű', '↑ ⏎ : belépés · ↓ Esc : kilépés'],
     moonWord: 'úticél',
+    enterAria: 'Belépés',
     branches: {
       geometry: { title: 'Geometria', summary: '<p>A terek, amikben a dolgok élnek — forgatások, pózok, hasonlóságok — és ahogy mozognak. Hat utazás a lapos ℝ<sup>n</sup>-től a Sim(3)-ig: érintőterek, exp/log, és (az SO(3)-nál) topológia. Költségfüggvény sehol.</p>',
         moons: {
