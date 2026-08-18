@@ -57,9 +57,11 @@ LIE.kit = (function(){
     g.userData.cyl.scale.set(1, Math.max(L-0.22,0.02), 1);
     g.userData.cone.position.y = L-0.12;
   }
+  const LABEL_DPR = Math.min(window.devicePixelRatio||1, 3);
   function makeLabel(text, color, w, opts){
     w = w||3.2;
-    const cv = document.createElement('canvas'); cv.width=512; cv.height=128;
+    const cv = document.createElement('canvas');
+    cv.width=512*LABEL_DPR; cv.height=128*LABEL_DPR;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({transparent:true, depthTest:false}));
     sp.userData.cv=cv;
     sp.scale.set(w, w*0.25, 1);
@@ -68,6 +70,7 @@ LIE.kit = (function(){
   }
   function updateLabel(sp, text, color, opts){
     const cv=sp.userData.cv, ctx=cv.getContext('2d');
+    ctx.setTransform(LABEL_DPR,0,0,LABEL_DPR,0,0);
     ctx.clearRect(0,0,512,128);
     const toks=[];
     for(let i=0;i<text.length;i++){
