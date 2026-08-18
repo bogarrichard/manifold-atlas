@@ -25,7 +25,7 @@ window.LIE_CONTENT.hu = {
     menuLabel: 'Menü',
     controlsLabel: 'Irányítás',
     theme: { label: 'Téma', system: 'rendszer', light: 'világos', dark: 'sötét' },
-    textSize: { label: 'Betűméret', default: 'alap', large: 'nagy', larger: 'nagyobb' },
+    textSize: { label: 'Betűméret', default: 'alap', small: 'kicsi', smaller: 'kisebb' },
     /* Read-aloud (Web Speech API). `symbols` is the pronunciation dictionary the
        extractor in engine.js applies to card text: a synthesizer either skips these
        glyphs silently or names them in Unicode-ese ("black-letter capital R"), so the

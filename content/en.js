@@ -25,7 +25,7 @@ window.LIE_CONTENT.en = {
     menuLabel: 'Menu',
     controlsLabel: 'Controls',
     theme: { label: 'Theme', system: 'system', light: 'light', dark: 'dark' },
-    textSize: { label: 'Text size', default: 'default', large: 'large', larger: 'larger' },
+    textSize: { label: 'Text size', default: 'default', small: 'small', smaller: 'smaller' },
     /* Read-aloud (Web Speech API). `symbols` is the pronunciation dictionary the
        extractor in engine.js applies to card text: a synthesizer either skips these
        glyphs silently or names them in Unicode-ese ("black-letter capital R"), so the

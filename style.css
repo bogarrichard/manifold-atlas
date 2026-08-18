@@ -306,21 +306,38 @@ body.hub #nav::after{right:40px}
 .msec h2{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;font-weight:400;
   letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 9px}
 
-/* theme, text size: both a full-width row that cycles, showing where it currently
-   stands rather than needing to be opened to find out */
-#themebtn,#textsizebtn,#speechbtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;
+/* theme: a full-width row that cycles, showing where it currently stands rather than
+   needing to be opened to find out */
+#themebtn,#speechbtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;
   color:var(--muted);
   background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
   font-family:ui-monospace,Menlo,monospace;font-size:17.5px;text-align:left;
   transition:border-color .15s,color .15s}
-#themebtn:hover,#textsizebtn:hover,#speechbtn:hover{border-color:var(--amber);color:var(--ink)}
+#themebtn:hover,#speechbtn:hover{border-color:var(--amber);color:var(--ink)}
 #themebtn .ticon,#speechbtn .ticon{font-size:20px;line-height:1;width:16px;text-align:center}
-/* the text-size icon's own size steps up with each choice, so the control demonstrates
-   its own effect rather than relying on the label text alone */
-#textsizebtn .ticon{line-height:1;width:16px;text-align:center;font-weight:600}
-.tsicon-default{font-size:15px}
-.tsicon-large{font-size:19px}
-.tsicon-larger{font-size:23px}
+
+/* text size: a plus/minus slider over three steps, replacing the old cycling button.
+   `default` sits at the *right/max* end deliberately — it is the largest step, not the
+   middle one, so the control reads "shrink from here" rather than "pick a size". */
+#textsizectl{display:flex;align-items:center;gap:8px;width:100%}
+.tsbtn{flex:0 0 auto;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--line);border-radius:7px;background:none;color:var(--muted);
+  font-family:ui-monospace,Menlo,monospace;font-size:16px;line-height:1;cursor:pointer;
+  transition:border-color .15s,color .15s}
+.tsbtn:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
+.tsbtn:disabled{opacity:.35;cursor:default}
+#tstrack{position:relative;flex:1 1 auto;height:28px;display:flex;align-items:center;
+  justify-content:space-between;cursor:pointer;outline-offset:4px}
+#tstrack::before{content:'';position:absolute;left:5px;right:5px;top:50%;height:2px;
+  transform:translateY(-50%);background:var(--line);border-radius:2px}
+#tstrack .tsfill{position:absolute;left:5px;top:50%;height:2px;transform:translateY(-50%);
+  border-radius:2px;background:var(--amber);
+  width:calc((100% - 10px) * var(--tsi,0) / 2);transition:width .15s ease}
+#tstrack .tsdot{position:relative;width:10px;height:10px;border-radius:50%;
+  background:var(--panel-strong);border:2px solid var(--line);transition:border-color .15s,background .15s}
+#tstrack .tsdot.on{border-color:var(--amber);background:var(--amber)}
+#tsname{flex:0 0 auto;min-width:52px;text-align:right;color:var(--muted);
+  font-family:ui-monospace,Menlo,monospace;font-size:14.5px}
 
 /* language: no nested dropdown inside a dropdown — the list is simply shown */
 #lang{font-family:ui-monospace,Menlo,monospace;font-size:17.5px}
@@ -345,21 +362,22 @@ body.hub #nav::after{right:40px}
    hover state — the button appears dead until the scene happens to change. One ring,
    one press state, applied everywhere so a new control inherits both for free. */
 .nbtn:focus-visible,.dot:focus-visible,.act:focus-visible,.s5info:focus-visible,
-#menubtn:focus-visible,#themebtn:focus-visible,#textsizebtn:focus-visible,
+#menubtn:focus-visible,#themebtn:focus-visible,.tsbtn:focus-visible,#tstrack:focus-visible,
 #speechbtn:focus-visible,#langmenu a:focus-visible{
   outline:2px solid var(--amber);outline-offset:3px}
 .dot:focus-visible{outline-offset:4px}
-.act:active,#themebtn:active,#textsizebtn:active,#speechbtn:active,#menubtn:active{transform:scale(.96)}
+.act:active,#themebtn:active,.tsbtn:not(:disabled):active,#speechbtn:active,#menubtn:active{transform:scale(.96)}
 .dot:not(.on):active{transform:scale(1.15)}
 /* kill the tap-highlight flash and the 300ms double-tap-zoom delay on every control */
-.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#speechbtn,#langmenu a,.whatnext a{
+.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,.tsbtn,#tstrack,#speechbtn,#langmenu a,.whatnext a{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
 @media (prefers-reduced-motion:reduce){
-  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#speechbtn,#langmenu a,#menubtn .bars i{
+  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,.tsbtn,#speechbtn,#langmenu a,#menubtn .bars i{
     transition-duration:.01ms}
-  .nbtn:not(:disabled):active,.act:active,#themebtn:active,#textsizebtn:active,#speechbtn:active,#menubtn:active,
+  .nbtn:not(:disabled):active,.act:active,#themebtn:active,.tsbtn:not(:disabled):active,#speechbtn:active,#menubtn:active,
   .dot:not(.on):active{transform:none}
+  #tstrack .tsfill{transition-duration:.01ms}
 }
 
 @media (max-width:640px){

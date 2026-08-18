@@ -118,45 +118,80 @@ function applyPref(pref){
 themeBtn.addEventListener('click', ()=>applyPref(THEME_NEXT[themePref]));
 updateThemeBtn();
 
-/* ---- text size (default / large / larger) ------------------------------
-   Same cycling-button shape as the theme toggle above, and the same reason for it: one
-   control that shows where it currently stands rather than a picker that has to be
-   opened to find out. The three steps scale `--text-scale`, which every fluid font-size
-   in style.css (`clamp(...) * var(--text-scale)`) multiplies in — so this stacks with,
-   rather than replaces, the viewport-based scaling already there. Default is 1 (matches
-   every size already chosen for the "default" case), not tied to any OS-level signal:
-   unlike color scheme, there is no cross-browser media query for a user's preferred text
-   scale to default to, so "unless you ask, nothing changes" is the honest default. */
+/* ---- text size (smaller / small / default) ------------------------------
+   A plus/minus slider over three steps, replacing the old cycling button. The steps
+   scale `--text-scale`, which every fluid font-size in style.css (`clamp(...) *
+   var(--text-scale)`) multiplies in — so this stacks with, rather than replaces, the
+   viewport-based scaling already there. `default` is 1 (matches every size already
+   chosen for the "default" case) and is deliberately the *largest* step, with two
+   smaller ones below it — not tied to any OS-level signal: unlike color scheme, there is
+   no cross-browser media query for a user's preferred text scale to default to, so
+   "unless you ask, nothing shrinks" is the honest default, and it sits at the slider's
+   top end rather than its middle. */
 const TEXTSIZE_KEY = 'lie-textsize';
-const TEXT_SCALE = { default: 1, large: 1.15, larger: 1.3 };
-const TEXT_SCALE_NEXT = { default: 'large', large: 'larger', larger: 'default' };
+const TEXT_STEPS = ['smaller','small','default'];
+const TEXT_SCALE = { smaller: 0.82, small: 0.91, default: 1 };
 function storedTextSizePref(){
   try{ const v = localStorage.getItem(TEXTSIZE_KEY); return TEXT_SCALE[v] ? v : 'default'; }
   catch(e){ return 'default'; }
 }
 let textSizePref = storedTextSizePref();
 document.documentElement.style.setProperty('--text-scale', TEXT_SCALE[textSizePref]);
-const textSizeBtn = document.createElement('button');
-textSizeBtn.id='textsizebtn'; textSizeBtn.type='button';
-document.getElementById('textsize').appendChild(textSizeBtn);
-function updateTextSizeBtn(){
+
+const tsWrap = document.createElement('div');
+tsWrap.id = 'textsizectl';
+const tsMinus = document.createElement('button');
+tsMinus.id='tsminus'; tsMinus.type='button'; tsMinus.className='tsbtn'; tsMinus.textContent='−';
+const tsTrack = document.createElement('div');
+tsTrack.id='tstrack'; tsTrack.setAttribute('role','slider');
+tsTrack.setAttribute('aria-valuemin','0'); tsTrack.setAttribute('aria-valuemax', String(TEXT_STEPS.length-1));
+tsTrack.tabIndex = 0;
+tsTrack.innerHTML = '<span class="tsfill"></span>' + TEXT_STEPS.map((_,i)=>'<span class="tsdot" data-i="'+i+'"></span>').join('');
+const tsPlus = document.createElement('button');
+tsPlus.id='tsplus'; tsPlus.type='button'; tsPlus.className='tsbtn'; tsPlus.textContent='+';
+const tsName = document.createElement('span');
+tsName.id='tsname';
+tsWrap.append(tsMinus, tsTrack, tsPlus, tsName);
+document.getElementById('textsize').appendChild(tsWrap);
+
+function tsIndex(){ return TEXT_STEPS.indexOf(textSizePref); }
+function updateTextSizeCtl(){
   const tl = (C.ui && C.ui.textSize) || {};
+  const i = tsIndex();
   const name = tl[textSizePref] || textSizePref;
-  // the icon's own size grows with each step — the control demonstrates its own effect
-  // rather than relying on a label alone to say what "large" means
-  textSizeBtn.innerHTML = '<span class="ticon tsicon tsicon-'+textSizePref+'" aria-hidden="true">A</span><span></span>';
-  textSizeBtn.lastChild.textContent = name;
-  textSizeBtn.title = (tl.label||'Text size') + ': ' + name;
-  textSizeBtn.setAttribute('aria-label', (tl.label||'Text size') + ': ' + name);
+  tsName.textContent = name;
+  const label = (tl.label||'Text size') + ': ' + name;
+  tsTrack.setAttribute('aria-valuenow', String(i));
+  tsTrack.setAttribute('aria-valuetext', label);
+  tsTrack.setAttribute('aria-label', tl.label||'Text size');
+  tsTrack.querySelectorAll('.tsdot').forEach(d=>d.classList.toggle('on', Number(d.dataset.i)<=i));
+  tsTrack.style.setProperty('--tsi', String(i));
+  tsMinus.disabled = i===0;
+  tsMinus.setAttribute('aria-label', (tl.label||'Text size') + ' −');
+  tsPlus.disabled = i===TEXT_STEPS.length-1;
+  tsPlus.setAttribute('aria-label', (tl.label||'Text size') + ' +');
 }
 function applyTextSizePref(pref){
   textSizePref = pref;
   try{ localStorage.setItem(TEXTSIZE_KEY, pref); }catch(e){}
   document.documentElement.style.setProperty('--text-scale', TEXT_SCALE[pref]);
-  updateTextSizeBtn();
+  updateTextSizeCtl();
 }
-textSizeBtn.addEventListener('click', ()=>applyTextSizePref(TEXT_SCALE_NEXT[textSizePref]));
-updateTextSizeBtn();
+function stepTextSize(delta){
+  const i = Math.min(TEXT_STEPS.length-1, Math.max(0, tsIndex()+delta));
+  applyTextSizePref(TEXT_STEPS[i]);
+}
+tsMinus.addEventListener('click', ()=>stepTextSize(-1));
+tsPlus.addEventListener('click', ()=>stepTextSize(1));
+tsTrack.addEventListener('click', e=>{
+  const dot = e.target.closest('.tsdot');
+  if(dot) applyTextSizePref(TEXT_STEPS[Number(dot.dataset.i)]);
+});
+tsTrack.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowUp'){ e.preventDefault(); stepTextSize(1); }
+  else if(e.key==='ArrowLeft'||e.key==='ArrowDown'){ e.preventDefault(); stepTextSize(-1); }
+});
+updateTextSizeCtl();
 mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resolveTheme('system')); });
 
 /* ---- read aloud (Web Speech API) — Chrome-only prototype ----------------

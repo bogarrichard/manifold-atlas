@@ -25,7 +25,7 @@ window.LIE_CONTENT.ja = {
     menuLabel: 'メニュー',
     controlsLabel: '操作',
     theme: { label: 'テーマ', system: 'システム', light: 'ライト', dark: 'ダーク' },
-    textSize: { label: '文字サイズ', default: '標準', large: '大', larger: '特大' },
+    textSize: { label: '文字サイズ', default: '標準', small: '小', smaller: '特小' },
     /* Read-aloud (Web Speech API). `symbols` is the pronunciation dictionary the
        extractor in engine.js applies to card text: a synthesizer either skips these
        glyphs silently or names them in Unicode-ese ("black-letter capital R"), so the
