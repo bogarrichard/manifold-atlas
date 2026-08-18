@@ -26,6 +26,32 @@ window.LIE_CONTENT.ja = {
     controlsLabel: '操作',
     theme: { label: 'テーマ', system: 'システム', light: 'ライト', dark: 'ダーク' },
     textSize: { label: '文字サイズ', default: '標準', large: '大', larger: '特大' },
+    /* Read-aloud (Web Speech API). `symbols` is the pronunciation dictionary the
+       extractor in engine.js applies to card text: a synthesizer either skips these
+       glyphs silently or names them in Unicode-ese ("black-letter capital R"), so the
+       reading has to be spelled out here — and it is language-specific, like every
+       other string in this pack. */
+    speech: {
+      label: '読み上げ', off: 'オフ', auto: '各ステーション',
+      playAria: 'このステーションを読み上げる', stopAria: '読み上げを停止',
+      supWord: 'の', subWord: 'の添字',
+      matrix: '{r} 行 {c} 列の行列', vector: '{r} 成分の列ベクトル',
+      symbols: {
+        'ℝ':'R', 'ℤ':'Z', 'ẏ':'y ドット', 'ℂ':'C', '\u0307':'ドット', 'Ṙ':'R ドット', '𝔰𝔢':'エスイー', '𝔰𝔦𝔪':'シム',
+        '−':'マイナス', '→':'から', '←':'左向き矢印', '↦':'を写す', '⟼':'を写す',
+        '⟹':'ならば', '⟺':'と同値', '∝':'に比例',
+        'θ':'シータ', 'δ':'デルタ', 'ω':'オメガ', 'λ':'ラムダ', 'φ':'ファイ', 'ρ':'ロー',
+        'α':'アルファ', 'ξ':'クシー', 'σ':'シグマ', 'γ':'ガンマ', 'π':'パイ', 'τ':'タウ',
+        'β':'ベータ', 'μ':'ミュー', 'ζ':'ゼータ', 'Δ':'デルタ', 'Ω':'オメガ',
+        'Σ':'総和', '∏':'総乗', '∫':'積分', '∂':'偏微分',
+        '⊤':'転置', '∧':'ハット', '∨':'ベクトル化', '\u0302':'ハット', '′':'プライム',
+        '⊞':'ボックスプラス', '⊟':'ボックスマイナス', '∇':'勾配', '‖':'ノルム', '·':'かける',
+        '∈':'の元', '⊂':'の部分集合', '≈':'およそ', '≠':'に等しくない',
+        '≅':'と同型', '≤':'以下', '≥':'以上',
+        '√':'ルート', '∞':'無限大', '°':'度', '½':'二分の一',
+        '²':'の二乗', 'ⁿ':'の n 乗', '₀':'ゼロ'
+      }
+    },
     hint: ['ドラッグ: 見回す', 'スクロール: ズーム', '← → : 移動', '↓ Esc : ハブ'],
     noscript: 'このインタラクティブな図には JavaScript と WebGL が必要です。ブラウザで有効にしてください。'
   },

@@ -26,6 +26,32 @@ window.LIE_CONTENT.hu = {
     controlsLabel: 'Irányítás',
     theme: { label: 'Téma', system: 'rendszer', light: 'világos', dark: 'sötét' },
     textSize: { label: 'Betűméret', default: 'alap', large: 'nagy', larger: 'nagyobb' },
+    /* Read-aloud (Web Speech API). `symbols` is the pronunciation dictionary the
+       extractor in engine.js applies to card text: a synthesizer either skips these
+       glyphs silently or names them in Unicode-ese ("black-letter capital R"), so the
+       reading has to be spelled out here — and it is language-specific, like every
+       other string in this pack. */
+    speech: {
+      label: 'Felolvasás', off: 'ki', auto: 'minden állomás',
+      playAria: 'Állomás felolvasása', stopAria: 'Felolvasás leállítása',
+      supWord: 'a következőn:', subWord: 'alsó index',
+      matrix: '{r}-szer {c}-es mátrix', vector: '{r} elemű oszlopvektor',
+      symbols: {
+        'ℝ':'R', 'ℤ':'Z', 'ẏ':'y pont', 'ℂ':'C', '\u0307':'pont', 'Ṙ':'R pont', '𝔰𝔢':'es é', '𝔰𝔦𝔪':'szim',
+        '−':'mínusz', '→':'nyíl', '←':'balra nyíl', '↦':'ide képez', '⟼':'ide képez',
+        '⟹':'ebből következik', '⟺':'akkor és csak akkor', '∝':'arányos',
+        'θ':'théta', 'δ':'delta', 'ω':'ómega', 'λ':'lambda', 'φ':'fí', 'ρ':'ró',
+        'α':'alfa', 'ξ':'kszí', 'σ':'szigma', 'γ':'gamma', 'π':'pí', 'τ':'tau',
+        'β':'béta', 'μ':'mű', 'ζ':'dzéta', 'Δ':'delta', 'Ω':'ómega',
+        'Σ':'szumma', '∏':'produktum', '∫':'integrál', '∂':'parciális',
+        '⊤':'transzponált', '∧':'kalap', '∨':'vé', '\u0302':'kalap', '′':'vessző',
+        '⊞':'dobozos plusz', '⊟':'dobozos mínusz', '∇':'gradiens', '‖':'norma', '·':'szorozva',
+        '∈':'eleme', '⊂':'részhalmaza', '≈':'körülbelül', '≠':'nem egyenlő',
+        '≅':'izomorf', '≤':'legfeljebb', '≥':'legalább',
+        '√':'gyök', '∞':'végtelen', '°':'fok', '½':'egy ketted',
+        '²':'négyzet', 'ⁿ':'az n-ediken', '₀':'nulla'
+      }
+    },
     hint: ['húzd: körbenézés', 'görgő: közelítés', '← → : utazás', '↓ Esc : központ'],
     noscript: 'Ehhez az interaktív ábrához JavaScript és WebGL kell. Kérlek, engedélyezd a böngésződben.'
   },

@@ -238,6 +238,10 @@ body.hub #hud.scrolls{max-height:none}
    amber under the cursor while doing nothing — hence the :not(:disabled) guards above. */
 .nbtn:disabled{opacity:.3;cursor:default}
 .nbtn[hidden]{display:none}
+/* read-aloud: the play/stop glyph is denser than the arrows at the same size, so it is set
+   a little smaller; while speaking, the button holds the amber the others only take on hover */
+#speak{font-size:17px}
+#speak.speaking{border-color:var(--amber);color:var(--amber);background:var(--panel-strong)}
 #dots{display:flex;gap:9px}
 .dot{position:relative;width:9px;height:9px;border-radius:50%;background:var(--dot);border:0;
   padding:0;cursor:pointer;transition:background .2s,transform .2s,opacity .2s}
@@ -304,13 +308,13 @@ body.hub #nav::after{right:40px}
 
 /* theme, text size: both a full-width row that cycles, showing where it currently
    stands rather than needing to be opened to find out */
-#themebtn,#textsizebtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;
+#themebtn,#textsizebtn,#speechbtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;
   color:var(--muted);
   background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
   font-family:ui-monospace,Menlo,monospace;font-size:17.5px;text-align:left;
   transition:border-color .15s,color .15s}
-#themebtn:hover,#textsizebtn:hover{border-color:var(--amber);color:var(--ink)}
-#themebtn .ticon{font-size:20px;line-height:1;width:16px;text-align:center}
+#themebtn:hover,#textsizebtn:hover,#speechbtn:hover{border-color:var(--amber);color:var(--ink)}
+#themebtn .ticon,#speechbtn .ticon{font-size:20px;line-height:1;width:16px;text-align:center}
 /* the text-size icon's own size steps up with each choice, so the control demonstrates
    its own effect rather than relying on the label text alone */
 #textsizebtn .ticon{line-height:1;width:16px;text-align:center;font-weight:600}
@@ -341,19 +345,20 @@ body.hub #nav::after{right:40px}
    hover state — the button appears dead until the scene happens to change. One ring,
    one press state, applied everywhere so a new control inherits both for free. */
 .nbtn:focus-visible,.dot:focus-visible,.act:focus-visible,.s5info:focus-visible,
-#menubtn:focus-visible,#themebtn:focus-visible,#textsizebtn:focus-visible,#langmenu a:focus-visible{
+#menubtn:focus-visible,#themebtn:focus-visible,#textsizebtn:focus-visible,
+#speechbtn:focus-visible,#langmenu a:focus-visible{
   outline:2px solid var(--amber);outline-offset:3px}
 .dot:focus-visible{outline-offset:4px}
-.act:active,#themebtn:active,#textsizebtn:active,#menubtn:active{transform:scale(.96)}
+.act:active,#themebtn:active,#textsizebtn:active,#speechbtn:active,#menubtn:active{transform:scale(.96)}
 .dot:not(.on):active{transform:scale(1.15)}
 /* kill the tap-highlight flash and the 300ms double-tap-zoom delay on every control */
-.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#langmenu a,.whatnext a{
+.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#speechbtn,#langmenu a,.whatnext a{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
 @media (prefers-reduced-motion:reduce){
-  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#langmenu a,#menubtn .bars i{
+  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#speechbtn,#langmenu a,#menubtn .bars i{
     transition-duration:.01ms}
-  .nbtn:not(:disabled):active,.act:active,#themebtn:active,#textsizebtn:active,#menubtn:active,
+  .nbtn:not(:disabled):active,.act:active,#themebtn:active,#textsizebtn:active,#speechbtn:active,#menubtn:active,
   .dot:not(.on):active{transform:none}
 }
 

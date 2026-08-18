@@ -26,6 +26,32 @@ window.LIE_CONTENT.en = {
     controlsLabel: 'Controls',
     theme: { label: 'Theme', system: 'system', light: 'light', dark: 'dark' },
     textSize: { label: 'Text size', default: 'default', large: 'large', larger: 'larger' },
+    /* Read-aloud (Web Speech API). `symbols` is the pronunciation dictionary the
+       extractor in engine.js applies to card text: a synthesizer either skips these
+       glyphs silently or names them in Unicode-ese ("black-letter capital R"), so the
+       reading has to be spelled out here — and it is language-specific, like every
+       other string in this pack. */
+    speech: {
+      label: 'Read aloud', off: 'off', auto: 'each station',
+      playAria: 'Read this station aloud', stopAria: 'Stop reading',
+      supWord: 'to the power of', subWord: 'sub',
+      matrix: 'a {r} by {c} matrix', vector: 'a column vector of {r} entries',
+      symbols: {
+        'ℝ':'R', 'ℤ':'Z', 'ẏ':'y dot', 'ℂ':'C', '\u0307':'dot', 'Ṙ':'R dot', '𝔰𝔢':'s e', '𝔰𝔦𝔪':'sim',
+        '−':'minus', '→':'to', '←':'from', '↦':'maps to', '⟼':'maps to',
+        '⟹':'implies', '⟺':'if and only if', '∝':'is proportional to',
+        'θ':'theta', 'δ':'delta', 'ω':'omega', 'λ':'lambda', 'φ':'phi', 'ρ':'rho',
+        'α':'alpha', 'ξ':'xi', 'σ':'sigma', 'γ':'gamma', 'π':'pi', 'τ':'tau',
+        'β':'beta', 'μ':'mu', 'ζ':'zeta', 'Δ':'delta', 'Ω':'omega',
+        'Σ':'the sum of', '∏':'the product of', '∫':'the integral of', '∂':'partial',
+        '⊤':'transpose', '∧':'hat', '∨':'vee', '\u0302':'hat', '′':'prime',
+        '⊞':'box-plus', '⊟':'box-minus', '∇':'gradient', '‖':'norm', '·':'times',
+        '∈':'in', '⊂':'inside', '≈':'approximately', '≠':'is not equal to',
+        '≅':'is isomorphic to', '≤':'at most', '≥':'at least',
+        '√':'the square root of', '∞':'infinity', '°':'degrees', '½':'one half',
+        '²':'squared', 'ⁿ':'to the n', '₀':'nought'
+      }
+    },
     hint: ['drag: look around', 'scroll: zoom', '← → : travel', '↓ Esc : hub'],
     noscript: 'This interactive visualization requires JavaScript and WebGL. Please enable them in your browser.'
   },

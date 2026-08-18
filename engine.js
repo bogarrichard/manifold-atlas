@@ -159,6 +159,208 @@ textSizeBtn.addEventListener('click', ()=>applyTextSizePref(TEXT_SCALE_NEXT[text
 updateTextSizeBtn();
 mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resolveTheme('system')); });
 
+/* ---- read aloud (Web Speech API) — Chrome-only prototype ----------------
+   `speechSynthesis` is in the browser, so this adds no dependency and no build step.
+   The API half is trivial; the work is turning a card into speakable text, because a
+   card body is math markup, not prose. Four things the extractor has to do that a bare
+   `bo.textContent` does not:
+
+   - **Skip the footnote bubbles.** They are `hidden` dialogs sitting *inside* the card
+     body, so textContent recites the "what is δ" popup in the middle of a sentence.
+   - **Say what `<sup>`/`<sub>` mean.** `ℝ<sup>n</sup>` flattens to "ℝn"; markup is the
+     only place the exponent is marked at all (that is why CLAUDE.md forbids precomposed
+     Unicode there), so the reading has to be reconstructed from the tags.
+   - **Not read matrices cell by cell.** `.mgrid` is a CSS grid of loose numbers — read
+     in DOM order it is number soup. It gets announced by its shape instead.
+   - **Name the symbols.** A voice either skips ℝ/∇/⊞/θ silently or reads the Unicode
+     character name. `ui.speech.symbols` in each content pack is the pronunciation
+     dictionary; it is per-language because everything a reader hears is.
+
+   Where auto-extraction still reads badly, `data-speak` on any element overrides its
+   whole subtree — `<span class="m" data-speak="R to the n">ℝ<sup>n</sup></span>`. Card
+   bodies are already per-language, so that override is in the right language for free,
+   and only the formulas that actually need it have to carry one.
+
+   Chrome specifics this leans on (it is a prototype, not a portable feature): utterances
+   are chunked to a few sentences because Chrome cuts off a single long one at ~15s;
+   `getVoices()` is populated asynchronously, hence the `voiceschanged` re-check; and
+   `cancel()` immediately followed by `speak()` drops the new utterance, hence the tick
+   between them. */
+// Named `reader`, not `speech`: the menu's container div is `<div id="speech">`, and an
+// element id is exposed as a window property — same name, two things, one of them silent.
+const SPEECH_KEY = 'lie-speech';
+const SPEECH_ICON = { off:'▷', auto:'▶' };
+const SPEECH_NEXT = { off:'auto', auto:'off' };
+const reader = (function(){
+  const synth = window.speechSynthesis;
+  const sec  = document.getElementById('msec-speech');
+  const rail = document.getElementById('speak');
+  const sp   = (C.ui && C.ui.speech) || {};
+  // Scoped to journeys: the ask was the stations, and the hub's bar text is rewritten on
+  // every hover — a reader there would stutter rather than speak.
+  if(hubMode || !synth || !window.SpeechSynthesisUtterance || !sec) return null;
+
+  document.getElementById('mspeech-h').textContent = sp.label || 'Read aloud';
+  const btn = document.createElement('button');
+  btn.id = 'speechbtn'; btn.type = 'button';
+  document.getElementById('speech').appendChild(btn);
+
+  let pref = (function(){ try{ return localStorage.getItem(SPEECH_KEY)==='auto' ? 'auto' : 'off'; }
+                          catch(e){ return 'off'; } })();
+  let voice = null, speaking = false;
+
+  /* ---- voice ---------------------------------------------------------- */
+  function pickVoice(){
+    const base = (document.documentElement.lang || 'en').toLowerCase().split('-')[0];
+    const all = synth.getVoices().filter(v =>
+      v.lang.toLowerCase().replace('_','-').split('-')[0] === base);
+    // Chrome lists Google's *network* voices next to any locally installed ones. Prefer
+    // local: card text going off-device for synthesis is a heavier dependency than the
+    // CDN round-trip this project vendors three.min.js to avoid. Network is the fallback
+    // rather than nothing, since on desktop Linux it is often all Chrome has.
+    return all.find(v => v.localService) || all[0] || null;
+  }
+
+  /* ---- card -> speakable text ----------------------------------------- */
+  const SYM = sp.symbols || {};
+  // Alternation rather than a character class: the Lie-algebra names are Fraktur letters
+  // outside the BMP (𝔰𝔢, 𝔰𝔦𝔪 — surrogate pairs), so they are multi-unit keys and a class
+  // would match their halves separately. Longest-first, so a multi-letter key wins.
+  const SYM_KEYS = Object.keys(SYM).sort((a,b)=>b.length-a.length);
+  const SYM_RE = SYM_KEYS.length
+    ? new RegExp(SYM_KEYS.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g') : null;
+  const SKIP_CLASS = ['bubble','whatnext','dotctr'];
+
+  function matrixPhrase(el){
+    // resolved track count, so `repeat(2,auto)` and a bare `auto` column vector both work
+    const cols = (getComputedStyle(el).gridTemplateColumns.match(/\S+/g) || ['x']).length;
+    const rows = Math.max(1, Math.ceil(el.children.length / cols));
+    const tpl = (cols === 1 ? sp.vector : sp.matrix) || '{r} by {c} matrix';
+    return tpl.replace('{r}', rows).replace('{c}', cols);
+  }
+
+  function walk(node, out){
+    if(node.nodeType === 3){ out.push(node.nodeValue); return out; }
+    if(node.nodeType !== 1) return out;
+    const el = node, tag = el.tagName;
+    if(el.hidden || el.getAttribute('aria-hidden') === 'true') return out;
+    if(el.dataset && el.dataset.speak != null){ out.push(' ' + el.dataset.speak + ' '); return out; }
+    if(SKIP_CLASS.some(c => el.classList.contains(c))) return out;
+    if(el.classList.contains('mgrid')){ out.push(' ' + matrixPhrase(el) + ' '); return out; }
+    if(tag === 'INPUT' || tag === 'SELECT' || tag === 'SVG' || tag === 'CANVAS') return out;
+    // .termbtn is a word inside a sentence (it opens a footnote); every other button in a
+    // card is a control — "step", "reset" — and reading it aloud makes no sense.
+    if(tag === 'BUTTON' && !el.classList.contains('termbtn')) return out;
+    if(tag === 'SUP') out.push(' ' + (sp.supWord || 'to the power of') + ' ');
+    if(tag === 'SUB') out.push(' ' + (sp.subWord || 'sub') + ' ');
+    for(const kid of el.childNodes) walk(kid, out);
+    if(tag === 'SUP' || tag === 'SUB') out.push(' ');
+    return out;
+  }
+
+  function textOf(el){
+    let s = walk(el, []).join('');
+    if(SYM_RE) s = s.replace(SYM_RE, ch => ' ' + SYM[ch] + ' ');
+    return s.replace(/\s+/g,' ').trim();
+  }
+
+  // Chrome silently truncates one long utterance at ~15s, so the card is queued as
+  // several short ones. Japanese packs ~3x the speech into the same character count,
+  // hence the smaller budget there.
+  const BUDGET = (LANG === 'ja') ? 60 : 150;
+  function chunk(s){
+    const out = [];
+    let buf = '';
+    for(const part of s.split(/(?<=[.!?;:。！？])\s*/)){
+      if(!part) continue;
+      if(buf && (buf.length + part.length) > BUDGET){ out.push(buf); buf = part; }
+      else buf = buf ? buf + ' ' + part : part;
+    }
+    if(buf) out.push(buf);
+    return out;
+  }
+
+  function cardChunks(){
+    const out = [];
+    const t = textOf(document.getElementById('ti'));
+    if(t) out.push(t);
+    for(const block of document.getElementById('bo').children){
+      const s = textOf(block);
+      if(s) out.push.apply(out, chunk(s));
+    }
+    return out;
+  }
+
+  /* ---- speaking -------------------------------------------------------- */
+  function stop(){
+    speaking = false;
+    synth.cancel();
+    sync();
+  }
+  function speakCard(){
+    const parts = cardChunks();
+    if(!voice || !parts.length) return;
+    synth.cancel();
+    speaking = true; sync();
+    // cancel() + speak() in the same tick drops the new utterance in Chrome
+    setTimeout(()=>{
+      if(!speaking) return;
+      // A throw here (a voice that went away between pick and use, say) would otherwise
+      // leave `speaking` stuck true and the rail button locked on its stop glyph, with no
+      // error event coming to clear it — onerror only fires for utterances that started.
+      try{
+        parts.forEach((text, i)=>{
+          const u = new SpeechSynthesisUtterance(text);
+          u.voice = voice; u.lang = voice.lang; u.rate = 0.97;
+          if(i === parts.length - 1) u.onend = ()=>{ speaking = false; sync(); };
+          u.onerror = ()=>{ speaking = false; sync(); };
+          synth.speak(u);
+        });
+      }catch(e){ speaking = false; synth.cancel(); sync(); }
+    }, 60);
+  }
+
+  function sync(){
+    const has = !!voice;
+    sec.hidden = !has;
+    rail.hidden = !has;
+    if(!has) return;
+    const name = (sp[pref] || pref);
+    btn.innerHTML = '<span class="ticon" aria-hidden="true">'+SPEECH_ICON[pref]+'</span><span></span>';
+    btn.lastChild.textContent = name;
+    // which voice actually got picked is worth surfacing: "network" means the card text
+    // is being synthesized off-device
+    const via = voice.name + (voice.localService ? '' : ' · network');
+    btn.title = (sp.label || 'Read aloud') + ': ' + name + ' — ' + via;
+    btn.setAttribute('aria-label', (sp.label || 'Read aloud') + ': ' + name);
+    rail.textContent = speaking ? '■' : '▶︎';
+    rail.classList.toggle('speaking', speaking);
+    const ra = speaking ? (sp.stopAria || 'Stop reading') : (sp.playAria || 'Read aloud');
+    rail.title = ra; rail.setAttribute('aria-label', ra);
+  }
+
+  btn.addEventListener('click', ()=>{
+    pref = SPEECH_NEXT[pref];
+    try{ localStorage.setItem(SPEECH_KEY, pref); }catch(e){}
+    if(pref === 'auto') speakCard(); else stop();
+    sync();
+  });
+  rail.addEventListener('click', ()=>{ if(speaking) stop(); else speakCard(); });
+
+  // getVoices() is empty on first call in Chrome and fills in asynchronously
+  synth.addEventListener('voiceschanged', ()=>{ voice = pickVoice(); sync(); });
+  voice = pickVoice(); sync();
+
+  // Chrome keeps speaking across a navigation (hub<->journey is a full page load)
+  addEventListener('pagehide', ()=>synth.cancel());
+
+  return {
+    // called from renderCard: whatever was being read belongs to the station just left
+    onCard(){ stop(); if(pref === 'auto' && voice) speakCard(); },
+    stop, chunks: cardChunks
+  };
+})();
+
 /* ---- top-right menu: theme + language + the control legend ------------- */
 (function(){
   const ui = C.ui || {}, tl = ui.theme || {};
@@ -428,6 +630,7 @@ if(hubMode){
     dotctr.textContent=(i+1)+' / '+CARDS.length;   // the dot row's mobile stand-in (style.css)
     ti.textContent=CARDS[i].t;
     bo.innerHTML=CARDS[i].b + (i===CARDS.length-1 ? whatNext() : '');
+    if(reader) reader.onCard();   // stop the previous station mid-sentence; auto-read this one
     hud.scrollTop=0;   // a long previous card may have left the box scrolled down
     syncHudScroll();   // the card's own length decides whether it scrolls — measure it now
                        // rather than waiting on the ResizeObserver, whose delivery rides
