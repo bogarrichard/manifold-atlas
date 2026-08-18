@@ -34,6 +34,7 @@ window.LIE_CONTENT.en = {
     speech: {
       label: 'Read aloud', off: 'off', auto: 'each station',
       playAria: 'Read this station aloud', stopAria: 'Stop reading',
+      voiceLabel: 'Voice', network: 'network',
       supWord: 'to the power of', subWord: 'sub',
       matrix: 'a {r} by {c} matrix', vector: 'a column vector of {r} entries',
       symbols: {

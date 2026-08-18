@@ -34,6 +34,7 @@ window.LIE_CONTENT.ja = {
     speech: {
       label: '読み上げ', off: 'オフ', auto: '各ステーション',
       playAria: 'このステーションを読み上げる', stopAria: '読み上げを停止',
+      voiceLabel: '声', network: 'ネットワーク',
       supWord: 'の', subWord: 'の添字',
       matrix: '{r} 行 {c} 列の行列', vector: '{r} 成分の列ベクトル',
       symbols: {

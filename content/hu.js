@@ -34,6 +34,7 @@ window.LIE_CONTENT.hu = {
     speech: {
       label: 'Felolvasás', off: 'ki', auto: 'minden állomás',
       playAria: 'Állomás felolvasása', stopAria: 'Felolvasás leállítása',
+      voiceLabel: 'Hang', network: 'hálózati',
       supWord: 'a következőn:', subWord: 'alsó index',
       matrix: '{r}-szer {c}-es mátrix', vector: '{r} elemű oszlopvektor',
       symbols: {

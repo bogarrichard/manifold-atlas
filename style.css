@@ -316,6 +316,16 @@ body.hub #nav::after{right:40px}
 #themebtn:hover,#speechbtn:hover{border-color:var(--amber);color:var(--ink)}
 #themebtn .ticon,#speechbtn .ticon{font-size:20px;line-height:1;width:16px;text-align:center}
 
+/* voice picker: a plain <select>, matching the toggle button's row width and border
+   language rather than trying to look like a custom dropdown — this is a system list
+   (installed TTS engines/voices), so the native affordance is the honest one */
+#speechvoice{display:block;width:100%;margin-top:6px;cursor:pointer;
+  color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:6px 9px;font-family:ui-monospace,Menlo,monospace;font-size:15px;
+  transition:border-color .15s,color .15s}
+#speechvoice:hover{border-color:var(--amber);color:var(--ink)}
+#speechvoice[hidden]{display:none}
+
 /* text size: a plus/minus slider over three steps, replacing the old cycling button.
    `default` sits at the *right/max* end deliberately — it is the largest step, not the
    middle one, so the control reads "shrink from here" rather than "pick a size". */

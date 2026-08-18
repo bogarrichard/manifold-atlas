@@ -239,21 +239,44 @@ const reader = (function(){
   const btn = document.createElement('button');
   btn.id = 'speechbtn'; btn.type = 'button';
   document.getElementById('speech').appendChild(btn);
+  // Voice picker: once a second engine is installed (Android in particular — Samsung's
+  // own TTS sits next to Google's, and a sideloaded engine like RHVoice/Piper adds a
+  // third) there is no way to know in advance which one a given user will find best.
+  // Auto-pick just seeds a reasonable default; this lets a user override it.
+  const voiceSel = document.createElement('select');
+  voiceSel.id = 'speechvoice';
+  voiceSel.setAttribute('aria-label', sp.voiceLabel || 'Voice');
+  voiceSel.title = sp.voiceLabel || 'Voice';
+  document.getElementById('speech').appendChild(voiceSel);
 
   let pref = (function(){ try{ return localStorage.getItem(SPEECH_KEY)==='auto' ? 'auto' : 'off'; }
                           catch(e){ return 'off'; } })();
   let voice = null, speaking = false;
 
-  /* ---- voice ---------------------------------------------------------- */
-  function pickVoice(){
+  /* ---- voice ------------------------------------------------------------
+     Auto-pick seeds a default; a manual choice (stored per page language, since a
+     language switch here is a full page reload, not a live re-render) always wins over
+     it once made, and self-heals back to auto if that engine ever disappears — voiceId()
+     just stops matching anything candidateVoices() returns. */
+  const VOICE_KEY = 'lie-speech-voice:' + (document.documentElement.lang || 'en').toLowerCase().split('-')[0];
+  function candidateVoices(){
     const base = (document.documentElement.lang || 'en').toLowerCase().split('-')[0];
-    const all = synth.getVoices().filter(v =>
+    return synth.getVoices().filter(v =>
       v.lang.toLowerCase().replace('_','-').split('-')[0] === base);
+  }
+  function voiceId(v){ return v.name + '::' + v.lang; }
+  function bestVoice(all){
     // Chrome lists Google's *network* voices next to any locally installed ones. Prefer
     // local: card text going off-device for synthesis is a heavier dependency than the
     // CDN round-trip this project vendors three.min.js to avoid. Network is the fallback
     // rather than nothing, since on desktop Linux it is often all Chrome has.
     return all.find(v => v.localService) || all[0] || null;
+  }
+  function pickVoice(){
+    const all = candidateVoices();
+    let stored = null;
+    try{ stored = localStorage.getItem(VOICE_KEY); }catch(e){}
+    return (stored && all.find(v => voiceId(v) === stored)) || bestVoice(all);
   }
 
   /* ---- card -> speakable text ----------------------------------------- */
@@ -365,7 +388,7 @@ const reader = (function(){
     btn.lastChild.textContent = name;
     // which voice actually got picked is worth surfacing: "network" means the card text
     // is being synthesized off-device
-    const via = voice.name + (voice.localService ? '' : ' · network');
+    const via = voice.name + (voice.localService ? '' : ' · '+(sp.network || 'network'));
     btn.title = (sp.label || 'Read aloud') + ': ' + name + ' — ' + via;
     btn.setAttribute('aria-label', (sp.label || 'Read aloud') + ': ' + name);
     rail.textContent = speaking ? '■' : '▶︎';
@@ -373,6 +396,30 @@ const reader = (function(){
     const ra = speaking ? (sp.stopAria || 'Stop reading') : (sp.playAria || 'Read aloud');
     rail.title = ra; rail.setAttribute('aria-label', ra);
   }
+
+  function syncVoiceOptions(){
+    const all = candidateVoices();
+    // Nothing to choose between with zero or one candidate — same "don't show a control
+    // with nothing to control" rule the language list already follows.
+    voiceSel.hidden = all.length < 2;
+    voiceSel.innerHTML = '';
+    all.forEach(v=>{
+      const opt = document.createElement('option');
+      opt.value = voiceId(v);
+      opt.textContent = v.name + (v.localService ? '' : ' · '+(sp.network || 'network'));
+      voiceSel.appendChild(opt);
+    });
+    if(voice) voiceSel.value = voiceId(voice);
+  }
+  voiceSel.addEventListener('change', ()=>{
+    const picked = candidateVoices().find(v => voiceId(v) === voiceSel.value);
+    if(!picked) return;
+    voice = picked;
+    try{ localStorage.setItem(VOICE_KEY, voiceId(picked)); }catch(e){}
+    sync();
+    // demonstrate the new voice immediately rather than waiting for the next station
+    if(pref === 'auto' || speaking) speakCard();
+  });
 
   btn.addEventListener('click', ()=>{
     pref = SPEECH_NEXT[pref];
@@ -383,8 +430,8 @@ const reader = (function(){
   rail.addEventListener('click', ()=>{ if(speaking) stop(); else speakCard(); });
 
   // getVoices() is empty on first call in Chrome and fills in asynchronously
-  synth.addEventListener('voiceschanged', ()=>{ voice = pickVoice(); sync(); });
-  voice = pickVoice(); sync();
+  synth.addEventListener('voiceschanged', ()=>{ voice = pickVoice(); syncVoiceOptions(); sync(); });
+  voice = pickVoice(); syncVoiceOptions(); sync();
 
   // Chrome keeps speaking across a navigation (hub<->journey is a full page load)
   addEventListener('pagehide', ()=>synth.cancel());
