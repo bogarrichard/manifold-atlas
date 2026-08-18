@@ -127,10 +127,14 @@ updateThemeBtn();
    smaller ones below it — not tied to any OS-level signal: unlike color scheme, there is
    no cross-browser media query for a user's preferred text scale to default to, so
    "unless you ask, nothing shrinks" is the honest default, and it sits at the slider's
-   top end rather than its middle. */
+   top end rather than its middle. The two steps down are deliberately uneven rather than
+   an even 3-way split: the first press of `−` already carries most of the drop (1 → 0.78),
+   so one click reads as a real change instead of a barely-visible nudge, and the second
+   press finishes the descent to the floor (0.78 → 0.62) rather than repeating the first
+   jump's size. */
 const TEXTSIZE_KEY = 'lie-textsize';
 const TEXT_STEPS = ['smaller','small','default'];
-const TEXT_SCALE = { smaller: 0.82, small: 0.91, default: 1 };
+const TEXT_SCALE = { smaller: 0.62, small: 0.78, default: 1 };
 function storedTextSizePref(){
   try{ const v = localStorage.getItem(TEXTSIZE_KEY); return TEXT_SCALE[v] ? v : 'default'; }
   catch(e){ return 'default'; }

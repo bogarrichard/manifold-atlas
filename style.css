@@ -404,18 +404,24 @@ body.hub #nav::after{right:40px}
      primary view with the reading card docked underneath it, rather than the reverse.
      No hamburger gutter needed here any more (that was only ever for the old top-anchored
      card): the top-right corner is clear once the card owns the bottom instead.
-     `max-height:60vh` is a firm cap, not the "only once content overflows" `.scrolls`
+     `max-height:50vh` is a firm cap, not the "only once content overflows" `.scrolls`
      threshold desktop uses — most journey cards are long enough on a phone to fill nearly
      the whole screen otherwise (see check.html's station-length measurements), leaving no
      scene visible at all and no visual cue that one exists. Capping unconditionally (`#hud`
      itself, not gated on the JS-toggled `.scrolls` class — that class is tuned for the
-     desktop's much taller allowance and would rarely trigger at this cap) guarantees at
-     least two fifths of the screen stays scene, whatever the station's length; the `#hud,
+     desktop's much taller allowance and would rarely trigger at this cap) guarantees the
+     upper half of the screen stays scene, whatever the station's length — matching
+     `bottomLift()`'s pre-layout fallback guess of `innerHeight*0.50` in engine.js, which
+     now needs no separate tuning to agree with this cap; the `#hud,
      #hud.scrolls` pairing beats the desktop `#hud.scrolls{max-height:calc(100vh - 44px)}`
-     rule on specificity for a card that also happens to carry that class. */
-  #hud, #hud.scrolls{top:auto;bottom:12px;left:12px;width:calc(100vw - 24px);
+     rule on specificity for a card that also happens to carry that class. Edge-to-edge
+     (`left:0;width:100vw`, no side gap) rather than the desktop card's floating margin —
+     on a narrow phone every horizontal pixel buys a meaningfully longer line, and there is
+     no scene visible to either side of it here for the margin to reveal anyway (the card
+     is already the full-width bottom sheet). */
+  #hud, #hud.scrolls{top:auto;bottom:12px;left:0;width:100vw;max-width:100vw;
     padding:15px 17px 0;
-    max-height:60vh;overflow-y:auto;overscroll-behavior:contain;
+    max-height:50vh;overflow-y:auto;overscroll-behavior:contain;
     background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
   /* Desktop only inlines a footnote panel once `.scrolls` is toggled by JS, which is tuned
      to a much taller threshold than this 60vh cap — a card short enough to dodge that
