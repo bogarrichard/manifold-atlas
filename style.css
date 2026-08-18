@@ -5,6 +5,9 @@
   --card:rgba(13,18,32,0.80); --line:rgba(232,230,223,0.14);
   --panel:rgba(20,26,44,0.85); --panel-strong:rgba(17,23,40,0.97);
   --dot:rgba(232,230,223,0.22);
+  /* the menu's text-size control multiplies this in on top of every fluid font-size
+     below; engine.js overwrites it inline from the stored preference on load */
+  --text-scale:1;
 }
 :root[data-theme="light"]{
   --bg:#E7ECF3; --ink:#1A2233; --muted:#48526A; --faint:#7A8598;
@@ -20,7 +23,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
      before them carry no kana/kanji), so Latin rendering is unchanged */
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans",
     "Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;color:var(--ink)}
-#c{position:fixed;inset:0;display:block;cursor:grab}
+/* touch-action:none stops the browser's own scroll/refresh/pinch-zoom gestures from
+   fighting the canvas's own drag-orbit and pinch-zoom handlers (engine.js, hub.js) —
+   without it, a one-finger drag here also tries to scroll the (non-scrolling) page, and
+   a two-finger pinch fights the page zoom instead of reaching the pointer handlers at all. */
+#c{position:fixed;inset:0;display:block;cursor:grab;touch-action:none}
 #c.grabbing{cursor:grabbing}
 
 /* The card owns a good third of the viewport; the engine shifts the camera frustum right
@@ -74,12 +81,27 @@ body.hub #hud h1{text-align:center;text-transform:uppercase;letter-spacing:.04em
   text-shadow:0 0 22px color-mix(in srgb, var(--amber) 45%, transparent)}
 body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:auto}
 
-.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16.5px;
+/* ---- fluid type: reading-content sizes scale with the viewport instead of jumping at a
+   breakpoint ------------------------------------------------------------
+   Each `clamp(MIN, …, MAX)` below interpolates linearly between MIN at a 360px viewport
+   (a narrow phone) and MAX at 900px (about where the card's own width — `clamp(460px,
+   calc(38vw - 22px), 700px)` on a journey — is already close to maxed out, so the text
+   riding along it can stop growing too). MAX is always the size this rule used before this
+   pass — nothing changes on a wide desktop window. Below 360px or above 900px the clamp's
+   own floor/ceiling takes over, so this never needs a breakpoint of its own; the old
+   discrete mobile overrides for `#hud h1`/`#hud p` are gone; this replaces them.
+   The middle term is `calc(A + Bvw)`, derived from MIN/MAX by
+     B = (MAX-MIN) × 100/540      A = MIN − (MAX-MIN) × 360/540
+   (540 = 900−360, the span). Recompute both if MIN, MAX, or the 360/900 reference points
+   change — they are not derived from anything else at render time. */
+.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:calc(clamp(14px, calc(12.33px + 0.463vw), 16.5px) * var(--text-scale));
   letter-spacing:.14em;color:var(--amber);margin-bottom:9px}
 #hud h1{font-family:Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",
     "Noto Serif JP","Yu Mincho",serif;font-weight:500;
-  font-size:37px;line-height:1.26;margin-bottom:13px;color:var(--ink)}
-#hud p{font-size:22.5px;line-height:1.7;color:var(--muted)}
+  font-size:calc(clamp(27px, calc(20.33px + 1.852vw), 37px) * var(--text-scale));
+  line-height:1.26;margin-bottom:13px;color:var(--ink)}
+#hud p{font-size:calc(clamp(19.5px, calc(17.5px + 0.556vw), 22.5px) * var(--text-scale));line-height:1.7;color:var(--muted)}
 #hud p+p{margin-top:10px}
 .m{font-family:Georgia,serif;font-style:italic;color:var(--ink)}
 .m sup,.m sub{font-size:.68em}
@@ -91,7 +113,8 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
 .frac span:last-child{border-top:1px solid var(--muted);padding:0 4px}
 /* bracketed math matrix (a CSS grid flanked by two border-drawn brackets) */
 #hud .matline{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;
-  margin:16px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:24.5px}
+  margin:16px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);
+  font-size:calc(clamp(20px, calc(17px + 0.833vw), 24.5px) * var(--text-scale))}
 #hud .matline sub,#hud .matline sup{font-size:.66em}
 .matrix{display:inline-flex;align-items:stretch;color:var(--muted)}
 .matrix .mbracket{width:7px;flex:none;border:1.5px solid currentColor;border-right:none}
@@ -103,16 +126,18 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
 /* station 6: live per-phase formula, "what is δ" trigger, and floating bubble */
 .s5math{margin-top:12px;padding:8px 12px;border-radius:9px;text-align:center;
   background:color-mix(in srgb, var(--amber) 8%, transparent);border:1px solid color-mix(in srgb, var(--amber) 20%, transparent);
-  font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:23.5px;
+  font-family:Georgia,serif;font-style:italic;color:var(--ink);
+  font-size:calc(clamp(19px, calc(16px + 0.833vw), 23.5px) * var(--text-scale));
   min-height:27px;line-height:1.55}
 .s5math sub,.s5math sup{font-size:.7em}
 .s5foot{position:relative;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .s5info{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:0;
   background:none;border:none;color:var(--faint);
-  font-family:ui-monospace,Menlo,monospace;font-size:18.5px;transition:color .15s}
+  font-family:ui-monospace,Menlo,monospace;font-size:calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));
+  transition:color .15s}
 .s5info:hover,.s5info[aria-expanded="true"]{color:var(--amber)}
 .s5info .m{color:inherit}
-.s5info .ic{font-size:17.5px}
+.s5info .ic{font-size:calc(clamp(14.5px, calc(12.5px + 0.556vw), 17.5px) * var(--text-scale))}
 /* The panel hangs under the card. Under a tall card that would drop it below the fold —
    and the page never scrolls — so clamp the top to whatever still leaves room for a
    full-height panel. It then overlaps the foot of the card, which is fine: it is opaque.
@@ -168,15 +193,18 @@ body.hub #hud.scrolls{max-height:none}
 .whatnext a:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px}
 
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-.act{font-family:ui-monospace,Menlo,monospace;font-size:20px;color:var(--ink);
+.act{font-family:ui-monospace,Menlo,monospace;font-size:calc(clamp(17px, calc(15px + 0.556vw), 20px) * var(--text-scale));
+  color:var(--ink);
   background:color-mix(in srgb, var(--amber) 12%, transparent);border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
   border-radius:9px;padding:8px 14px;cursor:pointer;transition:background .15s}
 .act:hover{background:color-mix(in srgb, var(--amber) 22%, transparent)}
-.ro{font-family:ui-monospace,Menlo,monospace;font-size:18.5px;color:var(--faint);margin-top:10px}
+.ro{font-family:ui-monospace,Menlo,monospace;font-size:calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));
+  color:var(--faint);margin-top:10px}
 .ro b{color:var(--ink);font-weight:500}
 .slrow{display:flex;align-items:center;gap:10px;margin-top:12px}
 .slrow input[type=range]{flex:1;accent-color:var(--amber)}
-.slrow label{font-family:ui-monospace,Menlo,monospace;font-size:18.5px;color:var(--muted);min-width:62px}
+.slrow label{font-family:ui-monospace,Menlo,monospace;
+  font-size:calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));color:var(--muted);min-width:62px}
 
 /* ---- the console rail -------------------------------------------------
    Docked across the foot of the HUD instead of floating over the scene. `sticky` so a
@@ -230,6 +258,14 @@ body.hub #hud.scrolls{max-height:none}
 /* a stop that exists on the map but is not built yet — visible, obviously not landable */
 .dot.locked{opacity:.34;background:transparent;box-shadow:inset 0 0 0 1.5px var(--dot)}
 .dot.locked.on{background:transparent;box-shadow:inset 0 0 0 1.5px var(--amber);opacity:.75}
+/* Numeric stand-in for the dot row, swapped in on narrow phones (see the mobile media
+   query below) where a strip of up to ten dots — each needing a coarse-pointer hit area
+   per `@media (pointer:coarse)` above — does not fit next to prev/next without crowding
+   or wrapping. `aria-hidden`: purely a visual convenience for sighted mobile users: the
+   position is already announced through each button's own aria-label and the eyebrow
+   ("station 3 / 10"), so this would just double that up for a screen reader. */
+.dotctr{display:none;font-family:ui-monospace,Menlo,monospace;font-size:15px;
+  color:var(--muted);white-space:nowrap;letter-spacing:.02em}
 
 /* In the hub the rail is the last flex item of the fixed-height bar, so it pins itself to
    the bar's foot with no offsets to maintain — the reason the old lifts (which chased
@@ -266,13 +302,21 @@ body.hub #nav::after{right:40px}
 .msec h2{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;font-weight:400;
   letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 9px}
 
-/* theme: one full-width row that cycles, showing where it currently stands */
-#themebtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;color:var(--muted);
+/* theme, text size: both a full-width row that cycles, showing where it currently
+   stands rather than needing to be opened to find out */
+#themebtn,#textsizebtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;
+  color:var(--muted);
   background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
   font-family:ui-monospace,Menlo,monospace;font-size:17.5px;text-align:left;
   transition:border-color .15s,color .15s}
-#themebtn:hover{border-color:var(--amber);color:var(--ink)}
+#themebtn:hover,#textsizebtn:hover{border-color:var(--amber);color:var(--ink)}
 #themebtn .ticon{font-size:20px;line-height:1;width:16px;text-align:center}
+/* the text-size icon's own size steps up with each choice, so the control demonstrates
+   its own effect rather than relying on the label text alone */
+#textsizebtn .ticon{line-height:1;width:16px;text-align:center;font-weight:600}
+.tsicon-default{font-size:15px}
+.tsicon-large{font-size:19px}
+.tsicon-larger{font-size:23px}
 
 /* language: no nested dropdown inside a dropdown — the list is simply shown */
 #lang{font-family:ui-monospace,Menlo,monospace;font-size:17.5px}
@@ -297,35 +341,62 @@ body.hub #nav::after{right:40px}
    hover state — the button appears dead until the scene happens to change. One ring,
    one press state, applied everywhere so a new control inherits both for free. */
 .nbtn:focus-visible,.dot:focus-visible,.act:focus-visible,.s5info:focus-visible,
-#menubtn:focus-visible,#themebtn:focus-visible,#langmenu a:focus-visible{
+#menubtn:focus-visible,#themebtn:focus-visible,#textsizebtn:focus-visible,#langmenu a:focus-visible{
   outline:2px solid var(--amber);outline-offset:3px}
 .dot:focus-visible{outline-offset:4px}
-.act:active,#themebtn:active,#menubtn:active{transform:scale(.96)}
+.act:active,#themebtn:active,#textsizebtn:active,#menubtn:active{transform:scale(.96)}
 .dot:not(.on):active{transform:scale(1.15)}
 /* kill the tap-highlight flash and the 300ms double-tap-zoom delay on every control */
-.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#langmenu a,.whatnext a{
+.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#langmenu a,.whatnext a{
   touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 
 @media (prefers-reduced-motion:reduce){
-  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#langmenu a,#menubtn .bars i{
+  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#textsizebtn,#langmenu a,#menubtn .bars i{
     transition-duration:.01ms}
-  .nbtn:not(:disabled):active,.act:active,#themebtn:active,#menubtn:active,
+  .nbtn:not(:disabled):active,.act:active,#themebtn:active,#textsizebtn:active,#menubtn:active,
   .dot:not(.on):active{transform:none}
 }
 
 @media (max-width:640px){
-  #hud{top:12px;left:12px;width:calc(100vw - 24px);padding:15px 17px 0}
-  #hud.scrolls{max-height:calc(100vh - 24px)}   /* 12px top + the same again below */
-  #hud h1{font-size:30.5px}
-  #hud p{font-size:22px}
-  /* HUD fills the top on phones, so drop the control to the bottom-right, panel opening upward */
-  #topctl{top:auto;bottom:20px;right:14px}
-  #menupanel{top:auto;bottom:46px}
-  /* The hub keeps its own bottom-anchored bar (same specificity as the desktop rule above,
-     so this wins on source order alone) rather than falling back to the journeys' top
-     banner — just narrower padding and smaller corner brackets for the tighter width.
-     Half the height on a phone: two fifths of a tall narrow viewport would bury the map. */
-  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 0;height:40vh}
+  /* backdrop-filter dropped here (unlike the desktop rule it otherwise inherits from):
+     a `position:fixed` element that is ALSO its own scroll container (`.scrolls` adds
+     `overflow-y:auto`, and a phone card hits that far more often than a wide desktop one)
+     is a known trigger for some mobile browsers to silently fail to paint the element at
+     all — not just skip the blur, the background/border/children too, confirmed by
+     testing on a real device: the card measured correctly in every DOM check yet never
+     painted until some *later* unrelated style change (a station's fade transition) forced
+     a repaint. Traded for a near-opaque flat panel, which doesn't depend on sampling
+     anything behind it. */
+  /* Bottom-anchored now, like the hub bar always has been — the 3D view reads as the
+     primary view with the reading card docked underneath it, rather than the reverse.
+     No hamburger gutter needed here any more (that was only ever for the old top-anchored
+     card): the top-right corner is clear once the card owns the bottom instead.
+     `max-height:60vh` is a firm cap, not the "only once content overflows" `.scrolls`
+     threshold desktop uses — most journey cards are long enough on a phone to fill nearly
+     the whole screen otherwise (see check.html's station-length measurements), leaving no
+     scene visible at all and no visual cue that one exists. Capping unconditionally (`#hud`
+     itself, not gated on the JS-toggled `.scrolls` class — that class is tuned for the
+     desktop's much taller allowance and would rarely trigger at this cap) guarantees at
+     least two fifths of the screen stays scene, whatever the station's length; the `#hud,
+     #hud.scrolls` pairing beats the desktop `#hud.scrolls{max-height:calc(100vh - 44px)}`
+     rule on specificity for a card that also happens to carry that class. */
+  #hud, #hud.scrolls{top:auto;bottom:12px;left:12px;width:calc(100vw - 24px);
+    padding:15px 17px 0;
+    max-height:60vh;overflow-y:auto;overscroll-behavior:contain;
+    background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
+  /* Desktop only inlines a footnote panel once `.scrolls` is toggled by JS, which is tuned
+     to a much taller threshold than this 60vh cap — a card short enough to dodge that
+     toggle can still be too tall for this cap, and its scroll container clips an
+     absolutely-positioned `.bubble` that assumes it can float past the card's own edge.
+     Unconditional here so it can never be caught out by that gap. */
+  #hud .bubble,#hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
+  #hud .bubble::before,#hud.scrolls .bubble::before{display:none}
+  /* The hub bar was already bottom-anchored — same specificity as the desktop rule above,
+     so this wins on source order alone — just narrower padding and smaller corner
+     brackets for the tighter width. 40vh (vs. the journey card's 60) leaves the map,
+     rather than reading content, most of the screen. */
+  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 0;height:40vh;
+    background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
   /* re-bleed the rail to the phone card's tighter gutters (17px sides, 15px foot) */
   #nav{margin:14px -17px 0;padding:10px 17px 13px}
   #nav::before{left:17px} #nav::after{right:17px}
@@ -333,4 +404,10 @@ body.hub #nav::after{right:40px}
   body.hub #nav::before{left:18px} body.hub #nav::after{right:18px}
   #navmain{gap:12px}
   body.hub #hud::before,body.hub #hud::after{width:16px;height:16px}
+  /* A phone-width rail has room for prev/next plus either the dot row or the exit/enter
+     buttons, not comfortably both — up to ten dots (geometry-se3) each carrying a
+     `pointer:coarse` hit area already crowds `#navmain` on its own. The numeric readout
+     takes a fraction of the width for the same information. */
+  #dots{display:none}
+  .dotctr{display:inline-flex}
 }
