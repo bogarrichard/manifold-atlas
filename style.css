@@ -31,42 +31,55 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #hud{position:fixed;top:22px;left:22px;
   width:clamp(460px, calc(38vw - 22px), 700px);max-width:calc(100vw - 44px);
   background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:20px 24px 18px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  padding:20px 24px 0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:opacity .35s ease, transform .35s ease}
-#hud.fade{opacity:0;transform:translateY(6px)}
+/* Only the *readout* fades while the camera flies between stations — the console rail
+   below it stays solid. Fading the whole card would blink the ← → buttons out from under
+   a cursor that is mid-click on them. */
+#hud.fade .eyebrow,#hud.fade h1,#hud.fade #bo{opacity:0;transform:translateY(6px)}
+.eyebrow,#hud h1,#bo{transition:opacity .35s ease, transform .35s ease}
 
 /* The hub trades the journeys' tall side card for a wide mission bar pinned along the
    bottom, mission-select style: title and status line centered, body copy in a readable
    centered column, corner brackets standing in for a HUD frame. The engine mirrors this
    with a fixed vertical shift of the 3D view (`HUB_LIFT`), pushing the solar system up
    into the freed space instead of leaving it centered behind the bar. */
-/* The bar is a fixed two fifths of the viewport height, whatever it is showing. Letting it
+/* The bar is a fixed fraction of the viewport height, whatever it is showing. Letting it
    size to its content meant every hover — planet, moon, nothing — resized it, which both
    jiggled the framing and moved the text you were mid-sentence in. Fixed height also means
    the engine can derive the scene's upward shift from it without that shift jittering.
    Only the body scrolls; the eyebrow and title stay put, and the corner brackets stay
-   pinned to the card rather than scrolling away with the copy. */
+   pinned to the card rather than scrolling away with the copy.
+
+   Why 48vh (was 40) and 40vh on phones (was 34): the console rail moved *into* the bar,
+   and the copy is set large, so two fifths left the reading column about five lines tall.
+   The map could spare it — measured at 886px tall, the whole solar system (orbits, planets
+   and their labels) projects to only ~300px of screen height, and it was sitting with
+   ~133px of dead space above it and a 74px gap below. `hubLift()` derives the frustum
+   shift from this height, so raising it re-centers the map automatically; nothing else
+   needs touching. Don't push past ~52vh: the gap between the map's lowest orbit and the
+   top of the bar closes to ~20px there, and the two start to read as one crowded mass. */
 body.hub #hud{top:auto;left:50%;bottom:26px;transform:translateX(-50%);
   width:clamp(560px, 62vw, 1100px);max-width:calc(100vw - 48px);
-  height:40vh;display:flex;flex-direction:column;
-  padding:24px 40px 22px;text-align:center}
+  height:48vh;display:flex;flex-direction:column;
+  padding:24px 40px 0;text-align:center}
 body.hub #bo{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
   scrollbar-width:thin}
 body.hub #hud::before,body.hub #hud::after{content:'';position:absolute;
   width:22px;height:22px;border:2px solid var(--amber);opacity:.5;pointer-events:none}
 body.hub #hud::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:14px 0 0 0}
 body.hub #hud::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 14px 0}
-body.hub .eyebrow{text-align:center;text-transform:uppercase;font-size:12px}
+body.hub .eyebrow{text-align:center;text-transform:uppercase;font-size:16px}
 body.hub #hud h1{text-align:center;text-transform:uppercase;letter-spacing:.04em;
   text-shadow:0 0 22px color-mix(in srgb, var(--amber) 45%, transparent)}
 body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:auto}
 
-.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16.5px;
   letter-spacing:.14em;color:var(--amber);margin-bottom:9px}
 #hud h1{font-family:Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",
     "Noto Serif JP","Yu Mincho",serif;font-weight:500;
-  font-size:28px;line-height:1.26;margin-bottom:13px;color:var(--ink)}
-#hud p{font-size:17px;line-height:1.7;color:var(--muted)}
+  font-size:37px;line-height:1.26;margin-bottom:13px;color:var(--ink)}
+#hud p{font-size:22.5px;line-height:1.7;color:var(--muted)}
 #hud p+p{margin-top:10px}
 .m{font-family:Georgia,serif;font-style:italic;color:var(--ink)}
 .m sup,.m sub{font-size:.68em}
@@ -77,8 +90,8 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
 .frac span:first-child{padding:0 4px}
 .frac span:last-child{border-top:1px solid var(--muted);padding:0 4px}
 /* bracketed math matrix (a CSS grid flanked by two border-drawn brackets) */
-#hud .matline{display:flex;align-items:center;justify-content:center;gap:10px;
-  margin:16px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:18.5px}
+#hud .matline{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;
+  margin:16px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:24.5px}
 #hud .matline sub,#hud .matline sup{font-size:.66em}
 .matrix{display:inline-flex;align-items:stretch;color:var(--muted)}
 .matrix .mbracket{width:7px;flex:none;border:1.5px solid currentColor;border-right:none}
@@ -90,16 +103,16 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
 /* station 6: live per-phase formula, "what is δ" trigger, and floating bubble */
 .s5math{margin-top:12px;padding:8px 12px;border-radius:9px;text-align:center;
   background:color-mix(in srgb, var(--amber) 8%, transparent);border:1px solid color-mix(in srgb, var(--amber) 20%, transparent);
-  font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:17.5px;
+  font-family:Georgia,serif;font-style:italic;color:var(--ink);font-size:23.5px;
   min-height:27px;line-height:1.55}
 .s5math sub,.s5math sup{font-size:.7em}
 .s5foot{position:relative;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 .s5info{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:0;
   background:none;border:none;color:var(--faint);
-  font-family:ui-monospace,Menlo,monospace;font-size:14px;transition:color .15s}
+  font-family:ui-monospace,Menlo,monospace;font-size:18.5px;transition:color .15s}
 .s5info:hover,.s5info[aria-expanded="true"]{color:var(--amber)}
 .s5info .m{color:inherit}
-.s5info .ic{font-size:13px}
+.s5info .ic{font-size:17.5px}
 /* The panel hangs under the card. Under a tall card that would drop it below the fold —
    and the page never scrolls — so clamp the top to whatever still leaves room for a
    full-height panel. It then overlaps the foot of the card, which is fine: it is opaque.
@@ -120,9 +133,10 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
    panel). Scrolling clips whatever hangs past the card's box, and the panel above hangs
    below the foot, so there it drops into the flow instead and the engine scrolls it into
    view on open. Cards that fit keep `overflow:visible`, and with it the floating panel. */
-/* 100px = the 22px top offset + 78px kept clear for the ↑ button in the bottom-left
-   corner; `BOTTOM_KEEP` in engine.js is the same 78 (keep the two in step). */
-#hud.scrolls{max-height:calc(100vh - 100px);overflow-y:auto;overscroll-behavior:contain}
+/* 44px = the 22px top offset + the same again below; `BOTTOM_KEEP` in engine.js is that
+   bottom 22 (keep the two in step). It used to be 78 to clear a floating exit button that
+   now rides inside the card. */
+#hud.scrolls{max-height:calc(100vh - 44px);overflow-y:auto;overscroll-behavior:contain}
 #hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
 #hud.scrolls .bubble::before{display:none}
 /* The hub card has no ↑ button to keep clear of, so it only needs symmetric top/bottom
@@ -139,43 +153,90 @@ body.hub #hud.scrolls{max-height:none}
 .termbtn:hover,.termbtn[aria-expanded="true"]{color:var(--coral)}
 .termbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:2px}
 
+/* "What next" — the link block engine.js appends to a journey's LAST card, built from
+   the descriptor's `seq`. Separated from the running text by a rule rather than boxed:
+   it is the end of the card, not a dialog like .bubble. Lives inside #bo so the card's
+   own scroll measurement counts its height. */
+.whatnext{margin:22px 0 0;padding-top:14px;border-top:1px solid var(--line)}
+.whatnext .wnrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:0 0 9px}
+.whatnext .wnrow:last-child{margin-bottom:0}
+.whatnext .wnlab{flex:none;color:var(--faint);font-size:.78em;letter-spacing:.07em;text-transform:uppercase}
+.whatnext a{text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:1px}
+.whatnext a.wngo{color:var(--teal)}
+.whatnext a.wnalso{color:var(--muted);border-bottom-color:var(--line)}
+.whatnext a:hover{color:var(--coral)}
+.whatnext a:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px}
+
 .acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-.act{font-family:ui-monospace,Menlo,monospace;font-size:15px;color:var(--ink);
+.act{font-family:ui-monospace,Menlo,monospace;font-size:20px;color:var(--ink);
   background:color-mix(in srgb, var(--amber) 12%, transparent);border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
   border-radius:9px;padding:8px 14px;cursor:pointer;transition:background .15s}
 .act:hover{background:color-mix(in srgb, var(--amber) 22%, transparent)}
-.ro{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:var(--faint);margin-top:10px}
+.ro{font-family:ui-monospace,Menlo,monospace;font-size:18.5px;color:var(--faint);margin-top:10px}
 .ro b{color:var(--ink);font-weight:500}
 .slrow{display:flex;align-items:center;gap:10px;margin-top:12px}
 .slrow input[type=range]{flex:1;accent-color:var(--amber)}
-.slrow label{font-family:ui-monospace,Menlo,monospace;font-size:14px;color:var(--muted);min-width:62px}
+.slrow label{font-family:ui-monospace,Menlo,monospace;font-size:18.5px;color:var(--muted);min-width:62px}
 
-#nav{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
-  display:flex;align-items:center;gap:16px;z-index:5}
+/* ---- the console rail -------------------------------------------------
+   Docked across the foot of the HUD instead of floating over the scene. `sticky` so a
+   long journey card (which becomes its own scroll box, see `.scrolls`) keeps the controls
+   pinned in view while the text scrolls under them. The negative side margins bleed the
+   rail out to the card's inner edges so its rule reads as a division of the panel rather
+   than a box drawn inside one — the same trick the hub bar's corner brackets use to sit on
+   the frame instead of within it. */
+#nav{position:sticky;bottom:0;z-index:6;
+  display:flex;align-items:center;gap:14px;
+  margin:18px -24px 0;padding:12px 24px 16px;
+  border-top:1px solid var(--line);
+  background:linear-gradient(to top, var(--card) 72%, transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:0 0 14px 14px}
+/* amber tick marks riding the rule, echoing the hub frame's corner brackets */
+#nav::before,#nav::after{content:'';position:absolute;top:-1px;width:16px;height:2px;
+  background:var(--amber);opacity:.55;pointer-events:none}
+#nav::before{left:24px}
+#nav::after{right:24px}
+/* the exit sits at the far left; the travel cluster is always hard right, whether or not
+   the exit is currently shown (it is hidden on the hub's map level) */
+#navmain{display:flex;align-items:center;gap:16px;margin-left:auto}
 .nbtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
-  background:var(--panel);color:var(--ink);font-size:17px;cursor:pointer;
+  background:var(--panel);color:var(--ink);font-size:22.5px;cursor:pointer;
   display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;
   -webkit-user-select:none;user-select:none}
-.nbtn:hover{border-color:var(--amber)}
+.nbtn:not(:disabled):hover{border-color:var(--amber);background:var(--panel-strong)}
+.nbtn:not(:disabled):active{transform:scale(.92)}
+/* :hover matches disabled buttons too, so the end-of-journey prev/next used to light up
+   amber under the cursor while doing nothing — hence the :not(:disabled) guards above. */
 .nbtn:disabled{opacity:.3;cursor:default}
 .nbtn[hidden]{display:none}
-/* Right-aligned and stacked above the nav strip rather than orphaned on the far left —
-   groups it visually with the dots/prev/next cluster it belongs to (same "back one level"
-   idea, just reachable by mouse) instead of floating alone in a corner. */
-#tohub{position:fixed;right:22px;bottom:78px;z-index:5}
 #dots{display:flex;gap:9px}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--dot);border:0;padding:0;
-  cursor:pointer;transition:background .2s,transform .2s,opacity .2s}
+.dot{position:relative;width:9px;height:9px;border-radius:50%;background:var(--dot);border:0;
+  padding:0;cursor:pointer;transition:background .2s,transform .2s,opacity .2s}
+/* A 9px target is a decoration, not a control — and these dots are the only way to jump
+   straight to a station. The visual box stays 9px (the strip's density is deliberate);
+   an invisible pseudo-element carries the real hit area, sized to the *pitch* (dot + gap)
+   so neighbouring targets meet without overlapping — overlapping ones would send an edge
+   click to the wrong station. Coarse pointers get a wider gap so the pitch clears 24px. */
+.dot::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:18px;height:28px}
+/* not on .locked: filling an unbuilt stop amber would advertise it as landable */
+.dot:not(.locked):hover{background:var(--amber)}
 .dot.on{background:var(--amber);transform:scale(1.25)}
+@media (pointer:coarse){
+  #dots{gap:15px}
+  .dot::after{width:24px;height:34px}
+}
 /* a stop that exists on the map but is not built yet — visible, obviously not landable */
 .dot.locked{opacity:.34;background:transparent;box-shadow:inset 0 0 0 1.5px var(--dot)}
 .dot.locked.on{background:transparent;box-shadow:inset 0 0 0 1.5px var(--amber);opacity:.75}
 
-/* In the hub the bar owns the bottom 40vh, so the planet view's carousel controls ride
-   above it rather than underneath. The back button keeps its own extra lift above the
-   nav strip (see the base #tohub rule) on top of this. */
-body.hub #nav,body.hub #tohub{bottom:calc(40vh + 38px)}
-body.hub #tohub{bottom:calc(40vh + 38px + 52px)}
+/* In the hub the rail is the last flex item of the fixed-height bar, so it pins itself to
+   the bar's foot with no offsets to maintain — the reason the old lifts (which chased
+   the bar height by hand) are gone. Wider padding to match the bar's roomier gutters. */
+body.hub #nav{margin:16px -40px 0;padding:12px 40px 20px}
+body.hub #nav::before{left:40px}
+body.hub #nav::after{right:40px}
 
 /* Top-right: one hamburger, everything else folded inside it. The corner used to carry a
    theme button, a language dropdown and a permanently visible control legend, which is
@@ -202,38 +263,61 @@ body.hub #tohub{bottom:calc(40vh + 38px + 52px)}
 #menupanel[hidden]{display:none}
 .msec{padding:10px 12px 12px}
 .msec+.msec{border-top:1px solid var(--line)}
-.msec h2{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:400;
+.msec h2{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;font-weight:400;
   letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 9px}
 
 /* theme: one full-width row that cycles, showing where it currently stands */
 #themebtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;color:var(--muted);
   background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
-  font-family:ui-monospace,Menlo,monospace;font-size:13px;text-align:left;
+  font-family:ui-monospace,Menlo,monospace;font-size:17.5px;text-align:left;
   transition:border-color .15s,color .15s}
 #themebtn:hover{border-color:var(--amber);color:var(--ink)}
-#themebtn .ticon{font-size:15px;line-height:1;width:16px;text-align:center}
+#themebtn .ticon{font-size:20px;line-height:1;width:16px;text-align:center}
 
 /* language: no nested dropdown inside a dropdown — the list is simply shown */
-#lang{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+#lang{font-family:ui-monospace,Menlo,monospace;font-size:17.5px}
 #langmenu{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
 #langmenu a{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;
   color:var(--muted);text-decoration:none;white-space:nowrap}
 #langmenu a:hover{background:color-mix(in srgb, var(--amber) 12%, transparent);color:var(--ink)}
 #langmenu a.on{color:var(--ink)}
 #langmenu a.on::after{content:'✓';margin-left:auto;color:var(--amber)}
-#langmenu .flag{font-size:16px;line-height:1}
+#langmenu .flag{font-size:21.5px;line-height:1}
 
-#hint{font-size:12px;color:var(--faint);line-height:1.75;
+#hint{font-size:16px;color:var(--faint);line-height:1.75;
   font-family:ui-monospace,Menlo,monospace}
 
 .noscript{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  padding:24px;text-align:center;font-size:15px;line-height:1.6;color:var(--muted)}
+  padding:24px;text-align:center;font-size:20px;line-height:1.6;color:var(--muted)}
+
+/* ---- shared control affordances ---------------------------------------
+   Every control below used to style :hover only. That leaves keyboard users with no
+   visible focus at all (the UA's default ring is invisible against these custom
+   backgrounds) and touch users with no feedback whatsoever, since a tap produces no
+   hover state — the button appears dead until the scene happens to change. One ring,
+   one press state, applied everywhere so a new control inherits both for free. */
+.nbtn:focus-visible,.dot:focus-visible,.act:focus-visible,.s5info:focus-visible,
+#menubtn:focus-visible,#themebtn:focus-visible,#langmenu a:focus-visible{
+  outline:2px solid var(--amber);outline-offset:3px}
+.dot:focus-visible{outline-offset:4px}
+.act:active,#themebtn:active,#menubtn:active{transform:scale(.96)}
+.dot:not(.on):active{transform:scale(1.15)}
+/* kill the tap-highlight flash and the 300ms double-tap-zoom delay on every control */
+.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#langmenu a,.whatnext a{
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+
+@media (prefers-reduced-motion:reduce){
+  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,#langmenu a,#menubtn .bars i{
+    transition-duration:.01ms}
+  .nbtn:not(:disabled):active,.act:active,#themebtn:active,#menubtn:active,
+  .dot:not(.on):active{transform:none}
+}
 
 @media (max-width:640px){
-  #hud{top:12px;left:12px;width:calc(100vw - 24px);padding:15px 17px}
-  #hud.scrolls{max-height:calc(100vh - 90px)}   /* 12px top + the same 78px kept clear */
-  #hud h1{font-size:23px}
-  #hud p{font-size:16.5px}
+  #hud{top:12px;left:12px;width:calc(100vw - 24px);padding:15px 17px 0}
+  #hud.scrolls{max-height:calc(100vh - 24px)}   /* 12px top + the same again below */
+  #hud h1{font-size:30.5px}
+  #hud p{font-size:22px}
   /* HUD fills the top on phones, so drop the control to the bottom-right, panel opening upward */
   #topctl{top:auto;bottom:20px;right:14px}
   #menupanel{top:auto;bottom:46px}
@@ -241,8 +325,12 @@ body.hub #tohub{bottom:calc(40vh + 38px + 52px)}
      so this wins on source order alone) rather than falling back to the journeys' top
      banner — just narrower padding and smaller corner brackets for the tighter width.
      Half the height on a phone: two fifths of a tall narrow viewport would bury the map. */
-  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 15px;height:34vh}
-  body.hub #nav,body.hub #tohub{bottom:calc(34vh + 24px)}
-  body.hub #tohub{bottom:calc(34vh + 24px + 52px)}
+  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 0;height:40vh}
+  /* re-bleed the rail to the phone card's tighter gutters (17px sides, 15px foot) */
+  #nav{margin:14px -17px 0;padding:10px 17px 13px}
+  #nav::before{left:17px} #nav::after{right:17px}
+  body.hub #nav{margin:12px -18px 0;padding:10px 18px 13px}
+  body.hub #nav::before{left:18px} body.hub #nav::after{right:18px}
+  #navmain{gap:12px}
   body.hub #hud::before,body.hub #hud::after{width:16px;height:16px}
 }

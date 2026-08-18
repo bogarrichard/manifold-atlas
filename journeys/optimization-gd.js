@@ -122,6 +122,13 @@ LIE.journeys['optimization-gd'] = (function(){
     tier: 'optimization',
     layout: { SP, OFF },
     threadKey: 'amber',
+    // Curriculum position, as data rather than prose: `next` is the following moon in
+    // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`
+    // are the topical pointers this journey's cards name, `requires` the hard
+    // back-references its opening card makes. engine.js renders next+handoffs as links
+    // on the last station; check.html verifies every id resolves and that the next-chain
+    // still agrees with BRANCHES.
+    seq: { next: 'optimization-gn', requires: [], handoffs: ['so3-optimization'] },
     build,
     cards: {
       hu: [

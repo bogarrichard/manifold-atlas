@@ -402,9 +402,19 @@ LIE.journeys['so3-optimization'] = (function(){
 
   return {
     id: 'so3-optimization',
-    tier: 'optimization',
+    // 'slam', not 'optimization': this is the convergence journey and it sits on the
+    // SLAM planet in hub.js. It read 'optimization' from back when the site was this
+    // one journey — nothing consumed the field, so the drift went unnoticed.
+    tier: 'slam',
     layout: { SP, OFF },
     threadKey: 'violet2',
+    // Curriculum position, as data rather than prose: `next` is the following moon in
+    // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`
+    // are the topical pointers this journey's cards name, `requires` the hard
+    // back-references its opening card makes. engine.js renders next+handoffs as links
+    // on the last station; check.html verifies every id resolves and that the next-chain
+    // still agrees with BRANCHES.
+    seq: { next: 'slam-factor-graph', requires: ['geometry-flat', 'optimization-gd'], handoffs: ['geometry-so3', 'geometry-se3'] },
     build
   };
 })();

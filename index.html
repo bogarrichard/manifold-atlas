@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lie-utazás — a lapos gradienstől az SE(3) pózig</title>
+<title>Manifold Atlas — a lapos gradienstől az SE(3) pózig</title>
 <meta name="description" content="Interaktív 3D-utazás a lapos gradiensektől a Riemann-gradiensen és az exponenciális leképezésen át az SO(3)/SE(3) pózokig.">
 <meta name="color-scheme" content="dark light">
 <script>
@@ -19,19 +19,23 @@
 <body>
 <canvas id="c"></canvas>
 
+<!-- The controls live *inside* the HUD, as a console rail across its foot, rather than
+     floating loose over the scene in three separate clusters (nav strip bottom-centre,
+     exit orphaned bottom-right). One instrument panel: readout above, controls below.
+     Ids are unchanged — engine.js/hub.js look them up by id, not by position. -->
 <div id="hud">
   <div class="eyebrow" id="eb"></div>
   <h1 id="ti"></h1>
   <div id="bo"></div>
+  <div id="nav">
+    <button class="nbtn" id="tohub" type="button" hidden>⬇︎</button>
+    <div id="navmain">
+      <button class="nbtn" id="prev" type="button">⬅︎</button>
+      <div id="dots"></div>
+      <button class="nbtn" id="next" type="button">➡︎</button>
+    </div>
+  </div>
 </div>
-
-<div id="nav">
-  <button class="nbtn" id="prev">⬅︎</button>
-  <div id="dots"></div>
-  <button class="nbtn" id="next">➡︎</button>
-</div>
-
-<button class="nbtn" id="tohub" type="button" hidden>⬆︎</button>
 
 <!-- Single top-right affordance: a hamburger that opens theme, language and the
      control legend. Keeping them folded away means the corner stays clear of the

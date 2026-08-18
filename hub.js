@@ -276,8 +276,9 @@ LIE.hub = (function(){
     function syncFocus(){
       navWrap.style.display = '';
       backBtn.hidden = mode!=='planet';
-      // its action is exitPlanet(), which now lives on ↓ (not ↑) — the icon has to agree,
-      // or clicking it and pressing the key the icon suggests would do opposite things
+      // its action is exitPlanet(), which lives on ↓/Esc — the icon has to agree, or
+      // clicking it and pressing the key the icon suggests would do opposite things.
+      // Same glyph the journey player's back button carries: one "back out" arrow sitewide.
       backBtn.textContent = '⬇︎';
       const hint = mode==='planet' ? HUB.hintPlanet : HUB.hintSystem;
       if(hint) hintEl.innerHTML = hint.join('<br>');
@@ -288,6 +289,8 @@ LIE.hub = (function(){
           const d=document.createElement('button');
           d.type='button'; d.title=sp.userData.journey.title;
           d.className='dot'+(i===focus.idx?' on':'')+(sp.userData.live?'':' locked');
+          d.setAttribute('aria-label', (HUB.moonWord||'')+' '+(i+1)+' / '+ms.length+' — '+sp.userData.journey.title);
+          if(i===focus.idx) d.setAttribute('aria-current','true');
           d.onclick=()=>{ focus.idx=i; syncFocus(); };
           dotsWrap.appendChild(d); dots.push(d);
         });
@@ -299,6 +302,8 @@ LIE.hub = (function(){
           const d=document.createElement('button');
           d.type='button'; d.title=p.userData.branch.title;
           d.className='dot'+(p===selPlanet?' on':'');
+          d.setAttribute('aria-label', (HUB.branchWord||'')+' '+(i+1)+' / '+planets.length+' — '+p.userData.branch.title);
+          if(p===selPlanet) d.setAttribute('aria-current','true');
           d.onclick=()=>{ selPlanet=p; syncFocus(); };
           dotsWrap.appendChild(d); dots.push(d);
         });
@@ -372,10 +377,12 @@ LIE.hub = (function(){
       }
       if(e.key==='ArrowRight'){ stepPlanet(1); e.preventDefault(); }
       else if(e.key==='ArrowLeft'){ stepPlanet(-1); e.preventDefault(); }
-      else if(e.key==='ArrowUp'){
+      else if(e.key==='ArrowUp' || e.key==='Enter'){
         const p=selPlanet||hoverPlanet; if(p) enterPlanet(p, 0); e.preventDefault();
       }
-      else if(e.key==='ArrowDown'){ selPlanet=null; setCard(null,null); e.preventDefault(); }
+      // nothing further out to back into at the map level, so the back-out pair clears
+      // the selection instead — but it is still the same pair, not a third convention
+      else if(e.key==='ArrowDown' || e.key==='Escape'){ selPlanet=null; setCard(null,null); e.preventDefault(); }
     });
     navWrap.querySelector('#prev').onclick=()=>{ if(mode==='planet') step(-1); else stepPlanet(-1); };
     navWrap.querySelector('#next').onclick=()=>{ if(mode==='planet') step(1); else stepPlanet(1); };
@@ -539,5 +546,30 @@ LIE.hub = (function(){
              onResize(){} };
   }
 
-  return { run };
+  /* Where a journey sits on the map. `engine.js` needs this to label the "what next"
+     links on a journey's last station with the same moon titles the hub shows — the
+     alternative was a second copy of those twelve names (×3 languages) living in the
+     engine, which D6 forbids and which would drift from these the first time one was
+     renamed. `fallback` is the untranslated title in BRANCHES, used only if a content
+     pack is missing the moon entry. */
+  function moonOf(journeyId){
+    for(const br of BRANCHES){
+      for(const j of br.journeys){
+        if(j.journey === journeyId) return { branchId:br.id, moonKey:j.k, fallback:j.title };
+      }
+    }
+    return null;
+  }
+
+  /* The curriculum sequence, flattened: every landable journey id in map order. This is
+     what makes `seq.next` in a journey descriptor checkable rather than hand-maintained —
+     BRANCHES stays the one source of the ordering (D2), and check.html compares the
+     descriptors against this instead of against a second hard-coded list. */
+  function order(){
+    const out = [];
+    BRANCHES.forEach(br => br.journeys.forEach(j => { if(j.journey) out.push(j.journey); }));
+    return out;
+  }
+
+  return { run, moonOf, order };
 })();

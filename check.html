@@ -140,9 +140,51 @@
       }
     } catch(e){ fail(id, 'build() threw: '+e.message); }
 
+    checkSeq(id, j);
+
     if(j.cards) checkCards(id, j.cards, nStations);
     else note(id, 'ships no own cards — falls back to the shared content pack');
     return nStations;
+  }
+
+  /* The curriculum sequence. engine.js renders `seq.next` and `seq.handoffs` as links on
+     a journey's last card, so a stale id there is a dead link rather than a wrong colour —
+     and the failure it really guards is the one that already happened once in prose: the
+     Geometry branch's cards named successors that disagreed with the branch's own order
+     (SO(2) pointing at SO(3), SE(2) at SE(3), SE(3) at nothing), so a reader following the
+     text skipped three of the six moons. `next` is checked against LIE.hub.order(), the
+     flattened BRANCHES list, which keeps hub.js the single source of the ordering (D2). */
+  function checkSeq(id, j){
+    const known = LIE.journeys || {};
+    const seq = j.seq;
+    if(!seq){ fail(id, 'no seq — engine.js has nothing to build the last card’s links from'); return; }
+
+    const resolve = (key, val) => {
+      if(!Array.isArray(val)){ fail(id, 'seq.'+key+' is not an array'); return; }
+      val.forEach(x=>{
+        if(!known[x]) fail(id, 'seq.'+key+' names "'+x+'", which is not a registered journey');
+        if(x === id)  fail(id, 'seq.'+key+' names itself');
+      });
+    };
+    resolve('requires', seq.requires || []);
+    resolve('handoffs', seq.handoffs || []);
+
+    if(seq.next != null){
+      if(!known[seq.next]) fail(id, 'seq.next is "'+seq.next+'", which is not a registered journey');
+      if(seq.next === id)  fail(id, 'seq.next points at itself');
+    }
+
+    // …and that it still matches the map. A moon reordered in BRANCHES, or a new one
+    // spliced into a branch, has to move the chain with it.
+    const order = (LIE.hub && LIE.hub.order) ? LIE.hub.order() : null;
+    if(!order){ note(id, 'LIE.hub.order() unavailable — next-chain not checked against BRANCHES'); return; }
+    const at = order.indexOf(id);
+    if(at < 0){ note(id, 'registered but not on any BRANCHES moon — next-chain not checked'); return; }
+    const want = at+1 < order.length ? order[at+1] : null;
+    const got  = seq.next == null ? null : seq.next;
+    if(want !== got)
+      fail(id, 'seq.next is '+(got?'"'+got+'"':'null')+' but BRANCHES puts '
+             + (want?'"'+want+'"':'nothing')+' after it');
   }
 
   function report(){
@@ -188,7 +230,11 @@
     // "add a language here" example, and it is not a script the page loads
     const srcs   = [...html.replace(/<!--[\s\S]*?-->/g,'').matchAll(/src="([^"]+\.js)"/g)].map(m=>m[1]);
     const wired  = srcs.filter(s=>s.startsWith('journeys/'));
-    const before = srcs.filter(s=>!s.startsWith('journeys/') && !s.endsWith('engine.js') && !s.endsWith('hub.js'));
+    /* hub.js IS loaded: it only registers a module (BRANCHES is a static literal and
+       run() is never called here), and checkSeq needs LIE.hub.order() to compare each
+       descriptor's seq.next against the map's own moon order. engine.js stays out — that
+       one builds a scene the moment it loads. */
+    const before = srcs.filter(s=>!s.startsWith('journeys/') && !s.endsWith('engine.js'));
     const onDisk = [...new Set([...listing.matchAll(/href="[^"]*?([\w-]+\.js)"/g)].map(m=>'journeys/'+m[1]))];
     onDisk.forEach(f=>{
       if(!wired.includes(f)) fail('index.html', f+' exists but has no <script> tag — it never loads');

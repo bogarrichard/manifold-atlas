@@ -190,12 +190,26 @@ function resize(){
    Measured off the flow content: `scrollHeight` counts an open floating panel, which hangs
    below the card on purpose, and would report a card that fits as overflowing. */
 const boEl = document.getElementById('bo');
+const navEl = document.getElementById('nav');
 const PANEL_MIN = 200;      // a floating panel shorter than this is not worth reading
-const BOTTOM_KEEP = 78;     // room under a journey card for the ↑ button; mirrors `.scrolls` in the CSS
+/* The controls used to float *below* the card, so the card had to stop 78px short of the
+   bottom to leave them room. They are inside it now (the console rail), so all that is
+   still owed is the same breathing room the card keeps at the top. Mirrors `.scrolls`. */
+const BOTTOM_KEEP = 22;
 function syncHudScroll(){
-  const pb = parseFloat(getComputedStyle(hudEl).paddingBottom) || 0;
   const top = hudEl.offsetTop;
-  const need = boEl.offsetTop + boEl.offsetHeight + pb;
+  /* Measured off the flow content plus the rail, and deliberately NOT off `navEl.offsetTop`
+     or `hudEl.scrollHeight`: the rail is `position:sticky`, so once it sticks `offsetTop`
+     reports where it is *painted*, not where it sits in layout (810 instead of ~1305 on a
+     long card) — which under-reports the card's height and leaves `.scrolls` off, running
+     the card straight off the bottom of the window. `scrollHeight` is right for the rail
+     but wrong for the bubble (it counts an open floating panel, which hangs below the card
+     on purpose). `offsetHeight` and the computed margin are stable under sticky, so the
+     rail's contribution is added explicitly. No padding term appears here because the card
+     now has *no* bottom padding — the rail carries that gutter itself, which is what lets
+     it stick flush to the card's bottom edge instead of floating a padding's width above it. */
+  const navMt = parseFloat(getComputedStyle(navEl).marginTop) || 0;
+  const need = boEl.offsetTop + boEl.offsetHeight + navMt + navEl.offsetHeight;
   // the hub card has no ↑ button competing for room below it, and is bottom-anchored
   // besides, so there is no bottom margin to reserve
   const avail = innerHeight - top - (hubMode ? 0 : BOTTOM_KEEP);
@@ -231,9 +245,46 @@ if(hubMode){
 } else {
   document.getElementById('hint').innerHTML = C.ui.hint.join('<br>');
 
+  const urlLang = () => new URLSearchParams(location.search).get('lang');
   function goHub(){
-    const l = new URLSearchParams(location.search).get('lang');
+    const l = urlLang();
     location.href = '?journey=hub'+(l?('&lang='+l):'');
+  }
+
+  /* The last station is where a reader decides what to read next, and until now that
+     decision was only ever *stated* — eleven journeys end by naming a destination ("that
+     is the SO(3) moon", "the next moon") with nothing to act on. The only control there
+     was ↓, which lands in system view: from a named moon, four or five more interactions
+     to reach it. `journeyDef.seq` turns those sentences into links.
+
+     Rendered inside #bo, not appended after it, for two reasons: syncHudScroll() measures
+     the card off `boEl`, so anything outside it is invisible to the `.scrolls` decision;
+     and a synthetic extra *card* — the other obvious shape for this — would break the
+     `cards[LANG].length === stations.length` invariant that check.html exists to defend,
+     taking OFF[i]/camPose() with it. This adds no station and no dot.
+
+     Link text is the moon's own title from the content pack (via LIE.hub.moonOf), so no
+     journey name lives in the engine. `handoffs` minus `next` because a journey may name
+     the same moon both ways round and one link is enough. */
+  function whatNext(){
+    const seq = journeyDef.seq;
+    if(!seq) return '';
+    const label = id => {
+      const m = (LIE.hub && LIE.hub.moonOf) ? LIE.hub.moonOf(id) : null;
+      if(!m) return id;
+      const br = ((C.hub && C.hub.branches) || {})[m.branchId] || {};
+      return ((br.moons || {})[m.moonKey] || {}).title || m.fallback || id;
+    };
+    const l = urlLang();
+    const href = id => '?journey='+encodeURIComponent(id)+(l?('&lang='+encodeURIComponent(l)):'');
+    const link = (id,cls) => '<a class="'+cls+'" href="'+href(id)+'">'+label(id)+'</a>';
+    const row = (lab,body) => '<p class="wnrow"><span class="wnlab">'+lab+'</span>'+body+'</p>';
+    const U = C.ui || {};
+    let h = '';
+    if(seq.next) h += row(U.nextStop||'', link(seq.next,'wngo'));
+    const also = (seq.handoffs||[]).filter(id => id !== seq.next);
+    if(also.length) h += row(U.alsoSee||'', also.map(id=>link(id,'wnalso')).join(''));
+    return h ? '<nav class="whatnext" aria-label="'+(U.whatNextAria||'')+'">'+h+'</nav>' : '';
   }
   const toHubBtn = document.getElementById('tohub');
   toHubBtn.hidden = false;
@@ -285,16 +336,32 @@ if(hubMode){
   const hud=document.getElementById('hud'), eb=document.getElementById('eb'),
         ti=document.getElementById('ti'), bo=document.getElementById('bo'),
         dots=document.getElementById('dots');
+  // real <button>s, matching the hub's strip: a <div> is not focusable, cannot be
+  // activated from the keyboard, and announces nothing — yet these dots are the only
+  // way to jump straight to a station.
+  const dotLabel = i => C.ui.stationWord+' '+(i+1)+' / '+CARDS.length+' — '+CARDS[i].t;
   CARDS.forEach((_,i)=>{
-    const d=document.createElement('div'); d.className='dot'+(i===0?' on':'');
+    const d=document.createElement('button');
+    d.type='button'; d.className='dot'+(i===0?' on':'');
+    d.title=CARDS[i].t; d.setAttribute('aria-label', dotLabel(i));
     d.onclick=()=>go(i); dots.appendChild(d);
   });
   function renderCard(i){
     eb.textContent=C.ui.stationWord+' '+(i+1)+' / '+CARDS.length;
     ti.textContent=CARDS[i].t;
-    bo.innerHTML=CARDS[i].b;
+    bo.innerHTML=CARDS[i].b + (i===CARDS.length-1 ? whatNext() : '');
     hud.scrollTop=0;   // a long previous card may have left the box scrolled down
-    [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===i));
+    syncHudScroll();   // the card's own length decides whether it scrolls — measure it now
+                       // rather than waiting on the ResizeObserver, whose delivery rides
+                       // the rendering steps and so lags (or stalls) exactly when a long
+                       // card most needs clamping. The observer stays as the backstop for
+                       // reflows this path cannot see (font swap, viewport-driven rewrap).
+    [...dots.children].forEach((d,k)=>{
+      d.classList.toggle('on',k===i);
+      // aria-current is what carries "you are here" to a screen reader; the .on class
+      // is purely visual. Removed rather than set to "false" — false still announces.
+      if(k===i) d.setAttribute('aria-current','true'); else d.removeAttribute('aria-current');
+    });
     document.getElementById('prev').disabled=(i===0);
     document.getElementById('next').disabled=(i===CARDS.length-1);
     curInst.bindCard(i);
@@ -317,10 +384,14 @@ if(hubMode){
   }
   document.getElementById('prev').onclick=()=>go(cur-1);
   document.getElementById('next').onclick=()=>go(cur+1);
+  // One meaning per key across the whole site: up/Enter go deeper, down/Escape back out.
+  // A journey has no deeper level, so up/Enter simply do nothing here — they are NOT
+  // recycled as "back", which is what they used to mean and what made the direction you
+  // press to leave depend on where you were standing.
   addEventListener('keydown',e=>{
     if(e.key==='ArrowRight') go(cur+1);
     if(e.key==='ArrowLeft') go(cur-1);
-    if(e.key==='ArrowUp') goHub();
+    if(e.key==='ArrowDown') goHub();
   });
 
   /* close any open explanatory bubble (a "what is δ"-style popover) on outside-click;
