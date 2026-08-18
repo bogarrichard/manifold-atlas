@@ -117,7 +117,10 @@ LIE.hub = (function(){
         // and guarantees the name never shares its color with the sphere/ring it floats
         // near. The halo backs that up against any backdrop, not just a same-hue one.
         const blabel=makeLabel(brInfo(br.id).title||br.title, hexStr(PAL.ink), 9.5, {halo:true, haloColor:hexStr(PAL.bg)+'8c'});
-        blabel.position.set(0, coreR+1.7, 0); blabel.material.opacity=0.9;
+        // Lifted well clear of coreR+1.7: in planet view the selected moon's label swells
+        // and sits low-and-near under PRESENT_TILT (see the moon loop below), and at the
+        // old offset the two collided on screen at the default focus camera distance.
+        blabel.position.set(0, coreR+2.6, 0); blabel.material.opacity=0.9;
         blabel.userData.isPlanetLabel=true;   // dropped outright in another planet's view
         planet.add(blabel);
 
@@ -469,6 +472,22 @@ LIE.hub = (function(){
       if(enterBtn.disabled === can) enterBtn.disabled = !can;
     }
 
+    // Land back on the exact planet+moon a journey was entered from, when the URL says so
+    // (engine.js's goHub() stamps them on the way out) — otherwise every exit drops back to
+    // the generic system view and the moon just finished has to be re-found by hand.
+    (function restoreFocus(){
+      const qs=new URLSearchParams(location.search);
+      const brId=qs.get('planet'); if(!brId) return;
+      const br=BRANCHES.find(b=>b.id===brId); if(!br) return;
+      const planet=planets.find(p=>p.userData.branch===br); if(!planet) return;
+      const moonKey=qs.get('moon');
+      let idx=0;
+      if(moonKey){ const i=br.journeys.findIndex(j=>j.k===moonKey); if(i>=0) idx=i; }
+      mode='planet'; focus={planet, br, idx};
+      inFocus=new Set(); planet.traverse(o=>inFocus.add(o));
+      spinCur=planet.userData.ringG.rotation.z;
+      selPlanet=planet;
+    })();
     syncFocus();   // start on the map: nav strip and back button stay out of the way
     place();
 
@@ -632,5 +651,19 @@ LIE.hub = (function(){
     return out;
   }
 
-  return { run, moonOf, order };
+  /* The next *live* moon after `journeyId` within the same planet, or null at the planet's
+     last moon (or if `journeyId` isn't on the map at all). Distinct from `seq.next`, which
+     is hand-authored per journey and free to jump planets — this is purely BRANCHES order,
+     for engine.js to offer as a same-planet "next moon" option independent of that authoring. */
+  function nextMoon(journeyId){
+    for(const br of BRANCHES){
+      const idx = br.journeys.findIndex(j => j.journey === journeyId);
+      if(idx<0) continue;
+      for(let i=idx+1;i<br.journeys.length;i++){ if(br.journeys[i].journey) return br.journeys[i].journey; }
+      return null;
+    }
+    return null;
+  }
+
+  return { run, moonOf, order, nextMoon };
 })();

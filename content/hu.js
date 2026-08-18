@@ -18,6 +18,7 @@ window.LIE_CONTENT.hu = {
     hubBackAria: 'Vissza a központba',
     // az utolsó kártya linkblokkja, az útleírás `seq` mezőjéből
     nextStop: 'tovább',
+    nextMoon: 'következő hold',
     alsoSee: 'kapcsolódik',
     whatNextAria: 'Merre tovább',
     langMenuLabel: 'Nyelv',

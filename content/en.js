@@ -18,6 +18,7 @@ window.LIE_CONTENT.en = {
     hubBackAria: 'Back to the hub',
     // the last card's link block, built from the journey descriptor's `seq`
     nextStop: 'continue',
+    nextMoon: 'next moon',
     alsoSee: 'related',
     whatNextAria: 'Where to go next',
     langMenuLabel: 'Language',
