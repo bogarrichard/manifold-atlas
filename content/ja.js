@@ -18,6 +18,7 @@ window.LIE_CONTENT.ja = {
     hubBackAria: 'ハブに戻る',
     // 最後のカードのリンク欄。journey 記述子の `seq` から組み立てる
     nextStop: '次へ',
+    nextMoon: '次の衛星',
     alsoSee: '関連',
     whatNextAria: 'この先の行き先',
     langMenuLabel: '言語',

@@ -317,7 +317,11 @@ if(hubMode){
   const urlLang = () => new URLSearchParams(location.search).get('lang');
   function goHub(){
     const l = urlLang();
-    location.href = '?journey=hub'+(l?('&lang='+l):'');
+    // stamp which planet+moon this journey lives on, so the hub can land back on the
+    // exact spot left rather than always resetting to the system map
+    const m = (LIE.hub && LIE.hub.moonOf) ? LIE.hub.moonOf(journeyId) : null;
+    const spot = m ? ('&planet='+encodeURIComponent(m.branchId)+'&moon='+encodeURIComponent(m.moonKey)) : '';
+    location.href = '?journey=hub'+(l?('&lang='+l):'')+spot;
   }
 
   /* The last station is where a reader decides what to read next, and until now that
@@ -336,8 +340,7 @@ if(hubMode){
      journey name lives in the engine. `handoffs` minus `next` because a journey may name
      the same moon both ways round and one link is enough. */
   function whatNext(){
-    const seq = journeyDef.seq;
-    if(!seq) return '';
+    const seq = journeyDef.seq || {};
     const label = id => {
       const m = (LIE.hub && LIE.hub.moonOf) ? LIE.hub.moonOf(id) : null;
       if(!m) return id;
@@ -353,6 +356,11 @@ if(hubMode){
     if(seq.next) h += row(U.nextStop||'', link(seq.next,'wngo'));
     const also = (seq.handoffs||[]).filter(id => id !== seq.next);
     if(also.length) h += row(U.alsoSee||'', also.map(id=>link(id,'wnalso')).join(''));
+    // A same-planet "next moon", purely from the BRANCHES order — independent of (and often
+    // redundant with) the hand-authored seq.next/handoffs above, so only added when it names
+    // a moon those don't already offer.
+    const nm = (LIE.hub && LIE.hub.nextMoon) ? LIE.hub.nextMoon(journeyId) : null;
+    if(nm && nm!==seq.next && !also.includes(nm)) h += row(U.nextMoon||U.nextStop||'', link(nm,'wngo'));
     return h ? '<nav class="whatnext" aria-label="'+(U.whatNextAria||'')+'">'+h+'</nav>' : '';
   }
   const toHubBtn = document.getElementById('tohub');
