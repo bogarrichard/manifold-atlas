@@ -1,0 +1,17 @@
+{
+  "name": "Manifold Atlas",
+  "short_name": "Atlas",
+  "description": "Interaktív 3D-utazás a lapos gradiensektől a Riemann-gradiensen és az exponenciális leképezésen át az SO(3)/SE(3) pózokig.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0D1220",
+  "theme_color": "#0D1220",
+  "lang": "hu",
+  "icons": [
+    { "src": "pwa-icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "pwa-icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "pwa-icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

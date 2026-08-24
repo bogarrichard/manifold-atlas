@@ -6,6 +6,12 @@
 <title>Manifold Atlas — a lapos gradienstől az SE(3) pózig</title>
 <meta name="description" content="Interaktív 3D-utazás a lapos gradiensektől a Riemann-gradiensen és az exponenciális leképezésen át az SO(3)/SE(3) pózokig.">
 <meta name="color-scheme" content="dark light">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="pwa-icons/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="pwa-icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0D1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Atlas">
 <script>
 /* set the theme before first paint to avoid a flash */
 (function(){try{var p=localStorage.getItem('lie-theme');
@@ -88,5 +94,10 @@
 <script src="hub.js"></script>
 <!-- Rendering engine: journey player + hub mode. -->
 <script src="engine.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});
+}
+</script>
 </body>
 </html>
