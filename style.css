@@ -242,9 +242,14 @@ body.hub #hud.scrolls{max-height:none}
    amber under the cursor while doing nothing — hence the :not(:disabled) guards above. */
 .nbtn:disabled{opacity:.3;cursor:default}
 .nbtn[hidden]{display:none}
-/* read-aloud: the play/stop glyph is denser than the arrows at the same size, so it is set
-   a little smaller; while speaking, the button holds the amber the others only take on hover */
-#speak{font-size:17px}
+/* Every control's icon is an inline SVG from LIE.icons (see icons.js), drawn on one 24x24
+   grid with a 2px `currentColor` stroke — so the size is set here, per context, rather
+   than in the markup, and `color`/`:hover`/`:disabled` keep working unchanged. `#speak`
+   needed a hand-tuned smaller font-size back when it was a ▶︎ character next to arrow
+   characters of a different optical weight; drawn icons need no such per-glyph correction. */
+.svgic{display:block;flex:none}
+.nbtn .svgic{width:22px;height:22px}
+/* while speaking, the button holds the amber the others only take on hover */
 #speak.speaking{border-color:var(--amber);color:var(--amber);background:var(--panel-strong)}
 #dots{display:flex;gap:9px}
 .dot{position:relative;width:9px;height:9px;border-radius:50%;background:var(--dot);border:0;
@@ -318,7 +323,9 @@ body.hub #nav::after{right:40px}
   font-family:ui-monospace,Menlo,monospace;font-size:17.5px;text-align:left;
   transition:border-color .15s,color .15s}
 #themebtn:hover,#speechbtn:hover{border-color:var(--amber);color:var(--ink)}
-#themebtn .ticon,#speechbtn .ticon{font-size:20px;line-height:1;width:16px;text-align:center}
+#themebtn .ticon,#speechbtn .ticon{display:flex;align-items:center;justify-content:center;
+  flex:none;width:18px}
+#themebtn .svgic,#speechbtn .svgic{width:18px;height:18px}
 
 /* voice picker: a plain <select>, matching the toggle button's row width and border
    language rather than trying to look like a custom dropdown — this is a system list
@@ -338,6 +345,7 @@ body.hub #nav::after{right:40px}
   border:1px solid var(--line);border-radius:7px;background:none;color:var(--muted);
   font-family:ui-monospace,Menlo,monospace;font-size:16px;line-height:1;cursor:pointer;
   transition:border-color .15s,color .15s}
+.tsbtn .svgic{width:15px;height:15px}
 .tsbtn:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
 .tsbtn:disabled{opacity:.35;cursor:default}
 #tstrack{position:relative;flex:1 1 auto;height:28px;display:flex;align-items:center;
@@ -360,7 +368,13 @@ body.hub #nav::after{right:40px}
   color:var(--muted);text-decoration:none;white-space:nowrap}
 #langmenu a:hover{background:color-mix(in srgb, var(--amber) 12%, transparent);color:var(--ink)}
 #langmenu a.on{color:var(--ink)}
-#langmenu a.on::after{content:'✓';margin-left:auto;color:var(--amber)}
+/* The one icon that cannot come from icons.js: `content` holds text, not markup. Same
+   path, same 24x24 grid and stroke weight as the rest of the set, re-encoded as a mask so
+   `background` still colors it from the theme — keep it in step with LIE.icons. */
+#langmenu a.on::after{content:'';margin-left:auto;flex:none;width:15px;height:15px;
+  background:var(--amber);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5l5 5 10-11'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5l5 5 10-11'/%3E%3C/svg%3E") center/contain no-repeat}
 #langmenu .flag{font-size:21.5px;line-height:1}
 
 #hint{font-size:16px;color:var(--faint);line-height:1.75;

@@ -27,15 +27,18 @@
   <div class="eyebrow" id="eb"></div>
   <h1 id="ti"></h1>
   <div id="bo"></div>
+  <!-- The buttons ship empty: their icons come from LIE.icons (icons.js) as inline SVG,
+       set by engine.js/hub.js, so every control in the app is drawn from one 24x24 grid
+       instead of borrowing whatever glyph the platform's fallback font has for an arrow. -->
   <div id="nav">
-    <button class="nbtn" id="tohub" type="button" hidden>⬇︎</button>
-    <button class="nbtn" id="toenter" type="button" hidden>⬆︎</button>
-    <button class="nbtn" id="speak" type="button" hidden>▶︎</button>
+    <button class="nbtn" id="tohub" type="button" hidden></button>
+    <button class="nbtn" id="toenter" type="button" hidden></button>
+    <button class="nbtn" id="speak" type="button" hidden></button>
     <div id="navmain">
-      <button class="nbtn" id="prev" type="button">⬅︎</button>
+      <button class="nbtn" id="prev" type="button"></button>
       <div id="dots"></div>
       <span id="dotctr" class="dotctr" aria-hidden="true"></span>
-      <button class="nbtn" id="next" type="button">➡︎</button>
+      <button class="nbtn" id="next" type="button"></button>
     </div>
   </div>
 </div>
@@ -68,6 +71,7 @@
 <script src="content/en.js"></script>
 <script src="content/ja.js"></script>
 <!-- Shared toolkit (math + Three.js helpers), then journeys, then the player. -->
+<script src="icons.js"></script>
 <script src="kit.js"></script>
 <script src="journeys/so3-optimization.js"></script>
 <script src="journeys/slam-factor-graph.js"></script>

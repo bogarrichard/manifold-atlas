@@ -18,6 +18,18 @@ if(C.meta && C.meta.title) document.title = C.meta.title;
 document.getElementById('prev').setAttribute('aria-label', C.ui.prevAria);
 document.getElementById('next').setAttribute('aria-label', C.ui.nextAria);
 
+/* ---- icons ---------------------------------------------------------------
+   One drawn set for every control (see icons.js for why they are not characters).
+   The markup in index.html ships the rail's buttons empty and they are filled here, so
+   the four arrows can never drift apart: there is exactly one definition of each. The
+   hub gets the same object through `run()`'s ctx rather than reaching for the global,
+   matching how it already receives THREE, the kit and the palette. */
+const ICON = LIE.icons;
+document.getElementById('prev').innerHTML   = ICON.left;
+document.getElementById('next').innerHTML   = ICON.right;
+document.getElementById('tohub').innerHTML  = ICON.down;
+document.getElementById('toenter').innerHTML = ICON.up;
+
 /* Language list (only shown when more than one pack is loaded). It lives inside the
    top-right menu panel, so it is a plain always-visible list — a dropdown nested in a
    dropdown would need two clicks to reach one link. */
@@ -90,7 +102,7 @@ applySceneTheme();
 
 /* ---- theme toggle (shared; content re-theme delegated per mode) -------- */
 let rethemeContent = ()=>{};
-const THEME_ICON = {system:'◐', light:'☀', dark:'☾'};
+const THEME_ICON = {system:ICON.themeSystem, light:ICON.themeLight, dark:ICON.themeDark};
 const THEME_NEXT = {system:'light', light:'dark', dark:'system'};
 const themeBtn = document.createElement('button');
 themeBtn.id='themebtn'; themeBtn.type='button';
@@ -145,14 +157,14 @@ document.documentElement.style.setProperty('--text-scale', TEXT_SCALE[textSizePr
 const tsWrap = document.createElement('div');
 tsWrap.id = 'textsizectl';
 const tsMinus = document.createElement('button');
-tsMinus.id='tsminus'; tsMinus.type='button'; tsMinus.className='tsbtn'; tsMinus.textContent='−';
+tsMinus.id='tsminus'; tsMinus.type='button'; tsMinus.className='tsbtn'; tsMinus.innerHTML=ICON.minus;
 const tsTrack = document.createElement('div');
 tsTrack.id='tstrack'; tsTrack.setAttribute('role','slider');
 tsTrack.setAttribute('aria-valuemin','0'); tsTrack.setAttribute('aria-valuemax', String(TEXT_STEPS.length-1));
 tsTrack.tabIndex = 0;
 tsTrack.innerHTML = '<span class="tsfill"></span>' + TEXT_STEPS.map((_,i)=>'<span class="tsdot" data-i="'+i+'"></span>').join('');
 const tsPlus = document.createElement('button');
-tsPlus.id='tsplus'; tsPlus.type='button'; tsPlus.className='tsbtn'; tsPlus.textContent='+';
+tsPlus.id='tsplus'; tsPlus.type='button'; tsPlus.className='tsbtn'; tsPlus.innerHTML=ICON.plus;
 const tsName = document.createElement('span');
 tsName.id='tsname';
 tsWrap.append(tsMinus, tsTrack, tsPlus, tsName);
@@ -228,7 +240,7 @@ mqlDark.addEventListener('change', ()=>{ if(themePref==='system') setTheme(resol
 // Named `reader`, not `speech`: the menu's container div is `<div id="speech">`, and an
 // element id is exposed as a window property — same name, two things, one of them silent.
 const SPEECH_KEY = 'lie-speech';
-const SPEECH_ICON = { off:'▷', auto:'▶' };
+const SPEECH_ICON = { off:ICON.speechOff, auto:ICON.speechOn };
 const SPEECH_NEXT = { off:'auto', auto:'off' };
 const reader = (function(){
   const synth = window.speechSynthesis;
@@ -395,7 +407,7 @@ const reader = (function(){
     const via = voice.name + (voice.localService ? '' : ' · '+(sp.network || 'network'));
     btn.title = (sp.label || 'Read aloud') + ': ' + name + ' — ' + via;
     btn.setAttribute('aria-label', (sp.label || 'Read aloud') + ': ' + name);
-    rail.textContent = speaking ? '■' : '▶︎';
+    rail.innerHTML = speaking ? ICON.stop : ICON.play;
     rail.classList.toggle('speaking', speaking);
     const ra = speaking ? (sp.stopAria || 'Stop reading') : (sp.playAria || 'Read aloud');
     rail.title = ra; rail.setAttribute('aria-label', ra);
@@ -604,7 +616,7 @@ if(hubMode){
   ti.textContent = (C.meta && C.meta.title) || '';
   bo.innerHTML   = (C.hub && C.hub.intro) || '';
 
-  const hubApi = LIE.hub.run({ THREE, kit:K, scene, camera, renderer, canvas:cv, C, PAL });
+  const hubApi = LIE.hub.run({ THREE, kit:K, scene, camera, renderer, canvas:cv, C, PAL, icons:ICON });
   rethemeContent = ()=>{ hubApi.retheme(PAL); };
   requestAnimationFrame(()=>forceRepaint(hudEl));   // see forceRepaint's comment above
 

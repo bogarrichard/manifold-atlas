@@ -36,6 +36,7 @@ LIE.hub = (function(){
 
   function run(ctx){
     const { THREE, kit, scene, camera, renderer, canvas, C } = ctx;
+    const ICON = ctx.icons;   // the one drawn icon set (icons.js), handed over by engine.js
     const { V3, lerp, ease, clamp, RM, makeLabel, updateLabel, fatArrow, setArrow, hexStr } = kit;
     let PAL = ctx.PAL;
     const HUB = C.hub || {};
@@ -349,8 +350,9 @@ LIE.hub = (function(){
       backBtn.disabled = mode!=='planet';
       // its action is exitPlanet(), which lives on ↓/Esc — the icon has to agree, or
       // clicking it and pressing the key the icon suggests would do opposite things.
-      // Same glyph the journey player's back button carries: one "back out" arrow sitewide.
-      backBtn.textContent = '⬇︎';
+      // Same icon the journey player's back button carries: one "back out" arrow sitewide,
+      // and now literally the same drawing (LIE.icons.down) rather than the same character.
+      backBtn.innerHTML = ICON.down;
       /* The mouse counterpart of ↑/Enter, and the only one of the pair that shows at both
          hub levels. Disabled rather than hidden when there is no target (nothing selected
          on the map, a not-yet-built moon in a planet): a control that vanishes and
