@@ -68,7 +68,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
    top of the bar closes to ~20px there, and the two start to read as one crowded mass. */
 body.hub #hud{top:auto;left:50%;bottom:26px;transform:translateX(-50%);
   width:clamp(560px, 62vw, 1100px);max-width:calc(100vw - 48px);
-  height:48vh;display:flex;flex-direction:column;
+  height:48dvh;display:flex;flex-direction:column;
   padding:24px 40px 0;text-align:center}
 body.hub #bo{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
   scrollbar-width:thin}
@@ -143,12 +143,12 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
    full-height panel. It then overlaps the foot of the card, which is fine: it is opaque.
    `--bubmax` is the room the engine measured below the card; past that the panel would
    run off the bottom of the window, and it scrolls internally instead. */
-.bubble{position:absolute;top:min(calc(100% + 12px), calc(100vh - min(56vh,440px) - 40px));
+.bubble{position:absolute;top:min(calc(100% + 12px), calc(100dvh - min(56dvh,440px) - 40px));
   left:0;right:0;z-index:8;
   padding:14px 16px;border-radius:12px;background:var(--panel-strong);
   border:1px solid var(--line);box-shadow:0 16px 44px rgba(0,0,0,0.55);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  max-height:min(56vh,440px,var(--bubmax,440px));overflow-y:auto}
+  max-height:min(56dvh,440px,var(--bubmax,440px));overflow-y:auto}
 .bubble[hidden]{display:none}
 .bubble::before{content:'';position:absolute;top:-7px;left:26px;width:12px;height:12px;
   background:var(--panel-strong);border-left:1px solid var(--line);border-top:1px solid var(--line);
@@ -161,7 +161,11 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
 /* 44px = the 22px top offset + the same again below; `BOTTOM_KEEP` in engine.js is that
    bottom 22 (keep the two in step). It used to be 78 to clear a floating exit button that
    now rides inside the card. */
-#hud.scrolls{max-height:calc(100vh - 44px);overflow-y:auto;overscroll-behavior:contain}
+/* `--hudmax` is the room engine.js measured off `innerHeight` — see syncHudScroll(). The
+   `100dvh` fallback covers only the first frame, before that runs; it is `dvh` and not
+   `vh` for the same reason the variable exists at all (on a mobile browser `vh` is the
+   toolbar-less large viewport, which is taller than the screen actually is here). */
+#hud.scrolls{max-height:var(--hudmax, calc(100dvh - 44px));overflow-y:auto;overscroll-behavior:contain}
 #hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
 #hud.scrolls .bubble::before{display:none}
 /* The hub card has no ↑ button to keep clear of, so it only needs symmetric top/bottom
@@ -421,7 +425,7 @@ body.hub #nav::after{right:40px}
      is already the full-width bottom sheet). */
   #hud, #hud.scrolls{top:auto;bottom:12px;left:0;width:100vw;max-width:100vw;
     padding:15px 17px 0;
-    max-height:50vh;overflow-y:auto;overscroll-behavior:contain;
+    max-height:50dvh;overflow-y:auto;overscroll-behavior:contain;
     background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
   /* Desktop only inlines a footnote panel once `.scrolls` is toggled by JS, which is tuned
      to a much taller threshold than this 60vh cap — a card short enough to dodge that
@@ -434,7 +438,7 @@ body.hub #nav::after{right:40px}
      so this wins on source order alone — just narrower padding and smaller corner
      brackets for the tighter width. 40vh (vs. the journey card's 60) leaves the map,
      rather than reading content, most of the screen. */
-  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 0;height:40vh;
+  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 0;height:40dvh;
     background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
   /* re-bleed the rail to the phone card's tighter gutters (17px sides, 15px foot) */
   #nav{margin:14px -17px 0;padding:10px 17px 13px}

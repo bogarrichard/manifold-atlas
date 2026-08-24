@@ -568,6 +568,18 @@ function syncHudScroll(){
   const avail = innerHeight - top - (hubMode ? 0 : BOTTOM_KEEP);
   const room = innerHeight - (top + Math.min(need, avail)) - 24;  // the 12px gap under the card, and as much again below
   hudEl.style.setProperty('--bubmax', Math.max(0, room) + 'px');
+  /* The `.scrolls` cap, published to the CSS rather than left to a `vh` expression there.
+     On a phone or tablet browser with a retractable URL bar, `100vh` is the *large*
+     viewport (as if the bar were hidden) while `innerHeight` — the number `avail` above is
+     computed from, and the number the card actually has to fit into — is the smaller,
+     visible one. Nothing here ever scrolls the document, so that bar never retracts and
+     the two never converge: the CSS capped the card ~60px taller than the screen, and the
+     console rail, sticky to the card's *bottom* edge, sat just below the fold. It showed up
+     only from the second station on, because station 1 is usually short enough to fit
+     without `.scrolls` at all — the exact shape of the bug report. Deriving the cap from
+     the same `innerHeight` that decides `.scrolls` in the first place keeps the CSS and the
+     JS from disagreeing about how tall the window is. */
+  hudEl.style.setProperty('--hudmax', Math.max(0, avail) + 'px');
   // the hub has no floating footnote panel to reserve room for — it never needs `room`
   // (which is near-zero anyway: the hub card sits close to the bottom edge on purpose)
   hudEl.classList.toggle('scrolls', need > avail || (!hubMode && room < PANEL_MIN));
