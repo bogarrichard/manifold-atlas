@@ -197,6 +197,13 @@ LIE.hub = (function(){
     // faking the planets onto a shared radius or leaving the map's real proportions behind.
     // Survives the mouse moving elsewhere (mouse hover only *previews* over it, see pick()).
     let selPlanet=null;
+    // Idle-out of planet view: after a minute with no pointer/wheel/key activity while
+    // focused on a planet, drop back to the system view with nothing selected — the same
+    // state a fresh load starts in — rather than leaving a carousel parked indefinitely.
+    // Only tracked/checked while mode==='planet'; the map itself has no timeout.
+    const IDLE_MS = 60000;
+    let lastActivity = performance.now();
+    function noteActivity(){ lastActivity = performance.now(); }
 
     const FOCUS_OFF = V3(0, 4.5, 23);  // where the camera sits relative to the focused planet
     // Ring lean in planet view: front moon low and near. Close to -π/2 (fully horizontal,
@@ -245,6 +252,7 @@ LIE.hub = (function(){
     function enterPlanet(planet, idx){
       const br=planet.userData.branch;
       beginTrans();
+      noteActivity();
       mode='planet'; focus={planet, br, idx:idx||0};
       inFocus=new Set(); planet.traverse(o=>inFocus.add(o));
       // start the carousel from wherever the ring happens to be, so it winds rather than snaps
@@ -260,6 +268,14 @@ LIE.hub = (function(){
       beginTrans(); mode='system'; focus=null; inFocus=new Set();
       aimAtSel();
       setCard(selPlanet.userData.branch, null); syncFocus();
+    }
+    // Same as pressing ↓/Escape twice in a row (leave the planet, then clear the map
+    // selection Escape would clear) — reached only from the idle timer in loop(), never
+    // from an input handler, so it needs no e.preventDefault() of its own.
+    function idleReturnToDefault(){
+      if(mode!=='planet') return;
+      exitPlanet();
+      selPlanet=null; thetaGoal=null; setCard(null,null); syncFocus();
     }
     function step(d){
       if(mode!=='planet') return;
@@ -402,6 +418,7 @@ LIE.hub = (function(){
       pointer.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
     }
     canvas.addEventListener('pointerdown',e=>{
+      noteActivity();
       touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
       canvas.setPointerCapture(e.pointerId);
       if(touches.size===2){ dragging=false; pinchD0=pinchDist(); radius0=radius; return; }
@@ -417,6 +434,7 @@ LIE.hub = (function(){
     });
     canvas.addEventListener('pointermove',e=>{
       if(!touches.has(e.pointerId)) return;
+      noteActivity();
       touches.set(e.pointerId,{x:e.clientX,y:e.clientY});
       setPointerFromEvent(e);
       if(touches.size===2){
@@ -436,6 +454,7 @@ LIE.hub = (function(){
       }
     });
     canvas.addEventListener('pointerup',e=>{
+      noteActivity();
       touches.delete(e.pointerId);
       if(touches.size<2) pinchD0=null;
       dragging=false; canvas.classList.remove('grabbing');
@@ -465,6 +484,7 @@ LIE.hub = (function(){
       dragging=false; canvas.classList.remove('grabbing');
     });
     canvas.addEventListener('wheel',e=>{
+      noteActivity();
       e.preventDefault();
       if(mode==='planet') return;              // the planet view frames itself; zoom is the map's tool
       radius=clamp(radius*(1+Math.sign(e.deltaY)*0.08), 16, 85);
@@ -476,6 +496,7 @@ LIE.hub = (function(){
     // same way ←/→ already step the selected moon; ↓ has nothing further out to back into,
     // so it clears the selection instead.
     addEventListener('keydown', e=>{
+      noteActivity();
       if(mode==='planet'){
         if(e.key==='ArrowRight'){ step(1); e.preventDefault(); }
         else if(e.key==='ArrowLeft'){ step(-1); e.preventDefault(); }
@@ -494,6 +515,11 @@ LIE.hub = (function(){
       // the selection instead — but it is still the same pair, not a third convention
       else if(e.key==='ArrowDown' || e.key==='Escape'){ selPlanet=null; thetaGoal=null; setCard(null,null); e.preventDefault(); }
     });
+    // The console rail (dots, prev/next, enter, exit) is real DOM buttons outside the
+    // canvas, so none of it reaches the canvas-level pointer handlers noteActivity() is
+    // wired into above — one delegated listener covers all of it instead of touching
+    // every onclick below.
+    navWrap.addEventListener('pointerdown', noteActivity);
     navWrap.querySelector('#prev').onclick=()=>{ if(mode==='planet') step(-1); else stepPlanet(-1); };
     navWrap.querySelector('#next').onclick=()=>{ if(mode==='planet') step(1); else stepPlanet(1); };
     backBtn.onclick=()=>exitPlanet();
@@ -543,6 +569,7 @@ LIE.hub = (function(){
       requestAnimationFrame(loop);
       const dt=Math.min(clock.getDelta(), 0.05); T+=dt;
       const now=performance.now();
+      if(mode==='planet' && now-lastActivity>IDLE_MS) idleReturnToDefault();
       if(flight){
         const u=ease(clamp((now-flight.t0)/flight.dur,0,1));
         camera.position.lerpVectors(flight.from, flight.to, u);
