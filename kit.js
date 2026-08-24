@@ -57,20 +57,62 @@ LIE.kit = (function(){
     g.userData.cyl.scale.set(1, Math.max(L-0.22,0.02), 1);
     g.userData.cone.position.y = L-0.12;
   }
+  /* ---- sprite labels ----------------------------------------------------
+     A label is text rasterized by the browser's own font engine onto a canvas, then used
+     as a texture — so the glyphs are already the device's real ones, at the device's real
+     hinting. What decides whether they look sharp is only how many texture pixels back
+     each on-screen pixel.
+
+     The drawing below is written against a fixed 512x128 *logical* box (font 46px, fitted
+     to 470px wide, baseline at y=66). `S` scales the backing store under that box without
+     touching any of it. It used to be just the device pixel ratio, which silently assumed
+     every label is drawn at the same world size — true for the journeys, which nearly all
+     take the 3.2-unit default, and wrong for the hub, whose planet (9.5) and moon (11.5)
+     labels are three times as wide in world units and so were getting a third of the
+     texture density: at the hub's fixed planet-view camera distance (~23 units, a ~22.8
+     unit tall frustum) a moon label covers ~390 CSS px of a 512px-wide texture, i.e. it is
+     *magnified* on any display taller than about 1000 CSS px. Hence a density — texture px
+     per world unit — instead: LABEL_PPU is exactly the old default's (512/3.2), so a 3.2
+     label is byte-for-byte what it was, and a wider one now gets a wider canvas rather
+     than a stretched one.
+
+     The cap is the one real constraint, and it is memory, not the GL limit: a label costs
+     w*h*4 bytes of GPU texture, so the hub's fifteen labels alone would run to ~60MB if
+     they were allowed the 2048 every WebGL implementation is required to support. The
+     11.5-unit moon labels are the worst offenders and mostly *empty* — eleven of the twelve
+     show a bare number in a box sized for a full title — so the ceiling is set at 1536,
+     which puts the hub at ~35MB, about what a journey page already spends on its own
+     labels. That still resolves ~134 device px per world unit for a moon label: enough for
+     a 3000px-tall device viewport at the hub's fixed planet-view distance, i.e. more than
+     any current display asks for. It gives up a little only in system view zoomed to the
+     `radius` floor, where a planet label can be magnified past it. */
   const LABEL_DPR = Math.min(window.devicePixelRatio||1, 3);
+  const LABEL_PPU = 160;          // texture pixels per world unit (= the old 512/3.2)
+  const LABEL_MAXPX = 1536;       // widest canvas we will allocate (see above: a memory ceiling)
+  const labelScale = w => Math.max(LABEL_DPR,
+                            Math.min(LABEL_DPR * (w*LABEL_PPU)/512, LABEL_MAXPX/512));
   function makeLabel(text, color, w, opts){
     w = w||3.2;
+    const S = labelScale(w);
     const cv = document.createElement('canvas');
-    cv.width=512*LABEL_DPR; cv.height=128*LABEL_DPR;
+    cv.width=Math.round(512*S); cv.height=Math.round(128*S);
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({transparent:true, depthTest:false}));
-    sp.userData.cv=cv;
+    sp.userData.cv=cv; sp.userData.labelScale=S;
     sp.scale.set(w, w*0.25, 1);
     updateLabel(sp, text, color, opts);
     return sp;
   }
+  /* The same serif stack `#hud h1` uses in style.css, not a bare `Georgia, serif`: Georgia
+     carries no CJK, so a Japanese label (the hub's moon titles, for one) fell through to
+     whatever the platform picked by itself — usually a sans-serif, next to Georgia's serif
+     in every other label. Naming the fallbacks keeps one typeface family across languages. */
+  const LABEL_FONT = 'Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",'+
+                     '"Noto Serif JP","Yu Mincho",serif';
+  const labelFont = px => 'italic '+Math.round(px)+'px '+LABEL_FONT;
   function updateLabel(sp, text, color, opts){
     const cv=sp.userData.cv, ctx=cv.getContext('2d');
-    ctx.setTransform(LABEL_DPR,0,0,LABEL_DPR,0,0);
+    const S=sp.userData.labelScale||LABEL_DPR;
+    ctx.setTransform(S,0,0,S,0,0);
     ctx.clearRect(0,0,512,128);
     const toks=[];
     for(let i=0;i<text.length;i++){
@@ -82,7 +124,7 @@ LIE.kit = (function(){
     let F=46;
     // give superscripts a little breathing room from their base (^ token => s:1),
     // counted in both the width pass and the draw pass so centering stays correct
-    const wOf=f=>{let w=0; toks.forEach(k=>{ctx.font='italic '+Math.round(k.s?f*0.62:f)+'px Georgia, serif'; if(k.s) w+=f*0.06; w+=ctx.measureText(k.t).width;}); return w;};
+    const wOf=f=>{let w=0; toks.forEach(k=>{ctx.font=labelFont(k.s?f*0.62:f); if(k.s) w+=f*0.06; w+=ctx.measureText(k.t).width;}); return w;};
     let W=wOf(F); if(W>470){ F=F*470/W; W=wOf(F); }
     let x=(512-W)/2;
     ctx.textAlign='left'; ctx.textBaseline='middle';
@@ -100,7 +142,7 @@ LIE.kit = (function(){
     if(halo){ ctx.lineWidth=Math.max(3, F*0.13); ctx.strokeStyle=(opts.haloColor||'rgba(0,0,0,0.55)'); ctx.lineJoin='round'; }
     ctx.fillStyle=color||'#FAC775';
     toks.forEach(k=>{
-      ctx.font='italic '+Math.round(k.s?F*0.62:F)+'px Georgia, serif';
+      ctx.font=labelFont(k.s?F*0.62:F);
       if(k.s) x+=F*0.06;
       const y = k.s?46:66;
       if(halo) ctx.strokeText(k.t, x, y);
@@ -108,7 +150,9 @@ LIE.kit = (function(){
       x+=ctx.measureText(k.t).width;
     });
     const tex=new THREE.CanvasTexture(cv);
-    tex.minFilter=THREE.LinearFilter;
+    // no mipmap chain: minFilter is Linear, so it would never be sampled — it would only
+    // cost a third again of the (now much larger) texture's memory to build and upload
+    tex.minFilter=THREE.LinearFilter; tex.generateMipmaps=false;
     if(sp.material.map) sp.material.map.dispose();
     sp.material.map=tex; sp.material.needsUpdate=true;
   }
