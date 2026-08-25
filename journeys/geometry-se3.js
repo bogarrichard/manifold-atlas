@@ -671,6 +671,7 @@ LIE.journeys['geometry-se3'] = (function(){
       wireBubble('se3OrdInfo','se3OrdNote');       // card 4
       wireBubble('se3SkewInfo','se3SkewNote');     // card 5
       wireBubble('se3ChaInfo','se3ChaNote');       // card 6
+      wireBubble('se3HatInfo','se3HatNote');       // card 6
       wireBubble('se3IntInfo','se3IntNote');       // card 7
       wireBubble('se3SerInfo','se3SerNote');       // card 8
       wireBubble('se3AdjInfo','se3AdjNote');       // card 9
