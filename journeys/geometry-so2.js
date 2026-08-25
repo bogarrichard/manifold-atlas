@@ -21,9 +21,6 @@ LIE.journeys['geometry-so2'] = (function(){
   const K = LIE.kit;
   const { V3, ease, hexStr, fatArrow, setArrow, makeLabel, updateLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(42,4,-11), V3(84,-3,9)];
-  const OFF = [V3(0,2.2,8.8), V3(0,2.4,8.6), V3(0,2.2,8.4)];
-
   // Station 1: the two rotations composed in both orders. Station 2: the angle whose
   // approximation is drawn — the same α the card quotes numbers for.
   const A1 = 0.9, A2 = 1.7;
@@ -185,7 +182,6 @@ LIE.journeys['geometry-so2'] = (function(){
   return {
     id: 'geometry-so2',
     tier: 'geometry',
-    layout: { SP, OFF },
     threadKey: 'teal',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

@@ -5,7 +5,8 @@
    and drives the tick + camera. Requires LIE.kit (loaded first).
 
    Descriptor shape:
-     { id, tier, layout:{SP,OFF}, threadKey, build(content, palette) -> {stations, bindCard} }
+     { id, tier, threadKey, build(content, palette) -> {stations, bindCard} }
+     (layout lives in layouts/<id>.json)
    `build` binds a language pack + the active theme palette: `stations` are group
    builders, `bindCard(i)` wires any interactive HUD controls for card i.
    `threadKey` names the palette color used for the connecting thread. */
@@ -15,12 +16,6 @@ LIE.journeys['so3-optimization'] = (function(){
   const K = LIE.kit;
   const { V3, lerp, ease, clamp, RM, hexStr,
           fatArrow, setArrow, makeLabel, updateLabel, baseSphere, dashedLine, expSph, projT } = K;
-
-  // Station world positions and the camera offset used to view each one.
-  const SP = [V3(0,0,0), V3(64,6,-18), V3(128,-4,8), V3(192,8,-6),
-              V3(256,-6,14), V3(322,4,-12), V3(392,-2,10), V3(458,8,-8)];
-  const OFF = [V3(0,1.6,7.6), V3(0,4.4,8.6), V3(0,1.8,6.8), V3(2.2,2.2,6.2),
-               V3(2.4,1.6,6.6), V3(0,2.2,7.0), V3(0,2.0,8.8), V3(0,3.2,9.6)];
 
   function build(C, PAL){
     const LB = C.labels;
@@ -406,7 +401,6 @@ LIE.journeys['so3-optimization'] = (function(){
     // SLAM planet in hub.js. It read 'optimization' from back when the site was this
     // one journey — nothing consumed the field, so the drift went unnoticed.
     tier: 'slam',
-    layout: { SP, OFF },
     threadKey: 'violet2',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

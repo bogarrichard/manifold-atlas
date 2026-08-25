@@ -471,6 +471,22 @@ const reader = (function(){
   document.getElementById('mtextsize-h').textContent = (ui.textSize && ui.textSize.label) || 'Text size';
   document.getElementById('mlang-h').textContent = ui.langMenuLabel || 'Language';
   document.getElementById('mhint-h').textContent = ui.controlsLabel || 'Controls';
+  /* Dev switch: reveals the station/camera tuning overlay built further down (journey
+     mode only — a no-op in the hub, which has no SP/OFF to tune). Persisted so it survives
+     the full-page reload a hub<->journey nav is, which is what lets you flip it on once and
+     then walk moon to moon accumulating tuned layouts. A reload on toggle (rather than
+     wiring the overlay to appear/disappear live) is the deliberately cheap way to keep this
+     one flag in sync with a feature built at page-load time. */
+  const devBtn = document.createElement('button');
+  devBtn.id='devbtn'; devBtn.type='button';
+  devBtn.innerHTML = '<span class="devdot" aria-hidden="true"></span><span>Station tuning</span>';
+  document.getElementById('dev').appendChild(devBtn);
+  const devOn = () => { try{ return localStorage.getItem('lie-dev')==='1'; }catch(e){ return false; } };
+  devBtn.setAttribute('aria-pressed', devOn()?'true':'false');
+  devBtn.addEventListener('click', ()=>{
+    try{ localStorage.setItem('lie-dev', devOn()?'0':'1'); }catch(e){}
+    location.reload();
+  });
   const setOpen = v=>{ panel.hidden = !v; btn.setAttribute('aria-expanded', v?'true':'false'); };
   btn.addEventListener('click', e=>{ e.stopPropagation(); setOpen(panel.hidden); });
   document.addEventListener('click', e=>{ if(!panel.hidden && !cluster.contains(e.target)) setOpen(false); });
@@ -537,8 +553,24 @@ function viewShift(){
   if(innerWidth <= 640 || hubMode) return {ox:0, oy:bottomLift()};   // positive oy => content moves up
   return {ox:-(hudEl.getBoundingClientRect().right / 2), oy:0};  // negative ox => content moves right
 }
+/* Declared above resize() on purpose: resize() runs once during startup, below, and reads
+   both of these — as `let`s declared after that call they would be in the temporal dead
+   zone and throw. Module scope, not the drag block's, because an authored card width
+   (layouts/<id>.json's `CARD`) has to clamp exactly the way a drag does and the journey
+   player is a separate top-level block. HUD_MIN_W is the card's old fixed width; the
+   `innerWidth - 380` term keeps the 3D view from being squeezed off a narrow window. */
+const HUD_MIN_W = 460, HUD_MAX_W = 900;
+const clampCardW = w => Math.max(HUD_MIN_W, Math.min(Math.min(HUD_MAX_W, innerWidth - 380), w));
+// set by the journey player when the tuning panel is up, so a drag writes back into CARD[cur]
+let onCardDrag = null;
+// set by the journey player; re-clamps an authored CARD width on a window resize
+let reapplyCardWidth = null;
+
 function resize(){
   camera.aspect=innerWidth/innerHeight;
+  // an authored CARD width clamps against innerWidth, so it has to be re-clamped here;
+  // this only writes the style (it does not call resize back), so there is no recursion
+  if(reapplyCardWidth) reapplyCardWidth();
   const s=viewShift();
   // setViewOffset re-derives aspect from the full size, so the image is not stretched
   if(s.ox||s.oy) camera.setViewOffset(innerWidth, innerHeight, s.ox, s.oy, innerWidth, innerHeight);
@@ -626,12 +658,11 @@ addEventListener('resize',resize); resize();
    user override — but the CSS `max-width` there still caps it on a later window shrink,
    so no extra reflow handling is needed here. */
 if(!hubMode){
-  const HUD_MIN_W = 460, HUD_MAX_W = 900;
   let dragStartX = 0, dragStartW = 0;
   function onDragMove(e){
-    const maxW = Math.min(HUD_MAX_W, innerWidth - 380);
-    const w = Math.max(HUD_MIN_W, Math.min(maxW, dragStartW + (e.clientX - dragStartX)));
+    const w = clampCardW(dragStartW + (e.clientX - dragStartX));
     hudEl.style.width = w + 'px';
+    if(onCardDrag) onCardDrag(w);
     resize();
   }
   function onDragEnd(){
@@ -731,9 +762,112 @@ if(hubMode){
   toHubBtn.title = (C.ui && C.ui.hubBackAria) || 'Hub';
   toHubBtn.onclick = goHub;
 
-  const SP = journeyDef.layout.SP;
-  const OFF = journeyDef.layout.OFF;
+  /* Where a journey's layout comes from, innermost last:
+
+       1. `layouts/<id>.json`  — the journey's default, and the file to edit in the repo.
+       2. `layouts.json`       — an optional whole-repo override on top, for trying a
+                                 tuning out before committing it into (1).
+       3. a synthesized fallback — only if (1) is missing or unreadable.
+
+     Both are fetched by index.html and parked on LIE.layoutDefault / LIE.layouts before
+     this file is injected, because the scene is built the moment engine.js runs: a layout
+     arriving later could only be applied as a visible jump. Each is SP / OFF / optional
+     PAN as [x, y, z] triples — the shape the dev tuning panel downloads, so its output is
+     a drop-in either way.
+
+     Layers 1 and 2 are validated per key and ignored (with a warning) if an array does not
+     match the station count or is not all finite triples. Being lenient rather than
+     throwing is deliberate — this is authoring data meant to be droppable, and a
+     wrong-length array would otherwise take out `camPose()` on the last station exactly
+     the way a mismatched card array does, the failure check.html exists to catch. Silent
+     at runtime, loud at the gate: check.html validates both layers against every journey's
+     real station count.
+
+     Layer 3 exists so that a missing layouts/<id>.json degrades to a usable-but-obviously-
+     plain scene (stations in a straight line, one standard camera offset) instead of a
+     blank page, since the station geometry itself is perfectly fine without it. It reads
+     the count from `build().stations`, which is an array of *builder functions* — cheap to
+     measure, nothing is constructed by asking for its length. */
+  const DEFAULT_OFF = V3(0, 2.6, 9.2), STATION_GAP = 46;
+  const LAYOUT = (function(){
+    const tripsOK = (a, n) => Array.isArray(a) && a.length === n
+      && a.every(p => Array.isArray(p) && p.length === 3
+                   && p.every(v => typeof v === 'number' && isFinite(v)));
+    const L = (window.LIE || {});
+    const def = (L.layoutDefault && typeof L.layoutDefault === 'object') ? L.layoutDefault : null;
+    const over = ((L.layouts || {})[journeyId]) || null;
+
+    // station count: from the default file when it is sane, else from the journey itself
+    let n = def && Array.isArray(def.SP) ? def.SP.length : 0;
+    if(!n){
+      try { n = journeyDef.build(C, PAL).stations.length; }
+      catch(e){ n = 0; }
+      console.error('[layouts] layouts/'+journeyId+'.json is missing or has no SP — '
+        + 'falling back to '+n+' evenly spaced stations. Run check.html.');
+    }
+    const synth = {
+      SP:  Array.from({length:n}, (_,i)=>V3(i*STATION_GAP, 0, 0)),
+      OFF: Array.from({length:n}, ()=>DEFAULT_OFF.clone())
+    };
+    const pick = (key) => {
+      let out = synth[key] || null;
+      [['layouts/'+journeyId+'.json', def], ['layouts.json', over]].forEach(([who, src])=>{
+        const a = src && src[key];
+        if(a === undefined || a === null) return;
+        if(!tripsOK(a, n)){
+          console.warn('['+who+'] ignoring '+key+' — expected '+n+' [x, y, z] triples '
+            + 'to match the station count');
+          return;
+        }
+        out = a.map(p => V3(p[0], p[1], p[2]));
+      });
+      return out;
+    };
+    /* CARD is the odd one out: plain pixel widths for the HUD text card, not [x, y, z]
+       triples. Accepts either one number for the whole journey or one per station, since
+       both are things you actually want — a journey that just reads better wide, and a
+       single station whose matrix needs more room than its neighbours. Normalized to a
+       per-station array here so the caller never has to care which was written. */
+    const pickCard = () => {
+      let out = null;
+      const num = v => typeof v === 'number' && isFinite(v) && v > 0;
+      [['layouts/'+journeyId+'.json', def], ['layouts.json', over]].forEach(([who, src])=>{
+        const a = src && src.CARD;
+        if(a === undefined || a === null) return;
+        if(num(a)){ out = Array.from({length:n}, ()=>a); return; }
+        if(Array.isArray(a) && a.length === n && a.every(num)){ out = a.slice(); return; }
+        console.warn('['+who+'] ignoring CARD — expected one positive number, or '+n
+          + ' of them to match the station count');
+      });
+      return out;
+    };
+    return { SP: pick('SP'), OFF: pick('OFF'), PAN: pick('PAN'), CARD: pickCard() };
+  })();
+
+  const SP = LAYOUT.SP;
+  const OFF = LAYOUT.OFF;
   const LOOK = SP.map(p=>p.clone().add(V3(0,0.55,0)));
+  // Optional per-station translation, in the station's own (unrotated) local axes, applied
+  // to the camera's pivot only — never to SP/LOOK, so it never moves the built geometry.
+  // No journey currently sets `layout.PAN`, so this is always a zero vector today; it
+  // exists so the dev tuning panel (below) has a "camera position relative to the grid"
+  // knob that's independent of SP (content position), OFF's orbit angle, and OFF's radius
+  // (zoom) — see pivot()/camPose(). A journey can adopt a tuned PAN by adding the array to
+  // its `layout`, same shape as SP/OFF.
+  const PAN = (LAYOUT.PAN || SP.map(()=>V3(0,0,0))).map(v=>v.clone());
+  let CARD = LAYOUT.CARD;   // per-station HUD card width in px, or null for the CSS default
+  /* Skipped below the mobile breakpoint, where the card is a full-width bottom sheet and an
+     inline px width would fight `#hud{left:0;width:100vw}` — the same guard the drag handle
+     uses. Callers do the resize(): this only touches the style, so that the window-resize
+     path can re-clamp (innerWidth is in the clamp) without recursing back into resize(). */
+  function applyCardWidth(i){
+    if(!CARD || innerWidth <= 640) return;
+    hudEl.style.width = clampCardW(CARD[i]) + 'px';
+  }
+  // registered unconditionally: applyCardWidth no-ops while CARD is null, and the tuning
+  // panel can turn CARD on partway through a session
+  reapplyCardWidth = ()=>applyCardWidth(travel ? travel.target : cur);
+  const pivot = i => LOOK[i].clone().add(PAN[i]);
 
   let world = null, stations = [], curInst = null;
   function disposeWorld(){
@@ -772,6 +906,7 @@ if(hubMode){
   const CARDS = (journeyDef.cards && (journeyDef.cards[LANG] || journeyDef.cards.hu || journeyDef.cards.en)) || C.cards;
   let cur=0, travel=null;
   let yaw=0, pitch=0, zoomF=1;
+  let tuneRefresh=null;   // set below when ?tune=1; renderCard() pokes it after every station change
   const hud=document.getElementById('hud'), eb=document.getElementById('eb'),
         ti=document.getElementById('ti'), bo=document.getElementById('bo'),
         dots=document.getElementById('dots'), dotctr=document.getElementById('dotctr');
@@ -807,6 +942,10 @@ if(hubMode){
     });
     document.getElementById('prev').disabled=(i===0);
     document.getElementById('next').disabled=(i===CARDS.length-1);
+    // width belongs with the rest of the readout swap, so a retarget mid-flight resizes the
+    // card at the same moment the title and dots move onto the new station
+    applyCardWidth(i); resize();
+    if(tuneRefresh) tuneRefresh();
   }
   function renderCard(i){
     updateNav(i);
@@ -819,12 +958,14 @@ if(hubMode){
                        // card most needs clamping. The observer stays as the backstop for
                        // reflows this path cannot see (font swap, viewport-driven rewrap).
     curInst.bindCard(i);
+    if(tuneRefresh) tuneRefresh();
   }
   function camPose(i){
+    const piv=pivot(i);
     const s=new THREE.Spherical().setFromVector3(OFF[i]);
     s.theta-=yaw; s.phi=clamp(s.phi-pitch, 0.15, Math.PI-0.15);
     s.radius*=zoomF;
-    return {pos:LOOK[i].clone().add(V3(0,0,0).setFromSpherical(s)), look:LOOK[i]};
+    return {pos:piv.clone().add(V3(0,0,0).setFromSpherical(s)), look:piv};
   }
   // While a flight is in progress, camPose(cur) is stale — cur only updates on arrival.
   // Re-deriving the in-flight camera pose (the same lerp the render loop applies) lets a
@@ -933,14 +1074,251 @@ if(hubMode){
     zoomF=clamp(zoomF*(1+Math.sign(e.deltaY)*0.08), 0.55, 2.1);
   },{passive:false});
 
+  /* Dev-only station/camera tuning overlay, gated on the menu's "Station tuning" switch
+     (or ?tune=1, kept as a quick manual override) — nothing a reader can stumble into.
+     Four independent knobs, matching the four things that actually vary between a good
+     and a bad station framing:
+       - SP[i]      — the built geometry's position (moves the station's whole content
+                       group; see buildScene()'s `grp.position.copy(SP[i])`).
+       - Orientation — OFF[i]'s direction as (θ azimuth, φ polar), the angle the camera
+                       views the pivot from.
+       - Zoom        — OFF[i]'s magnitude, i.e. the orbit radius (distance from pivot).
+       - Pan (x/y/z) — PAN[i], a straight local-axis translation of the pivot itself (see
+                       pivot()/camPose() above), independent of SP: it slides the camera
+                       and its look-at target together without changing the angle or the
+                       distance, and without moving the geometry SP anchors. This is what
+                       WASD+QE drives (A/D on x, W/S on z, Q/E on y) — deliberately a translation in the
+                       station's own axes rather than the camera's facing, since a camera-
+                       relative "forward" would fight the Orientation control above the
+                       moment you rotate away from the default angle.
+     Orientation and Zoom write back into OFF[i] as a single Cartesian vector (still the
+     exact shape every journey's `layout.OFF` already uses — Spherical.setFromVector3 is
+     how camPose() has always read it), so no journey file's data format has to change to
+     pick up this panel; only Pan is new state (`layout.PAN`, optional, default zero — see
+     its declaration above), and only a journey that intentionally saves a nonzero Pan use
+     it going forward.
+
+     "Capture current camera" folds whatever the built-in drag/zoom controls (the ones
+     every visitor has) are currently showing back into Orientation+Zoom: newOFF =
+     camera.position − pivot(i), then yaw/pitch/zoomF reset to 0/0/1 so OFF alone
+     reproduces the pose next time. It does not touch Pan — eyeball the angle with a drag,
+     capture it, then fine-tune Pan/SP with the fields or WASD.
+
+     "Save JSON" downloads this journey's whole layout as `layouts/<id>.json` — the file to
+     drop into the repo, replacing the one already there. There is no accumulate-then-batch
+     step any more: one file per journey *is* the storage, so walking the moons means one
+     download each, and the dev switch persisting across the full page reload a hub<->journey
+     nav is what makes that walk uninterrupted.
+
+     A horizontal bar along the top of the free 3D column, not a floating box: the fields
+     are the thing being read while the scene moves under them, and stacking ten of them in
+     a right-hand column put the ones you use most (pan, zoom) furthest from the view.
+     `positionBar()` pins its left edge to the card's right edge, so it never covers the
+     text card — including when CARD itself is what is being dragged. Inline-styled rather
+     than routed through style.css: scaffolding for editing a journey, not chrome a reader
+     ever sees. */
+  const devMode = (()=>{ try{ return localStorage.getItem('lie-dev')==='1'; }catch(e){ return false; } })()
+    || /[?&]tune=1(&|$)/.test(location.search);
+  const panKeys={w:false,a:false,s:false,d:false,q:false,e:false};
+  if(devMode){
+    const panel=document.createElement('div');
+    panel.style.cssText='position:fixed;top:12px;right:12px;z-index:9;'+
+      'display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;'+
+      'background:rgba(10,14,24,.92);border:1px solid #445566;border-radius:10px;'+
+      'padding:7px 10px;font:12px ui-monospace,Menlo,monospace;color:#dde;'+
+      'backdrop-filter:blur(6px)';
+    document.body.appendChild(panel);
+    const title=document.createElement('div');
+    title.style.cssText='font-weight:600;color:#ffcc55;white-space:nowrap';
+    panel.appendChild(title);
+    // one labelled cluster of inputs, e.g.  SP [x][y][z]
+    const group=(name, specs)=>{
+      const g=document.createElement('div');
+      g.style.cssText='display:flex;align-items:center;gap:4px';
+      const l=document.createElement('span');
+      l.textContent=name;
+      l.style.cssText='color:#7799bb;text-transform:uppercase;font-size:10px;'+
+        'letter-spacing:.05em;white-space:nowrap';
+      g.appendChild(l);
+      const inputs=specs.map(([ph,step,w])=>{
+        const inp=document.createElement('input');
+        inp.type='number'; inp.step=step; inp.title=ph; inp.placeholder=ph;
+        inp.style.cssText='width:'+(w||52)+'px;background:#131a29;border:1px solid #334455;'+
+          'border-radius:5px;color:#eeeeff;padding:2px 4px;font:inherit';
+        g.appendChild(inp); return inp;
+      });
+      panel.appendChild(g); return inputs;
+    };
+    const btn=(label,bg)=>{
+      const b=document.createElement('button'); b.textContent=label;
+      b.style.cssText='padding:4px 10px;background:'+bg+';white-space:nowrap;'+
+        'border:1px solid #445566;border-radius:6px;color:#ddeeff;cursor:pointer;font:inherit';
+      panel.appendChild(b); return b;
+    };
+    const [spX,spY,spZ] = group('sp',   [['x','0.1'],['y','0.1'],['z','0.1']]);
+    const [thI,phI]     = group('θ φ',  [['θ','1',46],['φ','1',46]]);
+    const [zmI]         = group('zoom', [['r','0.1']]);
+    const [pnX,pnY,pnZ] = group('pan',  [['x','0.1'],['y','0.1'],['z','0.1']]);
+    const [cwI]         = group('card', [['px','10',56]]);
+    const captureBtn=btn('Capture','#223344');
+    const saveBtn=btn('Save JSON','#223a2a');
+    const out=document.createElement('div');
+    out.style.cssText='color:#88bb88;font-size:10px;white-space:nowrap';
+    out.textContent='WASD/QE pan · drag edge = card';
+    panel.appendChild(out);
+    /* Pin the bar to the free column right of the text card, so it can never sit on top of
+       the card it is also able to resize. Re-run on every station change and window resize
+       because both can move that edge. */
+    function positionBar(){
+      panel.style.left = Math.round(hudEl.getBoundingClientRect().right + 14) + 'px';
+    }
+    addEventListener('resize', positionBar);
+
+    const curIdx=()=> travel?travel.target:cur;
+    const R2D=THREE.MathUtils.radToDeg, D2R=THREE.MathUtils.degToRad;
+    function refresh(){
+      const i=curIdx();
+      title.textContent='Station '+(i+1)+' / '+SP.length;
+      spX.value=SP[i].x; spY.value=SP[i].y; spZ.value=SP[i].z;
+      const s=new THREE.Spherical().setFromVector3(OFF[i]);
+      thI.value=Math.round(R2D(s.theta)); phI.value=Math.round(R2D(s.phi));
+      zmI.value=Math.round(s.radius*100)/100;
+      pnX.value=PAN[i].x; pnY.value=PAN[i].y; pnZ.value=PAN[i].z;
+      cwI.value=Math.round(CARD ? CARD[i] : hudEl.getBoundingClientRect().width);
+      positionBar();
+    }
+    /* A journey with no authored CARD gets one seeded from whatever the card is currently
+       showing (the CSS clamp's result), so the first drag or keystroke starts from what is
+       on screen rather than snapping to some default. Every station is seeded to that same
+       width, which is also what makes the scalar form the natural output. */
+    function ensureCard(){
+      if(!CARD){
+        const w = Math.round(hudEl.getBoundingClientRect().width);
+        CARD = SP.map(()=>w);
+      }
+      return CARD;
+    }
+    function applyCard(){
+      ensureCard()[curIdx()] = clampCardW(+cwI.value || HUD_MIN_W);
+      applyCardWidth(curIdx()); resize(); positionBar();
+    }
+    // dragging the card's right edge is the natural gesture for this, so let it author too
+    onCardDrag = w => {
+      ensureCard()[curIdx()] = Math.round(w);
+      cwI.value = Math.round(w);
+      positionBar();
+    };
+    function applySP(){
+      const i=curIdx();
+      SP[i].set(+spX.value||0, +spY.value||0, +spZ.value||0);
+      stations[i].group.position.copy(SP[i]);
+      LOOK[i].copy(SP[i]).add(V3(0,0.55,0));
+    }
+    function applyOrientOrZoom(){
+      const i=curIdx();
+      const s=new THREE.Spherical(+zmI.value||0.01, D2R(+phI.value||0), D2R(+thI.value||0));
+      OFF[i].setFromSpherical(s);
+    }
+    function applyPan(){
+      PAN[curIdx()].set(+pnX.value||0, +pnY.value||0, +pnZ.value||0);
+    }
+    [spX,spY,spZ].forEach(inp=>inp.addEventListener('input',applySP));
+    [thI,phI,zmI].forEach(inp=>inp.addEventListener('input',applyOrientOrZoom));
+    [pnX,pnY,pnZ].forEach(inp=>inp.addEventListener('input',applyPan));
+    cwI.addEventListener('input',applyCard);
+
+    captureBtn.onclick=()=>{
+      const i=curIdx();
+      OFF[i].copy(camera.position).sub(pivot(i));
+      yaw=0; pitch=0; zoomF=1;
+      refresh();
+      out.textContent='Captured station '+(i+1)+'\'s camera into orientation+zoom.';
+    };
+
+    const round=n=>Math.round(n*100)/100;
+    const panUsed=()=>PAN.some(v=>v.x||v.y||v.z);
+    const download=(filename,text,mime)=>{
+      const url=URL.createObjectURL(new Blob([text],{type:mime||'text/plain'}));
+      const a=document.createElement('a'); a.href=url; a.download=filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    };
+    /* Hand-rolled rather than JSON.stringify(…, null, 2): the pretty-printer breaks every
+       [x,y,z] across three lines, which turns a ten-station journey into 90 lines of single
+       numbers and makes a diff between two tunings unreadable. One station per line is the
+       whole point. Output is still ordinary JSON — the exact shape engine.js reads back and
+       check.html validates. CARD is written as one number when every station agrees, which
+       is both the common case and much easier to hand-edit afterwards. */
+    const journeyJSON = d => {
+      const val = k => k === 'CARD'
+        ? (d.CARD.every(w=>w===d.CARD[0]) ? String(d.CARD[0])
+                                          : '[' + d.CARD.join(', ') + ']')
+        : '[\n    ' + d[k].map(p=>'['+p[0]+', '+p[1]+', '+p[2]+']').join(',\n    ') + '\n  ]';
+      const keys = ['SP','OFF'].concat(d.PAN?['PAN']:[]).concat(d.CARD?['CARD']:[]);
+      return '{\n' + keys.map(k=>'  "'+k+'": '+val(k)).join(',\n') + '\n}\n';
+    };
+    const entryFor = () => {
+      const trip = v => [round(v.x), round(v.y), round(v.z)];
+      const e = { SP: SP.map(trip), OFF: OFF.map(trip) };
+      if(panUsed()) e.PAN = PAN.map(trip);
+      if(CARD) e.CARD = CARD.map(w=>Math.round(w));
+      return e;
+    };
+
+    saveBtn.onclick=()=>{
+      const text=journeyJSON(entryFor());
+      console.log('[layouts/'+journeyId+'.json]\n'+text);
+      download(journeyId+'.json', text, 'application/json');
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+        .then(()=>{}, ()=>{});
+      out.textContent='Saved '+journeyId+'.json — replace layouts/'+journeyId+'.json';
+    };
+
+    tuneRefresh=refresh;
+    refresh();
+
+    // Pan via WASD+QE: a straight translation in the station's own local axes (A/D on x,
+    // W/S on z, Q/E on y — see the block comment above for why this is Pan, not a camera-
+    // facing fly). Continuous while held, driven from loop() below so it shares one delta clock
+    // with everything else per-frame; the panel's Pan fields are kept live so the numbers
+    // you'd export always match what's on screen.
+    addEventListener('keydown', e=>{
+      const tag=(document.activeElement&&document.activeElement.tagName)||'';
+      if(tag==='INPUT'||tag==='TEXTAREA') return;
+      const k=e.key.toLowerCase();
+      if(k in panKeys){ panKeys[k]=true; e.preventDefault(); }
+    });
+    addEventListener('keyup', e=>{ const k=e.key.toLowerCase(); if(k in panKeys) panKeys[k]=false; });
+  }
+
   renderCard(0);
   { const p=camPose(0); camera.position.copy(p.pos); camera.lookAt(p.look); }
   requestAnimationFrame(()=>forceRepaint(hudEl));   // see forceRepaint's comment above
 
   const clock=new THREE.Clock();
+  let panLastT=performance.now();   // devMode Pan-via-WASD's own delta clock — kept
+                                     // separate from THREE.Clock so it never perturbs
+                                     // stations' tick(t)
+  const PAN_SPEED=10;   // local units/sec
   function loop(){
     requestAnimationFrame(loop);
     const t=clock.getElapsedTime();
+    if(devMode){
+      const now=performance.now(), dt=Math.min((now-panLastT)/1000, 0.1); panLastT=now;
+      if(panKeys.w||panKeys.a||panKeys.s||panKeys.d||panKeys.q||panKeys.e){
+        const d=PAN_SPEED*dt, p=PAN[cur];
+        if(panKeys.s) p.z+=d;
+        if(panKeys.w) p.z-=d;
+        if(panKeys.d) p.x+=d;
+        if(panKeys.a) p.x-=d;
+        if(panKeys.e) p.y+=d;   // rise
+        if(panKeys.q) p.y-=d;   // fall
+        if(tuneRefresh) tuneRefresh();   // keep the panel's Pan fields live while flying
+      }
+    }
+    // Pan[cur] feeds camPose() through pivot() (see its declaration above), so the WASD
+    // edit above needs no special-case here — the easing below just chases the new pivot
+    // like any other camPose() change (an SP/OFF field edit, a mouse drag, a nav press).
     if(travel){
       const u=clamp((performance.now()-travel.t0)/travel.dur,0,1), e=ease(u);
       camera.position.lerpVectors(travel.from.pos, travel.to.pos, e);

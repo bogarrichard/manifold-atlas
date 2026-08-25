@@ -74,6 +74,10 @@
     <div class="msec" id="msec-speech" hidden><h2 id="mspeech-h"></h2><div id="speech"></div></div>
     <div class="msec" id="msec-lang"><h2 id="mlang-h"></h2><nav id="lang" aria-label="Language"></nav></div>
     <div class="msec" id="msec-hint"><h2 id="mhint-h"></h2><div id="hint"></div></div>
+    <!-- Not a reader-facing section — no content-pack string, no translation. It's the
+         one switch that reveals the station/camera tuning overlay (engine.js), which is
+         scaffolding for editing journeys/*.js, not part of the visitor experience. -->
+    <div class="msec" id="msec-dev"><h2>Developer</h2><div id="dev"></div></div>
   </div>
 </div>
 
@@ -104,10 +108,60 @@
 <script src="journeys/optimization-lm.js"></script>
 <script src="journeys/geometry-se3.js"></script>
 <script src="hub.js"></script>
-<!-- Rendering engine: journey player + hub mode. -->
-<script src="engine.js"></script>
+<!-- Rendering engine: journey player + hub mode. Injected only once the layout files have
+     been read (or failed to read), because engine.js builds its scene the moment it runs —
+     a layout arriving after that could only be applied as a visible jump. layouts/<id>.json
+     is the journey's own layout; layouts.json is an optional override on top. Neither is
+     fatal if unreadable: engine.js falls back to evenly spaced stations and says so. -->
 <script>
-if('serviceWorker' in navigator){
+(function(){
+  window.LIE = window.LIE || {};
+  var id = new URLSearchParams(location.search).get('journey');
+  var json = function(url){
+    return fetch(url).then(function(r){ return r.ok ? r.json() : null; })
+                     .catch(function(){ return null; });
+  };
+  // Only this journey's default is fetched, not all twelve — the id is in the URL, and the
+  // hub (no ?journey=, or ?journey=hub) needs no layout at all.
+  var wantDefault = id && id !== 'hub';
+  Promise.all([
+    wantDefault ? json('layouts/' + encodeURIComponent(id) + '.json') : null,
+    json('layouts.json')
+  ]).then(function(r){
+    LIE.layoutDefault = r[0];
+    LIE.layouts = r[1] || {};
+  }).catch(function(){
+    LIE.layoutDefault = null;
+    LIE.layouts = {};
+  }).then(function(){
+    var s = document.createElement('script');
+    s.src = 'engine.js';
+    document.body.appendChild(s);
+  });
+})();
+</script>
+<script>
+// Skipped on localhost/127.0.0.1: sw.js caches the app shell cache-first under a fixed
+// name (see its own header comment), so once installed it keeps serving whatever was on
+// disk at install time — every edit since is invisible behind it until CACHE is bumped by
+// hand. Fine for a real deploy (that's the whole point, offline + installable), but it
+// silently defeats `python3 serve.py` + reload as a dev loop, which is this project's only
+// dev loop (no build step). Real hosts never match this, so production is unaffected.
+const isLocalDev = ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
+if(isLocalDev){
+  // Not registering is only half of it: a worker registered by an earlier visit — before
+  // this guard existed — keeps controlling the page and serving its frozen app-shell
+  // cache regardless. So tear any existing one down instead of just declining to add
+  // one. The current load is already controlled and stays stale; the next reload is
+  // clean, which is why this is a one-reload self-heal rather than instant.
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations()
+      .then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
+  }
+  if(window.caches){
+    caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); });
+  }
+} else if('serviceWorker' in navigator){
   window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});
 }
 </script>

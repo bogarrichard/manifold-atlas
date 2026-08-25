@@ -14,9 +14,6 @@ LIE.journeys['optimization-gd'] = (function(){
   const K = LIE.kit;
   const { V3, ease, clamp, hexStr, fatArrow, setArrow, makeLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(44,5,-12), V3(88,-4,10)];
-  const OFF = [V3(0,3.0,8.8), V3(0,2.6,8.0), V3(0,3.2,9.2)];
-
   // The drawn bowl is the graph of the cost: H(x,z) = 0.32·(x²+z²) = ½ wᵀQ w with
   // Q = 0.64·I. So ∇L = Qw = 0.64·w, and one GD step multiplies w by (1 − α·0.64).
   const Q = 0.64, ALPHA = 0.28, SHRINK = 1 - ALPHA*Q;   // = 0.8208
@@ -120,7 +117,6 @@ LIE.journeys['optimization-gd'] = (function(){
   return {
     id: 'optimization-gd',
     tier: 'optimization',
-    layout: { SP, OFF },
     threadKey: 'amber',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

@@ -21,10 +21,8 @@ LIE.journeys['slam-pipeline'] = (function(){
   const K = LIE.kit;
   const { V3, ease, clamp, hexStr, fatArrow, setArrow, makeLabel, updateLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(44,5,-12), V3(88,-4,10)];
   // Station 2 needs room to the right: the cloud slides out to twice its distance, and the
   // whole point is that you can still see it arrive there.
-  const OFF = [V3(0,2.2,9.4), V3(0.5,2.0,11.6), V3(0,2.4,9.4)];
 
   const NPOSE = 11, SWEEP = 300*Math.PI/180;              // 11 poses, 30° apart
 
@@ -205,7 +203,6 @@ LIE.journeys['slam-pipeline'] = (function(){
   return {
     id: 'slam-pipeline',
     tier: 'slam',
-    layout: { SP, OFF },
     threadKey: 'green',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

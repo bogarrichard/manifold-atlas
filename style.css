@@ -350,7 +350,7 @@ body.hub #nav::after{right:40px}
    theme button, a language dropdown and a permanently visible control legend, which is
    three pieces of chrome competing with the scene. Now the button is the only thing
    drawn until you ask for the rest. */
-#topctl{position:fixed;top:18px;right:22px;z-index:7}
+#topctl{position:fixed;top:18px;left:22px;z-index:7}
 #menubtn{display:flex;align-items:center;justify-content:center;cursor:pointer;
   width:38px;height:38px;padding:0;color:var(--ink);
   background:var(--panel);border:1px solid var(--line);border-radius:10px;
@@ -364,7 +364,7 @@ body.hub #nav::after{right:40px}
 #menubtn[aria-expanded="true"] .bars i:nth-child(2){opacity:0}
 #menubtn[aria-expanded="true"] .bars i:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
 
-#menupanel{position:absolute;top:46px;right:0;min-width:236px;padding:4px;
+#menupanel{position:absolute;top:46px;left:0;min-width:236px;padding:4px;
   background:var(--panel-strong);border:1px solid var(--line);border-radius:12px;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   box-shadow:0 14px 38px rgba(0,0,0,0.45)}
@@ -385,6 +385,18 @@ body.hub #nav::after{right:40px}
 #themebtn .ticon,#speechbtn .ticon{display:flex;align-items:center;justify-content:center;
   flex:none;width:18px}
 #themebtn .svgic,#speechbtn .svgic{width:18px;height:18px}
+
+/* dev switch: same row shape as the theme/speech toggles above, kept as its own rule
+   rather than joined into their selector lists — it's the one row with no content-pack
+   string, and every other rule sharing #themebtn's selectors is reader-facing chrome. */
+#devbtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;color:var(--muted);
+  background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
+  font-family:ui-monospace,Menlo,monospace;font-size:15px;text-align:left;
+  transition:border-color .15s,color .15s}
+#devbtn:hover{border-color:var(--amber);color:var(--ink)}
+#devbtn[aria-pressed="true"]{border-color:var(--amber);color:var(--ink)}
+#devbtn .devdot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line)}
+#devbtn[aria-pressed="true"] .devdot{background:var(--amber)}
 
 /* voice picker: a plain <select>, matching the toggle button's row width and border
    language rather than trying to look like a custom dropdown — this is a system list

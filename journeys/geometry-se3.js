@@ -17,12 +17,6 @@ LIE.journeys['geometry-se3'] = (function(){
   const K = LIE.kit;
   const { V3, ease, clamp, hexStr, fatArrow, setArrow, makeLabel, updateLabel, dashedLine } = K;
 
-  // Station world positions + the camera offset used to view each one.
-  const SP  = [V3(0,0,0), V3(58,5,-14), V3(116,-4,10), V3(174,7,-8), V3(232,-5,12),
-               V3(290,4,-10), V3(348,-3,9), V3(406,6,-7), V3(464,-4,11), V3(522,5,-9)];
-  const OFF = [V3(0,2.6,9.0), V3(0,2.6,8.8), V3(0,3.2,10.0), V3(0,3.2,10.2), V3(0,2.6,8.6),
-               V3(0,3.0,9.0), V3(0,2.8,9.6), V3(0,3.2,10.4), V3(0,3.0,9.4), V3(0,3.6,11.0)];
-
   /* ---- SE(3) math, in the plain shapes the cards state -------------------
      A pose is {p, q} (translation + quaternion). A twist is {rho, phi}: the
      constant body velocity and the rotation vector. Everything below is the
@@ -728,7 +722,6 @@ LIE.journeys['geometry-se3'] = (function(){
   return {
     id: 'geometry-se3',
     tier: 'geometry',
-    layout: { SP, OFF },
     threadKey: 'violet2',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

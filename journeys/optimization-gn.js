@@ -24,10 +24,8 @@ LIE.journeys['optimization-gn'] = (function(){
   const K = LIE.kit;
   const { V3, ease, clamp, hexStr, fatArrow, setArrow, makeLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(44,5,-12), V3(90,-4,11)];
   // Station 3 sits further back than the gradient-descent moon's view of the same bowl:
   // there the subject is one ball near the bottom, here it is two whole paths across it.
-  const OFF = [V3(0,2.4,9.2), V3(0,2.6,9.8), V3(0,5.4,14.2)];
 
   // Station 2's cost: L(x) = ½ r(x)² with a deliberately non-quadratic residual.
   const rOf  = x => Math.sin(1.15*x) + 0.32*x;
@@ -196,7 +194,6 @@ LIE.journeys['optimization-gn'] = (function(){
   return {
     id: 'optimization-gn',
     tier: 'optimization',
-    layout: { SP, OFF },
     threadKey: 'amber',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

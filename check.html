@@ -116,9 +116,21 @@
     if(!j.threadKey) fail(id, 'no threadKey (the hub thread color)');
     if(!LIE.kit.palette('dark')[j.threadKey]) fail(id, 'threadKey "'+j.threadKey+'" is not a palette color');
 
-    const SP = (j.layout&&j.layout.SP)||[], OFF = (j.layout&&j.layout.OFF)||[];
-    if(!SP.length) fail(id, 'layout.SP is empty');
-    if(SP.length !== OFF.length) fail(id, 'layout.SP has '+SP.length+' entries, layout.OFF has '+OFF.length);
+    /* The layout is no longer on the descriptor — it is layouts/<id>.json, so that it can
+       be edited as data in the repo. That makes its *absence* a real failure mode the
+       descriptor can no longer rule out (engine.js only degrades to evenly spaced
+       stations), which is precisely what this gate is for. */
+    const DEF = (DEFAULTS && DEFAULTS[id]) || null;
+    const SP = (DEF && Array.isArray(DEF.SP) && DEF.SP) || [];
+    const OFF = (DEF && Array.isArray(DEF.OFF) && DEF.OFF) || [];
+    if(j.layout)
+      fail(id, 'descriptor still carries a layout — the layout lives in layouts/'+id+'.json now');
+    if(!DEF) fail(id, 'no layouts/'+id+'.json — the journey has no camera layout');
+    else {
+      if(!SP.length) fail(id, 'layouts/'+id+'.json SP is empty');
+      if(SP.length !== OFF.length)
+        fail(id, 'layouts/'+id+'.json SP has '+SP.length+' entries, OFF has '+OFF.length);
+    }
 
     let nStations = null;
     try {
@@ -128,8 +140,8 @@
         nStations = inst.stations.length;
         if(typeof inst.bindCard !== 'function')
           fail(id, 'build() returned no bindCard — engine.js calls it on every card render');
-        if(nStations !== SP.length)
-          fail(id, 'builds '+nStations+' stations but layout.SP has '+SP.length+' positions');
+        if(DEF && nStations !== SP.length)
+          fail(id, 'builds '+nStations+' stations but layouts/'+id+'.json SP has '+SP.length+' positions');
         inst.stations.forEach((b,i)=>{
           try {
             const g = new THREE.Group();
@@ -140,11 +152,53 @@
       }
     } catch(e){ fail(id, 'build() threw: '+e.message); }
 
+    checkLayout(id, nStations === null ? SP.length : nStations);
     checkSeq(id, j);
 
     if(j.cards) checkCards(id, j.cards, nStations);
     else note(id, 'ships no own cards — falls back to the shared content pack');
     return nStations;
+  }
+
+  /* Both layout layers: layouts/<id>.json (the default, DEFAULTS) and the optional
+     whole-repo layouts.json override (LAYOUTS). engine.js applies each per key and skips
+     anything malformed — deliberately silent, so that droppable authoring data can never
+     crash the page. Silent is exactly why it has to be checked here instead: a wrong-length
+     SP/OFF is the same defect as a card array one entry too long, and without this the only
+     symptom is a journey quietly ignoring the tuning you thought you had applied. */
+  let LAYOUTS = null, DEFAULTS = null;
+  function checkLayoutSource(id, nStations, label, o){
+    if(!o) return;
+    if(typeof o !== 'object' || Array.isArray(o)){ fail(id, label+' is not an object'); return; }
+    /* CARD is pixel widths for the HUD text card, not [x, y, z] triples: one number for the
+       whole journey, or one per station. Checked here rather than folded into the loop
+       below because every rule differs. */
+    if(o.CARD !== undefined){
+      const num = v => typeof v === 'number' && isFinite(v) && v > 0;
+      const c = o.CARD;
+      if(!num(c) && !(Array.isArray(c) && c.length === nStations && c.every(num)))
+        fail(id, label+' CARD must be one positive number, or '+nStations
+               + ' of them to match the station count — ignored at runtime');
+    }
+    ['SP','OFF','PAN'].forEach(key=>{
+      const a = o[key];
+      if(a === undefined) return;
+      if(!Array.isArray(a)){ fail(id, label+' '+key+' is not an array — ignored at runtime'); return; }
+      if(a.length !== nStations)
+        fail(id, label+' '+key+' has '+a.length+' entries but the journey builds '
+               + nStations+' stations — ignored at runtime');
+      const bad = a.findIndex(p=>!Array.isArray(p) || p.length!==3
+                                || !p.every(v=>typeof v==='number' && isFinite(v)));
+      if(bad !== -1)
+        fail(id, label+' '+key+'['+bad+'] is not an [x, y, z] number triple — ignored at runtime');
+    });
+    Object.keys(o).forEach(k=>{
+      if(!['SP','OFF','PAN','CARD'].includes(k)) note(id, label+' has an unused "'+k+'" key');
+    });
+  }
+  function checkLayout(id, nStations){
+    checkLayoutSource(id, nStations, 'layouts/'+id+'.json', DEFAULTS && DEFAULTS[id]);
+    checkLayoutSource(id, nStations, 'layouts.json', LAYOUTS && LAYOUTS[id]);
   }
 
   /* The curriculum sequence. engine.js renders `seq.next` and `seq.handoffs` as links on
@@ -196,6 +250,12 @@
       say(bad?'FAIL':'pass', (bad?'  ✗  ':'  ✓  ')+id.padEnd(22)+(n===null?'?':n)+' stations · '
         + LANGS.map(l=>l+':'+((LIE.journeys[id].cards&&LIE.journeys[id].cards[l]||[]).length)).join(' '));
     });
+    // an entry keyed to a journey that is not registered does nothing at all at runtime —
+    // most often a typo'd or renamed id, which otherwise looks like "the tuning didn't take"
+    if(LAYOUTS) Object.keys(LAYOUTS).forEach(id=>{
+      if(!LIE.journeys[id])
+        fail('layouts.json', '"'+id+'" is not a registered journey — that entry is ignored');
+    });
     if(notes.length){ say('dim',''); notes.forEach(n=>say('note','  note  '+n)); }
     if(problems.length){
       say('dim','');
@@ -224,8 +284,15 @@
   // Discover what the page actually loads, and compare with what is on disk.
   Promise.all([
     fetch('index.html'+BUST).then(r=>r.text()),
-    fetch('journeys/'+BUST).then(r=>r.ok?r.text():'').catch(()=>'')
-  ]).then(([html, listing])=>{
+    fetch('journeys/'+BUST).then(r=>r.ok?r.text():'').catch(()=>''),
+    // optional: absent is the normal case. A present-but-unparseable file is not, though —
+    // engine.js would fall back to every built-in layout and give no hint why.
+    fetch('layouts.json'+BUST).then(r=>{
+      if(!r.ok) return null;
+      return r.json().catch(e=>{ fail('layouts.json','is not valid JSON: '+e.message); return null; });
+    }).catch(()=>null)
+  ]).then(([html, listing, layouts])=>{
+    LAYOUTS = layouts;
     // comments first: index.html carries a commented-out `content/de.js` as the
     // "add a language here" example, and it is not a script the page loads
     const srcs   = [...html.replace(/<!--[\s\S]*?-->/g,'').matchAll(/src="([^"]+\.js)"/g)].map(m=>m[1]);
@@ -240,11 +307,35 @@
       if(!wired.includes(f)) fail('index.html', f+' exists but has no <script> tag — it never loads');
     });
     if(!wired.length){ fail('index.html','no journey <script> tags found'); report(); return; }
+    /* layouts/<id>.json can only be fetched once the journeys have registered — the ids
+       are the registry's, not something index.html spells out. A layouts/ file naming no
+       registered journey is reported the same way an unwired journeys/ file is: it looks
+       like a tuning that is applied and is in fact dead. */
+    const loadDefaults = () => Promise.all(
+      Object.keys(LIE.journeys || {}).map(id =>
+        fetch('layouts/'+id+'.json'+BUST).then(r=>{
+          if(!r.ok) return [id, null];
+          return r.json().then(d=>[id, d]).catch(e=>{
+            fail(id, 'layouts/'+id+'.json is not valid JSON: '+e.message); return [id, null];
+          });
+        }).catch(()=>[id, null])
+      )
+    ).then(pairs=>{
+      DEFAULTS = {};
+      pairs.forEach(([id, d])=>{ if(d) DEFAULTS[id] = d; });
+      return fetch('layouts/'+BUST).then(r=>r.ok?r.text():'').catch(()=>'').then(ls=>{
+        [...new Set([...ls.matchAll(/href="[^"]*?([\w-]+)\.json"/g)].map(m=>m[1]))]
+          .forEach(f=>{
+            if(!LIE.journeys[f])
+              fail('layouts/', f+'.json names no registered journey — nothing ever reads it');
+          });
+      });
+    });
     // three + content packs + kit, then the journeys, exactly as index.html orders them
-    return inOrder(before).then(()=>inOrder(wired)).then(report);
+    return inOrder(before).then(()=>inOrder(wired)).then(loadDefaults).then(report);
   }).catch(e=>{
     sum.className='bad'; sum.textContent='could not run: '+e.message
-      + ' — serve the site (python3 -m http.server 8000) rather than opening the file directly';
+      + ' — serve the site (python3 serve.py) rather than opening the file directly';
   });
 })();
 </script>

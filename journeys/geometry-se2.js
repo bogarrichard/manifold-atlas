@@ -21,9 +21,6 @@ LIE.journeys['geometry-se2'] = (function(){
   const K = LIE.kit;
   const { V3, ease, hexStr, fatArrow, setArrow, makeLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(43,4,-11), V3(86,-3,10)];
-  const OFF = [V3(0,2.2,9.0), V3(0,2.4,9.4), V3(0,2.4,9.2)];
-
   // The worked example the cards quote, in model coordinates.
   const TH = 1.25, TX = 2.5, TY = 0.7;
   const CT = Math.cos(TH), ST = Math.sin(TH);
@@ -199,7 +196,6 @@ LIE.journeys['geometry-se2'] = (function(){
   return {
     id: 'geometry-se2',
     tier: 'geometry',
-    layout: { SP, OFF },
     threadKey: 'teal',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

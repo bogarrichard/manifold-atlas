@@ -38,10 +38,6 @@ LIE.journeys['geometry-so3'] = (function(){
   const { V3, ease, clamp, hexStr, fatArrow, setArrow, makeLabel, updateLabel,
           baseSphere } = K;
 
-  const SP  = [V3(0,0,0), V3(44,5,-12), V3(88,-4,10), V3(132,6,-6), V3(176,-5,12)];
-  const OFF = [V3(0,2.6,9.0), V3(1.1,2.9,10.4), V3(0,2.6,9.6),
-               V3(0,1.0,10.2), V3(0.5,2.2,9.2)];
-
   const AXIS = V3(0.55, 0.78, 0.30).normalize();     // the invariant axis at station 1
   const HALF = Math.PI/2;
 
@@ -301,7 +297,6 @@ LIE.journeys['geometry-so3'] = (function(){
   return {
     id: 'geometry-so3',
     tier: 'geometry',
-    layout: { SP, OFF },
     threadKey: 'teal',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

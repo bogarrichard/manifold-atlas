@@ -21,9 +21,6 @@ LIE.journeys['geometry-sim3'] = (function(){
   const K = LIE.kit;
   const { V3, ease, hexStr, fatArrow, setArrow, makeLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(44,5,-12), V3(90,-4,10)];
-  const OFF = [V3(0,2.6,9.2), V3(0,2.2,9.4), V3(0,2.8,12.2)];
-
   const SIG = 1.15;                       // the σ range plotted at station 2: −SIG … +SIG
   const XS = 1.75, YS = 0.80;             // plot scale: σ → x, s → y
 
@@ -178,7 +175,6 @@ LIE.journeys['geometry-sim3'] = (function(){
   return {
     id: 'geometry-sim3',
     tier: 'geometry',
-    layout: { SP, OFF },
     threadKey: 'teal',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

@@ -19,9 +19,6 @@ LIE.journeys['slam-factor-graph'] = (function(){
   const K = LIE.kit;
   const { V3, ease, clamp, hexStr, makeLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(44,5,-12), V3(88,-4,10)];
-  const OFF = [V3(0,2.0,9.4), V3(0,2.0,9.4), V3(0,2.0,10.6)];
-
   // The one graph the whole journey uses. Variables first, then the factors over them.
   const POSES = [[-3.0,-1.25], [-1.0,-1.25], [1.0,-1.25], [3.0,-1.25]];
   const LANDS = [[-2.0, 1.55], [0.0, 1.55], [2.0, 1.55]];
@@ -189,7 +186,6 @@ LIE.journeys['slam-factor-graph'] = (function(){
   return {
     id: 'slam-factor-graph',
     tier: 'slam',
-    layout: { SP, OFF },
     threadKey: 'green',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

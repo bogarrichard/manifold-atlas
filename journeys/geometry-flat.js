@@ -30,10 +30,6 @@ LIE.journeys['geometry-flat'] = (function(){
   const K = LIE.kit;
   const { V3, ease, hexStr, fatArrow, setArrow, makeLabel, updateLabel } = K;
 
-  // Station world positions + the camera offset used to view each one.
-  const SP  = [V3(0,0,0), V3(40,4,-10), V3(80,-3,9), V3(120,5,-8), V3(160,-4,11)];
-  const OFF = [V3(0,2.4,8.6), V3(0,2.8,8.8), V3(0,3.1,10.0), V3(0,0.6,8.8), V3(0,2.6,9.2)];
-
   // The concrete example animated at station 2 — the same numbers the card works out.
   const P0 = V3(-2,1,-1), VV = V3(3,1,2), Q0 = P0.clone().add(VV);   // (1,2,1)
 
@@ -282,7 +278,6 @@ LIE.journeys['geometry-flat'] = (function(){
   return {
     id: 'geometry-flat',
     tier: 'geometry',
-    layout: { SP, OFF },
     threadKey: 'teal',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`

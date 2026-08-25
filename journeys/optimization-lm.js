@@ -23,9 +23,6 @@ LIE.journeys['optimization-lm'] = (function(){
   const K = LIE.kit;
   const { V3, ease, clamp, hexStr, fatArrow, setArrow, makeLabel, updateLabel } = K;
 
-  const SP  = [V3(0,0,0), V3(44,5,-12), V3(88,-4,10)];
-  const OFF = [V3(0,2.4,9.6), V3(0,2.4,9.6), V3(0,2.4,9.2)];
-
   // The saturating residual, and the point the cards quote.
   const rOf  = x => Math.tanh(x);
   const drOf = x => 1 - Math.tanh(x)*Math.tanh(x);          // sech²x
@@ -210,7 +207,6 @@ LIE.journeys['optimization-lm'] = (function(){
   return {
     id: 'optimization-lm',
     tier: 'optimization',
-    layout: { SP, OFF },
     threadKey: 'amber',
     // Curriculum position, as data rather than prose: `next` is the following moon in
     // hub.js's BRANCHES order (crossing into the next branch at a branch end), `handoffs`
