@@ -602,6 +602,41 @@ function syncHudScroll(){
 if(window.ResizeObserver) new ResizeObserver(resize).observe(boEl);
 addEventListener('resize',resize); resize();
 
+/* Desktop-only manual card-width resize (see style.css's #hudresize comment for why this
+   is a custom drag handle rather than the native `resize` property). Skipped entirely in
+   hub mode: the hub's card is a bottom-anchored bar sized by CSS (`48dvh` height, a
+   viewport-relative width), not the side card this handle widens. Setting an inline
+   `width` overrides the responsive `clamp()` in style.css on purpose — a deliberate
+   user override — but the CSS `max-width` there still caps it on a later window shrink,
+   so no extra reflow handling is needed here. */
+if(!hubMode){
+  const resizeEl = document.getElementById('hudresize');
+  const HUD_MIN_W = 460, HUD_MAX_W = 900;
+  let dragStartX = 0, dragStartW = 0;
+  function onDragMove(e){
+    const maxW = Math.min(HUD_MAX_W, innerWidth - 380);
+    const w = Math.max(HUD_MIN_W, Math.min(maxW, dragStartW + (e.clientX - dragStartX)));
+    hudEl.style.width = w + 'px';
+    resize();
+  }
+  function onDragEnd(){
+    resizeEl.classList.remove('dragging');
+    removeEventListener('pointermove', onDragMove);
+    removeEventListener('pointerup', onDragEnd);
+    document.body.style.userSelect = '';
+  }
+  resizeEl.addEventListener('pointerdown', e => {
+    if(innerWidth <= 640) return;   // mobile breakpoint collapses the card to a full-width bar
+    dragStartX = e.clientX;
+    dragStartW = hudEl.getBoundingClientRect().width;
+    resizeEl.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    addEventListener('pointermove', onDragMove);
+    addEventListener('pointerup', onDragEnd);
+    e.preventDefault();
+  });
+}
+
 /* ========================================================================
    HUB MODE
    ===================================================================== */

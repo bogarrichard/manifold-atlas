@@ -46,6 +46,21 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #hud.fade .eyebrow,#hud.fade h1,#hud.fade #bo{opacity:0;transform:translateY(6px)}
 .eyebrow,#hud h1,#bo{transition:opacity .35s ease, transform .35s ease}
 
+/* Manual card-width resize (journeys, desktop only). A custom handle rather than the
+   native CSS `resize` property: the native corner grip lands bottom-right, exactly where
+   the sticky console rail's ← → cluster sits, and native `resize` also demands
+   `overflow: hidden`, which would clip the footnote `.bubble` that deliberately hangs
+   below the card. engine.js already reads the card's *live* width on every resize() call
+   (`viewShift()` → `hudEl.getBoundingClientRect().right`), so dragging this and setting
+   an inline width is the entire fix — no other layout math needs to change. */
+#hudresize{position:absolute;top:0;right:-9px;bottom:0;width:18px;cursor:ew-resize;
+  z-index:5;touch-action:none}
+#hudresize::before{content:'';position:absolute;top:14px;bottom:14px;left:8px;width:2px;
+  border-radius:1px;background:var(--line);opacity:0;transition:opacity .15s}
+#hudresize:hover::before,#hudresize.dragging::before{opacity:1;background:var(--amber)}
+body.hub #hudresize{display:none}
+@media (max-width:640px){#hudresize{display:none}}
+
 /* The hub trades the journeys' tall side card for a wide mission bar pinned along the
    bottom, mission-select style: title and status line centered, body copy in a readable
    centered column, corner brackets standing in for a HUD frame. The engine mirrors this
