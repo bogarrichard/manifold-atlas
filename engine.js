@@ -556,6 +556,7 @@ function resize(){
    below the card on purpose, and would report a card that fits as overflowing. */
 const boEl = document.getElementById('bo');
 const navEl = document.getElementById('nav');
+const resizeEl = document.getElementById('hudresize');
 const PANEL_MIN = 200;      // a floating panel shorter than this is not worth reading
 /* The controls used to float *below* the card, so the card had to stop 78px short of the
    bottom to leave them room. They are inside it now (the console rail), so all that is
@@ -595,6 +596,21 @@ function syncHudScroll(){
   // the hub has no floating footnote panel to reserve room for — it never needs `room`
   // (which is near-zero anyway: the hub card sits close to the bottom edge on purpose)
   hudEl.classList.toggle('scrolls', need > avail || (!hubMode && room < PANEL_MIN));
+  syncHudResizeHandle();
+}
+/* #hudresize is a sibling of #hud, not a child (see index.html's comment): #hud is
+   itself the scroll container once `.scrolls` is on, and a clipped/scrolling ancestor
+   would both clip and swallow the clicks of a child that pokes out past its box, which
+   this handle deliberately does to stay grabbable right on the card's border. Called from
+   syncHudScroll() (not just resize()) for the same reason that function itself is called
+   synchronously from renderCard() — a station's own height change has to reposition this
+   before the next paint, not whenever the ResizeObserver backstop gets around to it. */
+function syncHudResizeHandle(){
+  if(hubMode) return;
+  const r = hudEl.getBoundingClientRect();
+  resizeEl.style.top = r.top + 'px';
+  resizeEl.style.height = r.height + 'px';
+  resizeEl.style.left = (r.right - 5) + 'px';
 }
 // resize() (not just syncHudScroll()) so the mobile edgeLift() shift — which reads the
 // card's live height — stays correct as a station's content changes it, not only on an
@@ -610,7 +626,6 @@ addEventListener('resize',resize); resize();
    user override — but the CSS `max-width` there still caps it on a later window shrink,
    so no extra reflow handling is needed here. */
 if(!hubMode){
-  const resizeEl = document.getElementById('hudresize');
   const HUD_MIN_W = 460, HUD_MAX_W = 900;
   let dragStartX = 0, dragStartW = 0;
   function onDragMove(e){

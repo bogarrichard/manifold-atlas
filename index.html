@@ -51,10 +51,15 @@
       <button class="nbtn" id="next" type="button"></button>
     </div>
   </div>
-  <!-- Desktop-only drag handle on the card's right edge; engine.js wires it up and
-       style.css hides it in hub mode and below the mobile breakpoint. -->
-  <div id="hudresize" aria-hidden="true"></div>
 </div>
+
+<!-- Desktop-only drag handle on the card's right edge. A sibling of #hud rather than a
+     child: #hud is itself the scroll container on a long station (`.scrolls`), and a
+     clipped/scrolling ancestor cuts off — and can swallow the clicks of — any child that
+     pokes out past its box, which this handle deliberately does. engine.js positions it
+     (fixed, tracking #hud's live rect) on every syncHudScroll() call; style.css hides it
+     in hub mode and below the mobile breakpoint. -->
+<div id="hudresize" aria-hidden="true"></div>
 
 <!-- Single top-right affordance: a hamburger that opens theme, language and the
      control legend. Keeping them folded away means the corner stays clear of the

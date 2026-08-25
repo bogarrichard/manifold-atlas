@@ -87,10 +87,14 @@ body.hub #hudhead::before,body.hub #hudhead::after{display:none}
    `overflow: hidden`, which would clip the footnote `.bubble` that deliberately hangs
    below the card. engine.js already reads the card's *live* width on every resize() call
    (`viewShift()` → `hudEl.getBoundingClientRect().right`), so dragging this and setting
-   an inline width is the entire fix — no other layout math needs to change. */
-#hudresize{position:absolute;top:0;right:-9px;bottom:0;width:18px;cursor:ew-resize;
-  z-index:5;touch-action:none}
-#hudresize::before{content:'';position:absolute;top:14px;bottom:14px;left:8px;width:2px;
+   an inline width is most of the fix. `top`/`height`/`left` are unset here on purpose —
+   this is a sibling of #hud, not a child (see index.html's comment on why), so it has no
+   box of its own to size against; engine.js's syncHudResize() sets all three inline,
+   straddling #hud's live right edge the same way the old child version did. Mostly
+   outside the card (5px in, 9px out of its 14px width) so it doesn't sit on top of
+   whatever room a long card's own vertical scrollbar wants near that same edge. */
+#hudresize{position:fixed;width:14px;cursor:ew-resize;z-index:5;touch-action:none}
+#hudresize::before{content:'';position:absolute;top:14px;bottom:14px;left:5px;width:2px;
   border-radius:1px;background:var(--line);opacity:0;transition:opacity .15s}
 #hudresize:hover::before,#hudresize.dragging::before{opacity:1;background:var(--amber)}
 body.hub #hudresize{display:none}
@@ -215,7 +219,12 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
    `100dvh` fallback covers only the first frame, before that runs; it is `dvh` and not
    `vh` for the same reason the variable exists at all (on a mobile browser `vh` is the
    toolbar-less large viewport, which is taller than the screen actually is here). */
-#hud.scrolls{max-height:var(--hudmax, calc(100dvh - 44px));overflow-y:auto;overscroll-behavior:contain}
+/* overflow-x:hidden is explicit, not left to default to `auto` off overflow-y — the
+   station text is meant to always wrap to the card's width, so nothing here should ever
+   need a horizontal scrollbar; if some content ever does overflow sideways it should be
+   clipped, not made scrollable. */
+#hud.scrolls{max-height:var(--hudmax, calc(100dvh - 44px));overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain}
 #hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
 #hud.scrolls .bubble::before{display:none}
 /* The hub card has no ↑ button to keep clear of, so it only needs symmetric top/bottom
@@ -489,7 +498,7 @@ body.hub #nav::after{right:40px}
      is already the full-width bottom sheet). */
   #hud, #hud.scrolls{top:auto;bottom:12px;left:0;width:100vw;max-width:100vw;
     padding:0 17px 0;
-    max-height:50dvh;overflow-y:auto;overscroll-behavior:contain;
+    max-height:50dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
     background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
   /* re-bleed the readout to the phone card's tighter gutters, and drop the blur/gradient
      for the same reason #hud itself does above: a fixed, self-scrolling element with
