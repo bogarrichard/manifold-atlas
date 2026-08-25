@@ -777,6 +777,12 @@ if(hubMode){
   // they're the one piece of the HUD actually visible while the camera is still moving.
   function updateNav(i){
     eb.textContent=C.ui.stationWord+' '+(i+1)+' / '+CARDS.length;
+    ti.textContent=CARDS[i].t;   // moved out of renderCard: the sticky #hudhead is visible
+                                 // the whole time the camera is flying, unlike #bo (which
+                                 // stays hidden behind #hud.fade until arrival), so a
+                                 // retarget should snap the title onto the new destination
+                                 // immediately — same tempo as the dots below, not the
+                                 // ~1900ms flight + 0.35s cross-fade the body still gets.
     dotctr.textContent=(i+1)+' / '+CARDS.length;   // the dot row's mobile stand-in (style.css)
     [...dots.children].forEach((d,k)=>{
       d.classList.toggle('on',k===i);
@@ -789,7 +795,6 @@ if(hubMode){
   }
   function renderCard(i){
     updateNav(i);
-    ti.textContent=CARDS[i].t;
     bo.innerHTML=CARDS[i].b + (i===CARDS.length-1 ? whatNext() : '');
     if(reader) reader.onCard();   // stop the previous station mid-sentence; auto-read this one
     hud.scrollTop=0;   // a long previous card may have left the box scrolled down

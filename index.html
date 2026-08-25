@@ -30,8 +30,12 @@
      exit orphaned bottom-right). One instrument panel: readout above, controls below.
      Ids are unchanged — engine.js/hub.js look them up by id, not by position. -->
 <div id="hud">
-  <div class="eyebrow" id="eb"></div>
-  <h1 id="ti"></h1>
+  <!-- Sticky readout, mirroring #nav's sticky console rail at the card's foot: stays put
+       at the top while a long card's body scrolls under it (see #hudhead in style.css). -->
+  <div id="hudhead">
+    <div class="eyebrow" id="eb"></div>
+    <h1 id="ti"></h1>
+  </div>
   <div id="bo"></div>
   <!-- The buttons ship empty: their icons come from LIE.icons (icons.js) as inline SVG,
        set by engine.js/hub.js, so every control in the app is drawn from one 24x24 grid

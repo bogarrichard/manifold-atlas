@@ -47,13 +47,39 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #hud{position:fixed;top:22px;left:82px;
   width:clamp(460px, calc(43.75vw - 82px), 900px);max-width:calc(100vw - 44px - 60px);
   background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:20px 24px 0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  padding:0 24px 0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:opacity .35s ease, transform .35s ease}
-/* Only the *readout* fades while the camera flies between stations — the console rail
-   below it stays solid. Fading the whole card would blink the ← → buttons out from under
-   a cursor that is mid-click on them. */
-#hud.fade .eyebrow,#hud.fade h1,#hud.fade #bo{opacity:0;transform:translateY(6px)}
-.eyebrow,#hud h1,#bo{transition:opacity .35s ease, transform .35s ease}
+/* Only the *body* fades while the camera flies between stations — #hudhead (the readout)
+   and the console rail both stay solid. #hudhead now updates the instant a nav press
+   retarget the flight (see updateNav() in engine.js), so fading it would blink the new
+   destination's title in and immediately back out instead of just showing it; fading the
+   whole card would also blink the ← → buttons out from under a cursor mid-click on them. */
+#hud.fade #bo{opacity:0;transform:translateY(6px)}
+#bo{transition:opacity .35s ease, transform .35s ease}
+
+/* The readout — eyebrow + title — as its own sticky section, the mirror of #nav's sticky
+   console rail at the foot: pinned to the top of #hud's scroll box (`.scrolls`, or the
+   mobile card which always scrolls) while #bo scrolls underneath, tick marks and bleed
+   matching #nav's so the two read as one instrument panel rather than a loose header +
+   footer. #hud's own top padding moved here (`0 24px 0` above) so this carries that
+   breathing room itself, same reasoning as the card's bottom padding living in #nav. */
+#hudhead{position:sticky;top:0;z-index:6;
+  margin:0 -24px 14px;padding:20px 24px 14px;
+  border-bottom:1px solid var(--line);
+  background:linear-gradient(to bottom, var(--card) 72%, transparent);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-radius:14px 14px 0 0}
+#hudhead::before,#hudhead::after{content:'';position:absolute;bottom:-1px;width:16px;height:2px;
+  background:var(--amber);opacity:.55;pointer-events:none}
+#hudhead::before{left:24px}
+#hudhead::after{right:24px}
+/* The hub bar already keeps its title out of the scrolling area for free — #bo is the only
+   flex:1 child, so #hudhead just sits above it as an ordinary flex item. The sticky/bleed/
+   gradient treatment above is a journey-card-only concern (that scroll box is #hud itself,
+   see `.scrolls` below), so undo all of it here rather than layering hub overrides on top. */
+body.hub #hudhead{position:static;margin:0;padding:0;border:none;background:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:0}
+body.hub #hudhead::before,body.hub #hudhead::after{display:none}
 
 /* Manual card-width resize (journeys, desktop only). A custom handle rather than the
    native CSS `resize` property: the native corner grip lands bottom-right, exactly where
@@ -462,9 +488,17 @@ body.hub #nav::after{right:40px}
      no scene visible to either side of it here for the margin to reveal anyway (the card
      is already the full-width bottom sheet). */
   #hud, #hud.scrolls{top:auto;bottom:12px;left:0;width:100vw;max-width:100vw;
-    padding:15px 17px 0;
+    padding:0 17px 0;
     max-height:50dvh;overflow-y:auto;overscroll-behavior:contain;
     background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
+  /* re-bleed the readout to the phone card's tighter gutters, and drop the blur/gradient
+     for the same reason #hud itself does above: a fixed, self-scrolling element with
+     backdrop-filter is a known no-paint trap on some mobile browsers. #hud is *always* a
+     scroll box on this breakpoint (no `.scrolls` gate), so the sticky header is live here
+     too, not just on the desktop's occasional long card. */
+  #hudhead{margin:0 -17px 12px;padding:15px 17px 12px;
+    background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
+  #hudhead::before{left:17px} #hudhead::after{right:17px}
   /* Desktop only inlines a footnote panel once `.scrolls` is toggled by JS, which is tuned
      to a much taller threshold than this 60vh cap — a card short enough to dodge that
      toggle can still be too tall for this cap, and its scroll container clips an
