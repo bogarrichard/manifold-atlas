@@ -98,9 +98,9 @@ LIE.journeys['geometry-se3'] = (function(){
       return G;
     }
     const setPose = (G, T) => { G.position.copy(T.p); G.quaternion.copy(T.q); };
-    function grid(g, size, seg){
+    function grid(g, size, seg, y){
       const gr = new THREE.GridHelper(size||9, seg||18, COL.grid1, COL.grid2);
-      gr.position.y = -1.6; g.add(gr);
+      gr.position.y = y===undefined ? -1.6 : y; g.add(gr);
     }
     function dot(color, r, p){
       const d = new THREE.Mesh(new THREE.SphereGeometry(r,14,12), new THREE.MeshBasicMaterial({color}));
@@ -235,15 +235,22 @@ LIE.journeys['geometry-se3'] = (function(){
              Mid-rotation the panel is deliberately not a rotation matrix — one column has
              moved and the others have not. That is what "column by column" looks like. */
       g=>{
-        // frames left of centre, panel right: the two have to be readable side by side, and
-        // the grid rides with the frames so the panel floats clear of it
-        const S = new THREE.Group(); S.position.set(-3.45,-0.2,0); g.add(S);
-        grid(S);
+        // the grid rides with the frames; the panel does not (it sits fixed in the outer
+        // group so its own placement is independent of where S is shifted)
+        const S = new THREE.Group(); S.position.set(-1.0,-0.2,0); g.add(S);
         const PHI = V3(0.18,0.95,0.28), TT = V3(2.0,0.8,-0.7);
-        const T = pose(TT, PHI);
-        S.add(gizmo(1.15, 0.038, 0.24));                                 // W, the basis we start from
+        // W and B straddle the grid's own centre rather than sitting to one side of it:
+        // CTR is minus their averaged x/z, so shifting both by it puts the pair's
+        // horizontal midpoint exactly at the grid's local (0,·,0) — W and B move, but the
+        // displacement TT between them (and every rotation/translation computed from it)
+        // is untouched, since only where the *pair* sits is being recentred, not the pose
+        // math itself. y is left alone: the grid's height is set separately, below.
+        const CTR = V3(-TT.x/2, 0, -TT.z/2);
+        grid(S, undefined, undefined, CTR.y-0.05);          // the lower gizmo (W) rests on it
+        const T = pose(TT.clone().add(CTR), PHI);
+        const world = gizmo(1.15, 0.038, 0.24); world.position.copy(CTR); S.add(world);   // W
         const body = gizmo(1.05, 0.042, 0.2); setPose(body, T); S.add(body);   // where it is headed
-        const lw = makeLabel('W', HX.ink, 1.1); lw.position.set(0.5,1.3,0); S.add(lw);
+        const lw = makeLabel('W', HX.ink, 1.1); lw.position.copy(CTR).add(V3(0.5,1.3,0)); S.add(lw);
         const lbdy = makeLabel('B', HX.ink, 1.1);
         lbdy.position.copy(T.p).add(V3(0,1.55,0)); S.add(lbdy);
         const tArr = dimArrow(COL.amber, 0.032, 0.75); S.add(tArr);       // zero-length until t runs
@@ -257,8 +264,11 @@ LIE.journeys['geometry-se3'] = (function(){
         // exactly where a second frame's own geometry is — confusing when several frames
         // are on screen together. Anchored here it stays legible and never competes with
         // anything the animation moves through.
-        const lbl = makeLabel(' ', HX.coral, 2.7); lbl.position.set(0,2.5,0.9); S.add(lbl);
-        const panel = matrixPanel(3.9); panel.position.set(2.10,0.75,0); g.add(panel);
+        const lbl = makeLabel(' ', HX.coral, 2.7); lbl.position.copy(CTR).add(V3(0,2.5,0.9)); S.add(lbl);
+        // above and to the right of the frame rather than beside it at the same height —
+        // a floating side-by-side panel needed a wide gap to stay clear; stacked instead,
+        // the whole station reads well in the roughly-square 3D viewport
+        const panel = matrixPanel(3.9); panel.position.set(2.6,3.5,0); g.add(panel);
         const CX = [HX.coral, HX.teal, HX.violet, HX.amber];
         const M  = [['0','0','0','0'],['0','0','0','0'],['0','0','0','0'],['0','0','0','1']];
         const al = [0,0,0,0];
@@ -275,7 +285,7 @@ LIE.journeys['geometry-se3'] = (function(){
           const vis = clamp(tc/0.3, 0, 1) * clamp((PER-tc)/FADE, 0, 1);   // the loop's cut, softened
           const u   = ST.map(s => ease(clamp((tc-s)/ROT, 0, 1)));
           const uT  = ease(clamp((tc-SL)/TR, 0, 1));
-          const org = TT.clone().multiplyScalar(uT);
+          const org = CTR.clone().addScaledVector(TT, uT);
           // each axis travels the rotation's own geodesic, staged one after another: the arc
           // it sweeps is drawn behind it, so "rotated into place" is visible, not inferred
           const dir = AX.map((e,i)=> e.clone().applyQuaternion(expQ(PHI.clone().multiplyScalar(u[i]))));
@@ -289,7 +299,7 @@ LIE.journeys['geometry-se3'] = (function(){
             swept[i].userData.set(pts);
             swept[i].material.opacity = 0.45*vis;
           }
-          setArrow(tArr, V3(0,0,0), org);
+          setArrow(tArr, CTR, org);
           tArr.userData.cyl.material.opacity = 0.75*vis;
           // the caption names whichever column is being written right now
           let ph = -1;
@@ -305,7 +315,10 @@ LIE.journeys['geometry-se3'] = (function(){
             M[0][c] = fmt(dir[c].x); M[1][c] = fmt(dir[c].y); M[2][c] = fmt(dir[c].z);
           }
           al[3] = 0.3 + 0.7*uT;
-          M[0][3] = fmt(org.x); M[1][3] = fmt(org.y); M[2][3] = fmt(org.z);
+          // the matrix's t column is the true translation, not the on-screen (CTR-shifted)
+          // position org is drawn at
+          const tv = TT.clone().multiplyScalar(uT);
+          M[0][3] = fmt(tv.x); M[1][3] = fmt(tv.y); M[2][3] = fmt(tv.z);
           panel.userData.draw(M, CX, al, vis, t);
         }};
       },
