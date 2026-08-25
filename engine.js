@@ -735,9 +735,25 @@ if(hubMode){
     d.title=CARDS[i].t; d.setAttribute('aria-label', dotLabel(i));
     d.onclick=()=>go(i); dots.appendChild(d);
   });
-  function renderCard(i){
+  // Nav-only redraw: dots, the eyebrow/mobile counters, and prev/next disabled state.
+  // Split out of renderCard so a mid-flight retarget (see go()) can move these onto the
+  // new target the instant the button is pressed again, without waiting for arrival to
+  // rebuild the card body — #dots and #dotctr aren't part of #hud.fade's opacity rule, so
+  // they're the one piece of the HUD actually visible while the camera is still moving.
+  function updateNav(i){
     eb.textContent=C.ui.stationWord+' '+(i+1)+' / '+CARDS.length;
     dotctr.textContent=(i+1)+' / '+CARDS.length;   // the dot row's mobile stand-in (style.css)
+    [...dots.children].forEach((d,k)=>{
+      d.classList.toggle('on',k===i);
+      // aria-current is what carries "you are here" to a screen reader; the .on class
+      // is purely visual. Removed rather than set to "false" — false still announces.
+      if(k===i) d.setAttribute('aria-current','true'); else d.removeAttribute('aria-current');
+    });
+    document.getElementById('prev').disabled=(i===0);
+    document.getElementById('next').disabled=(i===CARDS.length-1);
+  }
+  function renderCard(i){
+    updateNav(i);
     ti.textContent=CARDS[i].t;
     bo.innerHTML=CARDS[i].b + (i===CARDS.length-1 ? whatNext() : '');
     if(reader) reader.onCard();   // stop the previous station mid-sentence; auto-read this one
@@ -747,14 +763,6 @@ if(hubMode){
                        // the rendering steps and so lags (or stalls) exactly when a long
                        // card most needs clamping. The observer stays as the backstop for
                        // reflows this path cannot see (font swap, viewport-driven rewrap).
-    [...dots.children].forEach((d,k)=>{
-      d.classList.toggle('on',k===i);
-      // aria-current is what carries "you are here" to a screen reader; the .on class
-      // is purely visual. Removed rather than set to "false" — false still announces.
-      if(k===i) d.setAttribute('aria-current','true'); else d.removeAttribute('aria-current');
-    });
-    document.getElementById('prev').disabled=(i===0);
-    document.getElementById('next').disabled=(i===CARDS.length-1);
     curInst.bindCard(i);
   }
   function camPose(i){
@@ -763,25 +771,37 @@ if(hubMode){
     s.radius*=zoomF;
     return {pos:LOOK[i].clone().add(V3(0,0,0).setFromSpherical(s)), look:LOOK[i]};
   }
+  // While a flight is in progress, camPose(cur) is stale — cur only updates on arrival.
+  // Re-deriving the in-flight camera pose (the same lerp the render loop applies) lets a
+  // second arrow/dot press retarget from wherever the camera actually is right now,
+  // instead of snapping back to the pose it left.
+  function travelPose(){
+    const u=clamp((performance.now()-travel.t0)/travel.dur,0,1), e=ease(u);
+    return {pos: travel.from.pos.clone().lerp(travel.to.pos, e),
+            look: travel.from.look.clone().lerp(travel.to.look, e)};
+  }
   function go(i){
-    if(i===cur || i<0 || i>=CARDS.length || travel) return;
-    const from=camPose(cur);
+    if(i<0 || i>=CARDS.length) return;
+    if(travel ? i===travel.target : i===cur) return;
+    const from=travel ? travelPose() : camPose(cur);
     yaw=0; pitch=0; zoomF=1;
     const to=camPose(i);
     hud.classList.add('fade');
-    if(RM){ cur=i; camera.position.copy(to.pos); camera.lookAt(to.look);
+    if(RM){ cur=i; travel=null; camera.position.copy(to.pos); camera.lookAt(to.look);
       renderCard(i); hud.classList.remove('fade'); return; }
     travel={t0:performance.now(), dur:1900, from, to, target:i};
+    updateNav(i);   // move the dots/counters onto the new target now — see updateNav's note
   }
-  document.getElementById('prev').onclick=()=>go(cur-1);
-  document.getElementById('next').onclick=()=>go(cur+1);
+  document.getElementById('prev').onclick=()=>go((travel?travel.target:cur)-1);
+  document.getElementById('next').onclick=()=>go((travel?travel.target:cur)+1);
   // One meaning per key across the whole site: up/Enter go deeper, down/Escape back out.
   // A journey has no deeper level, so up/Enter simply do nothing here — they are NOT
   // recycled as "back", which is what they used to mean and what made the direction you
   // press to leave depend on where you were standing.
   addEventListener('keydown',e=>{
-    if(e.key==='ArrowRight') go(cur+1);
-    if(e.key==='ArrowLeft') go(cur-1);
+    const t=travel?travel.target:cur;
+    if(e.key==='ArrowRight') go(t+1);
+    if(e.key==='ArrowLeft') go(t-1);
     if(e.key==='ArrowDown') goHub();
   });
 
