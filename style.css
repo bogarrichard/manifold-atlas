@@ -30,13 +30,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 #c{position:fixed;inset:0;display:block;cursor:grab;touch-action:none}
 #c.grabbing{cursor:grabbing}
 
-/* The card owns a good third of the viewport; the engine shifts the camera frustum right
-   by half the card so the scene stays centered in what is left instead of hiding behind
-   the text. The lower bound is the width the card had before it was made proportional;
-   the upper one keeps the measure readable (a line much past ~90 characters is hard to
-   track back to the next one). */
-#hud{position:fixed;top:22px;left:22px;
-  width:clamp(460px, calc(38vw - 22px), 700px);max-width:calc(100vw - 44px);
+/* The card's width is tuned so the free area to its right — where the engine's camera
+   shift (viewShift()) actually centers the 3D scene — comes out square (1:1) at a 16:9
+   landscape viewport, the common case. That free width is `100vw - cardRight`, and it
+   should equal `100vh`; at 16:9, 100vh = (9/16)*100vw, so cardRight must be
+   `(7/16)*100vw` = 43.75vw. cardRight is the left offset below (82px) plus the card's own
+   width, hence the `43.75vw - 82px` middle term. Off 16:9 this drifts from square
+   (gracefully — the clamp bounds just stop it going empty-card-thin or absurdly wide);
+   at other window shapes the reader can always drag it back with `#hudresize`. The lower
+   bound is the width the card had before it was made proportional; the upper one (900px)
+   matches `HUD_MAX_W` in engine.js's manual resize so the auto default never overshoots
+   what dragging can also reach. */
+/* left offset = the corner hamburger's own left offset (22px) + its full footprint
+   (38px button + 22px gap to the card), so the card clears #topctl now that both sit on
+   the left edge instead of opposite corners. */
+#hud{position:fixed;top:22px;left:82px;
+  width:clamp(460px, calc(43.75vw - 82px), 900px);max-width:calc(100vw - 44px - 60px);
   background:var(--card);border:1px solid var(--line);border-radius:14px;
   padding:20px 24px 0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   transition:opacity .35s ease, transform .35s ease}
@@ -100,7 +109,7 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
    breakpoint ------------------------------------------------------------
    Each `clamp(MIN, …, MAX)` below interpolates linearly between MIN at a 360px viewport
    (a narrow phone) and MAX at 900px (about where the card's own width — `clamp(460px,
-   calc(38vw - 22px), 700px)` on a journey — is already close to maxed out, so the text
+   calc(43.75vw - 82px), 900px)` on a journey — is already close to maxed out, so the text
    riding along it can stop growing too). MAX is always the size this rule used before this
    pass — nothing changes on a wide desktop window. Below 360px or above 900px the clamp's
    own floor/ceiling takes over, so this never needs a breakpoint of its own; the old
