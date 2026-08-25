@@ -333,10 +333,15 @@ LIE.journeys['geometry-se3'] = (function(){
         const W = {p:V3(0,0,0), q:new THREE.Quaternion()};
         const P = V3(2.1,1.7,-1.5);                                      // landmark, fixed in W
         g.add(dot(COL.green, 0.12, P));
-        // the three frames stay drawn as faint anchors; the reading frame parks on them
-        [[TWC,'C'],[TWB,'B'],[W,'W']].forEach(([T,name])=>{
-          const gz = gizmo(0.95, 0.036, 0.2); setPose(gz, T); g.add(gz);
+        // the three frames stay drawn as faint anchors; the reading frame parks on them.
+        // Kept by reference (not just built) so the one the live frame is sitting on or
+        // sliding into can be faded out — full overlap between two frame gizmos is what
+        // was glitching (coplanar arrows z-fighting at the exact same pose).
+        const ANCH = 0.24;
+        const anchors = [[TWC,'C'],[TWB,'B'],[W,'W']].map(([T,name])=>{
+          const gz = gizmo(0.95, 0.036, ANCH); setPose(gz, T); g.add(gz);
           const l = makeLabel(name, HX.ink, 0.9); l.position.copy(T.p).add(V3(-0.42,1.3,0)); g.add(l);
+          return {p:T.p, gz};
         });
         const live = gizmo(0.95, 0.05, 1); g.add(live);
         // one 2-point line per axis component, rebuilt from `live`'s axes on every tick
@@ -367,6 +372,13 @@ LIE.journeys['geometry-se3'] = (function(){
           setPose(live, T);
           const o = vis*(1 - 0.5*Math.sin(Math.PI*s));       // the travelling frame goes faint
           live.children.forEach(a => { a.userData.cyl.material.opacity = o; });
+          // whichever static anchor the live frame is at or sliding into fades out under it,
+          // so the two coplanar gizmos never fully coincide — that overlap is what glitched
+          const NEAR = 0.85;
+          anchors.forEach(an => {
+            const f = ease(clamp(T.p.distanceTo(an.p)/NEAR, 0, 1));
+            an.gz.children.forEach(a => { a.userData.cyl.material.opacity = ANCH*f*vis; });
+          });
           // the landmark, split along whichever axes are current
           const c = P.clone().sub(T.p).applyQuaternion(T.q.clone().conjugate());
           const dir = [V3(1,0,0),V3(0,1,0),V3(0,0,1)].map(e=>e.applyQuaternion(T.q));
