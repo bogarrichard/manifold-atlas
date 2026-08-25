@@ -150,10 +150,22 @@ LIE.journeys['geometry-se3'] = (function(){
         ctx.setTransform(PANEL_DPR,0,0,PANEL_DPR,0,0);
         ctx.clearRect(0,0,CW,CH);
         ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+        // One soft backdrop plate under the whole panel, not a stroke behind each glyph:
+        // a per-glyph halo reads as a little aura ringing every character (worst on the
+        // light palette, where the halo color sits close to the digit colors), and it
+        // still doesn't fully solve legibility since the panel can float over the grid,
+        // other frames, or a bright arrow. A single translucent plate is one soft edge,
+        // not sixteen, and needs no per-theme tuning because it *is* the theme's own bg.
+        ctx.globalAlpha = vis*0.82;
+        ctx.fillStyle = hexStr(COL.bg);
+        const PR = 22, PX0 = 0, PY0 = Y0-30, PX1 = X1+30, PY1 = Y1+30;
+        ctx.beginPath();
+        ctx.moveTo(PX0+PR, PY0);
+        ctx.arcTo(PX1, PY0, PX1, PY1, PR); ctx.arcTo(PX1, PY1, PX0, PY1, PR);
+        ctx.arcTo(PX0, PY1, PX0, PY0, PR); ctx.arcTo(PX0, PY0, PX1, PY0, PR);
+        ctx.closePath(); ctx.fill();
         ctx.globalAlpha = vis;
         ctx.textAlign = 'left'; ctx.font = 'italic 50px Georgia, serif';
-        ctx.strokeStyle = hexStr(COL.bg); ctx.lineWidth = 8;   // halo: this floats over stars
-        ctx.strokeText('T =', 8, (Y0+Y1)/2);
         ctx.fillStyle = HX.ink; ctx.fillText('T =', 8, (Y0+Y1)/2);
         ctx.globalAlpha = vis*0.5; ctx.strokeStyle = HX.ink; ctx.lineWidth = 5;
         const SER = 24;
@@ -163,13 +175,11 @@ LIE.journeys['geometry-se3'] = (function(){
         ctx.moveTo(X1+16-SER, Y0-16); ctx.lineTo(X1+16, Y0-16);
         ctx.lineTo(X1+16, Y1+16);     ctx.lineTo(X1+16-SER, Y1+16);
         ctx.stroke();
-        ctx.strokeStyle = hexStr(COL.bg); ctx.lineWidth = 6;
         ctx.textAlign = 'center'; ctx.font = '46px Georgia, serif';
         for(let c=0;c<4;c++) for(let r=0;r<4;r++){
           // the homogeneous bottom row is padding, not part of the column vector: it recedes
           ctx.globalAlpha = vis*alpha[c]*(r===3 ? 0.4 : 1);
           const x = X0+cw*(c+0.5), y = Y0+rh*(r+0.5);
-          ctx.strokeText(M[r][c], x, y);
           ctx.fillStyle = cols[c]; ctx.fillText(M[r][c], x, y);
         }
         ctx.globalAlpha = 1;
@@ -242,7 +252,12 @@ LIE.journeys['geometry-se3'] = (function(){
         // the three live axes, plus the arc each tip sweeps on its way into place
         const arms  = CO.map(c=>{ const a = dimArrow(c, 0.05, 1); S.add(a); return a; });
         const swept = CO.map(c=>{ const l = polyline(24, c, 0.45); S.add(l); return l; });
-        const lbl = makeLabel(' ', HX.coral, 2.0); S.add(lbl);
+        // fixed above the W origin rather than riding the arrow tip: a caption that tracks
+        // the moving frame ends up sitting over the B gizmo by the time the slide runs,
+        // exactly where a second frame's own geometry is — confusing when several frames
+        // are on screen together. Anchored here it stays legible and never competes with
+        // anything the animation moves through.
+        const lbl = makeLabel(' ', HX.coral, 2.7); lbl.position.set(0,2.5,0.9); S.add(lbl);
         const panel = matrixPanel(3.9); panel.position.set(2.10,0.75,0); g.add(panel);
         const CX = [HX.coral, HX.teal, HX.violet, HX.amber];
         const M  = [['0','0','0','0'],['0','0','0','0'],['0','0','0','0'],['0','0','0','1']];
@@ -283,8 +298,6 @@ LIE.journeys['geometry-se3'] = (function(){
           if(ph !== cur){ cur = ph; if(ph >= 0) updateLabel(lbl, TX[ph], CX[ph]); }
           lbl.visible = ph >= 0;
           lbl.material.opacity = vis;
-          if(ph >= 0 && ph < 3) lbl.position.copy(org).addScaledVector(dir[ph], LEN).add(V3(0,0.36,0));
-          else if(ph === 3)     lbl.position.copy(org).multiplyScalar(0.5).add(V3(0,0.42,0));
           // the panel is that same frame, written down: identity → one colored column per
           // arrow that lands → T
           for(let c=0;c<3;c++){
