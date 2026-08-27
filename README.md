@@ -10,11 +10,11 @@ each one a scene plus a card of text and interactive controls.
 
 ## The journeys
 
-| Branch | Journeys |
-| --- | --- |
-| **Geometry** — the spaces things live in, and how they move | **ℝⁿ** ✅ · SO(2) · SE(2) · SO(3) · **SE(3)** ✅ · Sim(3) |
-| **Optimization** — how a cost gets minimized, all in flat ℝⁿ | **gradient descent** ✅ · Gauss–Newton · LM · robust |
-| **SLAM** — where the two meet | **Riemannian GD** ✅ · factor graphs · SLAM |
+| Branch                                                       | Journeys                                                  |
+| ------------------------------------------------------------ | --------------------------------------------------------- |
+| **Geometry** — the spaces things live in, and how they move  | **ℝⁿ** ✅ · SO(2) · SE(2) · SO(3) · **SE(3)** ✅ · Sim(3) |
+| **Optimization** — how a cost gets minimized, all in flat ℝⁿ | **gradient descent** ✅ · Gauss–Newton · LM · robust      |
+| **SLAM** — where the two meet                                | **Riemannian GD** ✅ · factor graphs · SLAM               |
 
 ✅ = built and playable. The rest are on the hub as moons you cannot click yet.
 
@@ -38,10 +38,23 @@ HTTP — opening `index.html` straight from the filesystem trips the browser's `
 restrictions:
 
 ```bash
-python3 -m http.server 8000
+python3 serve.py
 ```
 
 Then open `http://localhost:8000/`.
+
+Use `serve.py` rather than a bare `python3 -m http.server`: it is the same stdlib server
+with `Cache-Control: no-store` added. Without that, there being no build step and so no
+fingerprinted filenames, the browser applies heuristic freshness and an edit can silently
+fail to take effect on some files and some reloads.
+
+Two checks before shipping:
+
+- `http://localhost:8000/check.html` rebuilds every journey against the real Three.js and
+  checks the station/card/element-id invariants. No dependencies — it is just a page.
+- `npm run format:check` reports any file that has drifted from Prettier's output
+  (`npm run format` rewrites in place). This is the only thing here that needs Node, and
+  it is developer-only: `node_modules/` is gitignored and the site runs without it.
 
 ## License
 
