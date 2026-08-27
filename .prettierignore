@@ -1,0 +1,11 @@
+# Third-party. three.min.js is minified on purpose and carries the MIT @license
+# header that has to stay with the code — never reformat it.
+vendor/
+
+# Not source.
+docs/
+pwa-icons/
+LICENSE
+layouts/
+layouts.json
+manifest.json

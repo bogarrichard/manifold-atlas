@@ -1,0 +1,14 @@
+{
+  "name": "manifold-atlas",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Interactive 3D journeys through the geometry robotics runs on.",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "3.3.3"
+  }
+}
