@@ -1,3 +1,6 @@
+/* The dark and light palettes are laid out to line up row for row: that pairing is how
+   a retheme gets checked by eye, so both are held out of the formatter on purpose. */
+/* prettier-ignore */
 :root{
   --bg:#0D1220; --ink:#E8E6DF; --muted:#B9BDCB; --faint:#6E7385;
   --teal:#5DCAA5; --violet:#AFA9EC; --violet2:#7F77DD; --coral:#F0997B;
@@ -9,6 +12,7 @@
      below; engine.js overwrites it inline from the stored preference on load */
   --text-scale:1;
 }
+/* prettier-ignore */
 :root[data-theme="light"]{
   --bg:#E7ECF3; --ink:#1A2233; --muted:#48526A; --faint:#7A8598;
   --teal:#2E9A78; --violet:#6E62C8; --violet2:#5A50C0; --coral:#C85A33;
@@ -17,18 +21,37 @@
   --panel:rgba(255,255,255,0.85); --panel-strong:rgba(255,255,255,0.96);
   --dot:rgba(20,30,55,0.22);
 }
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden;background:var(--bg);
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
   /* the CJK families at the tail only kick in for Japanese glyphs (the Latin fonts
      before them carry no kana/kanji), so Latin rendering is unchanged */
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans",
-    "Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI",Meiryo,sans-serif;color:var(--ink)}
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  color: var(--ink);
+}
 /* touch-action:none stops the browser's own scroll/refresh/pinch-zoom gestures from
    fighting the canvas's own drag-orbit and pinch-zoom handlers (engine.js, hub.js) —
    without it, a one-finger drag here also tries to scroll the (non-scrolling) page, and
    a two-finger pinch fights the page zoom instead of reaching the pointer handlers at all. */
-#c{position:fixed;inset:0;display:block;cursor:grab;touch-action:none}
-#c.grabbing{cursor:grabbing}
+#c {
+  position: fixed;
+  inset: 0;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+#c.grabbing {
+  cursor: grabbing;
+}
 
 /* The card's width is tuned so the free area to its right — where the engine's camera
    shift (viewShift()) actually centers the 3D scene — comes out square (1:1) at a 16:9
@@ -44,18 +67,36 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
 /* left offset = the corner hamburger's own left offset (22px) + its full footprint
    (38px button + 22px gap to the card), so the card clears #topctl now that both sit on
    the left edge instead of opposite corners. */
-#hud{position:fixed;top:22px;left:82px;
-  width:clamp(460px, calc(43.75vw - 82px), 900px);max-width:calc(100vw - 44px - 60px);
-  background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:0 24px 0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  transition:opacity .35s ease, transform .35s ease}
+#hud {
+  position: fixed;
+  top: 22px;
+  left: 82px;
+  width: clamp(460px, calc(43.75vw - 82px), 900px);
+  max-width: calc(100vw - 44px - 60px);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 0 24px 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
 /* Only the *body* fades while the camera flies between stations — #hudhead (the readout)
    and the console rail both stay solid. #hudhead now updates the instant a nav press
    retarget the flight (see updateNav() in engine.js), so fading it would blink the new
    destination's title in and immediately back out instead of just showing it; fading the
    whole card would also blink the ← → buttons out from under a cursor mid-click on them. */
-#hud.fade #bo{opacity:0;transform:translateY(6px)}
-#bo{transition:opacity .35s ease, transform .35s ease}
+#hud.fade #bo {
+  opacity: 0;
+  transform: translateY(6px);
+}
+#bo {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
 
 /* The readout — eyebrow + title — as its own sticky section, the mirror of #nav's sticky
    console rail at the foot: pinned to the top of #hud's scroll box (`.scrolls`, or the
@@ -63,23 +104,53 @@ html,body{height:100%;overflow:hidden;background:var(--bg);
    matching #nav's so the two read as one instrument panel rather than a loose header +
    footer. #hud's own top padding moved here (`0 24px 0` above) so this carries that
    breathing room itself, same reasoning as the card's bottom padding living in #nav. */
-#hudhead{position:sticky;top:0;z-index:6;
-  margin:0 -24px 14px;padding:20px 24px 14px;
-  border-bottom:1px solid var(--line);
-  background:linear-gradient(to bottom, var(--card) 72%, transparent);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border-radius:14px 14px 0 0}
-#hudhead::before,#hudhead::after{content:'';position:absolute;bottom:-1px;width:16px;height:2px;
-  background:var(--amber);opacity:.55;pointer-events:none}
-#hudhead::before{left:24px}
-#hudhead::after{right:24px}
+#hudhead {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  margin: 0 -24px 14px;
+  padding: 20px 24px 14px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(to bottom, var(--card) 72%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 14px 14px 0 0;
+}
+#hudhead::before,
+#hudhead::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  width: 16px;
+  height: 2px;
+  background: var(--amber);
+  opacity: 0.55;
+  pointer-events: none;
+}
+#hudhead::before {
+  left: 24px;
+}
+#hudhead::after {
+  right: 24px;
+}
 /* The hub bar already keeps its title out of the scrolling area for free — #bo is the only
    flex:1 child, so #hudhead just sits above it as an ordinary flex item. The sticky/bleed/
    gradient treatment above is a journey-card-only concern (that scroll box is #hud itself,
    see `.scrolls` below), so undo all of it here rather than layering hub overrides on top. */
-body.hub #hudhead{position:static;margin:0;padding:0;border:none;background:none;
-  backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:0}
-body.hub #hudhead::before,body.hub #hudhead::after{display:none}
+body.hub #hudhead {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-radius: 0;
+}
+body.hub #hudhead::before,
+body.hub #hudhead::after {
+  display: none;
+}
 
 /* Manual card-width resize (journeys, desktop only). A custom handle rather than the
    native CSS `resize` property: the native corner grip lands bottom-right, exactly where
@@ -93,12 +164,38 @@ body.hub #hudhead::before,body.hub #hudhead::after{display:none}
    straddling #hud's live right edge the same way the old child version did. Mostly
    outside the card (5px in, 9px out of its 14px width) so it doesn't sit on top of
    whatever room a long card's own vertical scrollbar wants near that same edge. */
-#hudresize{position:fixed;width:14px;cursor:ew-resize;z-index:5;touch-action:none}
-#hudresize::before{content:'';position:absolute;top:14px;bottom:14px;left:5px;width:2px;
-  border-radius:1px;background:var(--line);opacity:0;transition:opacity .15s}
-#hudresize:hover::before,#hudresize.dragging::before{opacity:1;background:var(--amber)}
-body.hub #hudresize{display:none}
-@media (max-width:640px){#hudresize{display:none}}
+#hudresize {
+  position: fixed;
+  width: 14px;
+  cursor: ew-resize;
+  z-index: 5;
+  touch-action: none;
+}
+#hudresize::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 5px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--line);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+#hudresize:hover::before,
+#hudresize.dragging::before {
+  opacity: 1;
+  background: var(--amber);
+}
+body.hub #hudresize {
+  display: none;
+}
+@media (max-width: 640px) {
+  #hudresize {
+    display: none;
+  }
+}
 
 /* The hub trades the journeys' tall side card for a wide mission bar pinned along the
    bottom, mission-select style: title and status line centered, body copy in a readable
@@ -120,20 +217,65 @@ body.hub #hudresize{display:none}
    shift from this height, so raising it re-centers the map automatically; nothing else
    needs touching. Don't push past ~52vh: the gap between the map's lowest orbit and the
    top of the bar closes to ~20px there, and the two start to read as one crowded mass. */
-body.hub #hud{top:auto;left:50%;bottom:26px;transform:translateX(-50%);
-  width:clamp(560px, 62vw, 1100px);max-width:calc(100vw - 48px);
-  height:48dvh;display:flex;flex-direction:column;
-  padding:24px 40px 0;text-align:center}
-body.hub #bo{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;
-  scrollbar-width:thin}
-body.hub #hud::before,body.hub #hud::after{content:'';position:absolute;
-  width:22px;height:22px;border:2px solid var(--amber);opacity:.5;pointer-events:none}
-body.hub #hud::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:14px 0 0 0}
-body.hub #hud::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 14px 0}
-body.hub .eyebrow{text-align:center;text-transform:uppercase;font-size:16px}
-body.hub #hud h1{text-align:center;text-transform:uppercase;letter-spacing:.04em;
-  text-shadow:0 0 22px color-mix(in srgb, var(--amber) 45%, transparent)}
-body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:auto}
+body.hub #hud {
+  top: auto;
+  left: 50%;
+  bottom: 26px;
+  transform: translateX(-50%);
+  width: clamp(560px, 62vw, 1100px);
+  max-width: calc(100vw - 48px);
+  height: 48dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 40px 0;
+  text-align: center;
+}
+body.hub #bo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+body.hub #hud::before,
+body.hub #hud::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--amber);
+  opacity: 0.5;
+  pointer-events: none;
+}
+body.hub #hud::before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+  border-radius: 14px 0 0 0;
+}
+body.hub #hud::after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+  border-radius: 0 0 14px 0;
+}
+body.hub .eyebrow {
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 16px;
+}
+body.hub #hud h1 {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--amber) 45%, transparent);
+}
+body.hub #hud p {
+  text-align: left;
+  max-width: 64ch;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 /* ---- fluid type: reading-content sizes scale with the viewport instead of jumping at a
    breakpoint ------------------------------------------------------------
@@ -148,65 +290,191 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
      B = (MAX-MIN) × 100/540      A = MIN − (MAX-MIN) × 360/540
    (540 = 900−360, the span). Recompute both if MIN, MAX, or the 360/900 reference points
    change — they are not derived from anything else at render time. */
-.eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:calc(clamp(14px, calc(12.33px + 0.463vw), 16.5px) * var(--text-scale));
-  letter-spacing:.14em;color:var(--amber);margin-bottom:9px}
-#hud h1{font-family:Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",
-    "Noto Serif JP","Yu Mincho",serif;font-weight:500;
-  font-size:calc(clamp(27px, calc(20.33px + 1.852vw), 37px) * var(--text-scale));
-  line-height:1.26;margin-bottom:13px;color:var(--ink)}
-#hud p{font-size:calc(clamp(19.5px, calc(17.5px + 0.556vw), 22.5px) * var(--text-scale));line-height:1.7;color:var(--muted)}
-#hud p+p{margin-top:10px}
-.m{font-family:Georgia,serif;font-style:italic;color:var(--ink)}
-.m sup,.m sub{font-size:.68em}
-.m sup{margin-left:.06em}   /* keep exponents off their base, e.g. ℝⁿ, 0.82ᵏ */
-.frac{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;
-  line-height:1.15;font-family:Georgia,serif;font-style:italic;margin:0 3px;font-size:.82em;
-  position:relative;top:-0.1em}
-.frac span:first-child{padding:0 4px}
-.frac span:last-child{border-top:1px solid var(--muted);padding:0 4px}
+.eyebrow {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: calc(clamp(14px, calc(12.33px + 0.463vw), 16.5px) * var(--text-scale));
+  letter-spacing: 0.14em;
+  color: var(--amber);
+  margin-bottom: 9px;
+}
+#hud h1 {
+  font-family: Georgia, "STIX Two Text", "Times New Roman", "Hiragino Mincho ProN", "Noto Serif JP",
+    "Yu Mincho", serif;
+  font-weight: 500;
+  font-size: calc(clamp(27px, calc(20.33px + 1.852vw), 37px) * var(--text-scale));
+  line-height: 1.26;
+  margin-bottom: 13px;
+  color: var(--ink);
+}
+#hud p {
+  font-size: calc(clamp(19.5px, calc(17.5px + 0.556vw), 22.5px) * var(--text-scale));
+  line-height: 1.7;
+  color: var(--muted);
+}
+#hud p + p {
+  margin-top: 10px;
+}
+.m {
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: var(--ink);
+}
+.m sup,
+.m sub {
+  font-size: 0.68em;
+}
+.m sup {
+  margin-left: 0.06em;
+} /* keep exponents off their base, e.g. ℝⁿ, 0.82ᵏ */
+.frac {
+  display: inline-flex;
+  flex-direction: column;
+  text-align: center;
+  vertical-align: middle;
+  line-height: 1.15;
+  font-family: Georgia, serif;
+  font-style: italic;
+  margin: 0 3px;
+  font-size: 0.82em;
+  position: relative;
+  top: -0.1em;
+}
+.frac span:first-child {
+  padding: 0 4px;
+}
+.frac span:last-child {
+  border-top: 1px solid var(--muted);
+  padding: 0 4px;
+}
 /* bracketed math matrix (a CSS grid flanked by two border-drawn brackets) */
-#hud .matline{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;
-  margin:16px 0;font-family:Georgia,serif;font-style:italic;color:var(--ink);
-  font-size:calc(clamp(20px, calc(17px + 0.833vw), 24.5px) * var(--text-scale))}
-#hud .matline sub,#hud .matline sup{font-size:.66em}
-.matrix{display:inline-flex;align-items:stretch;color:var(--muted)}
-.matrix .mbracket{width:7px;flex:none;border:1.5px solid currentColor;border-right:none}
-.matrix .mbracket.right{border-left:none;border-right:1.5px solid currentColor}
-.matrix .mgrid{display:grid;grid-template-columns:repeat(3,auto);gap:7px 20px;
-  padding:7px 13px;color:var(--ink);text-align:center}
-.matrix .mgrid>span{min-width:24px;white-space:nowrap}
+#hud .matline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: var(--ink);
+  font-size: calc(clamp(20px, calc(17px + 0.833vw), 24.5px) * var(--text-scale));
+}
+#hud .matline sub,
+#hud .matline sup {
+  font-size: 0.66em;
+}
+.matrix {
+  display: inline-flex;
+  align-items: stretch;
+  color: var(--muted);
+}
+.matrix .mbracket {
+  width: 7px;
+  flex: none;
+  border: 1.5px solid currentColor;
+  border-right: none;
+}
+.matrix .mbracket.right {
+  border-left: none;
+  border-right: 1.5px solid currentColor;
+}
+.matrix .mgrid {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 7px 20px;
+  padding: 7px 13px;
+  color: var(--ink);
+  text-align: center;
+}
+.matrix .mgrid > span {
+  min-width: 24px;
+  white-space: nowrap;
+}
 
 /* station 6: live per-phase formula, "what is δ" trigger, and floating bubble */
-.s5math{margin-top:12px;padding:8px 12px;border-radius:9px;text-align:center;
-  background:color-mix(in srgb, var(--amber) 8%, transparent);border:1px solid color-mix(in srgb, var(--amber) 20%, transparent);
-  font-family:Georgia,serif;font-style:italic;color:var(--ink);
-  font-size:calc(clamp(19px, calc(16px + 0.833vw), 23.5px) * var(--text-scale));
-  min-height:27px;line-height:1.55}
-.s5math sub,.s5math sup{font-size:.7em}
-.s5foot{position:relative;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
-.s5info{display:inline-flex;align-items:center;gap:6px;cursor:pointer;padding:0;
-  background:none;border:none;color:var(--faint);
-  font-family:ui-monospace,Menlo,monospace;font-size:calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));
-  transition:color .15s}
-.s5info:hover,.s5info[aria-expanded="true"]{color:var(--amber)}
-.s5info .m{color:inherit}
-.s5info .ic{font-size:calc(clamp(14.5px, calc(12.5px + 0.556vw), 17.5px) * var(--text-scale))}
+.s5math {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  text-align: center;
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber) 20%, transparent);
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: var(--ink);
+  font-size: calc(clamp(19px, calc(16px + 0.833vw), 23.5px) * var(--text-scale));
+  min-height: 27px;
+  line-height: 1.55;
+}
+.s5math sub,
+.s5math sup {
+  font-size: 0.7em;
+}
+.s5foot {
+  position: relative;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.s5info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--faint);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));
+  transition: color 0.15s;
+}
+.s5info:hover,
+.s5info[aria-expanded="true"] {
+  color: var(--amber);
+}
+.s5info .m {
+  color: inherit;
+}
+.s5info .ic {
+  font-size: calc(clamp(14.5px, calc(12.5px + 0.556vw), 17.5px) * var(--text-scale));
+}
 /* The panel hangs under the card. Under a tall card that would drop it below the fold —
    and the page never scrolls — so clamp the top to whatever still leaves room for a
    full-height panel. It then overlaps the foot of the card, which is fine: it is opaque.
    `--bubmax` is the room the engine measured below the card; past that the panel would
    run off the bottom of the window, and it scrolls internally instead. */
-.bubble{position:absolute;top:min(calc(100% + 12px), calc(100dvh - min(56dvh,440px) - 40px));
-  left:0;right:0;z-index:8;
-  padding:14px 16px;border-radius:12px;background:var(--panel-strong);
-  border:1px solid var(--line);box-shadow:0 16px 44px rgba(0,0,0,0.55);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  max-height:min(56dvh,440px,var(--bubmax,440px));overflow-y:auto}
-.bubble[hidden]{display:none}
-.bubble::before{content:'';position:absolute;top:-7px;left:26px;width:12px;height:12px;
-  background:var(--panel-strong);border-left:1px solid var(--line);border-top:1px solid var(--line);
-  transform:rotate(45deg)}
+.bubble {
+  position: absolute;
+  top: min(calc(100% + 12px), calc(100dvh - min(56dvh, 440px) - 40px));
+  left: 0;
+  right: 0;
+  z-index: 8;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  max-height: min(56dvh, 440px, var(--bubmax, 440px));
+  overflow-y: auto;
+}
+.bubble[hidden] {
+  display: none;
+}
+.bubble::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 26px;
+  width: 12px;
+  height: 12px;
+  background: var(--panel-strong);
+  border-left: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  transform: rotate(45deg);
+}
 /* A card taller than the viewport scrolls instead of running off the bottom — the engine
    sets `.scrolls` for that (and when the room under the card is too small for a floating
    panel). Scrolling clips whatever hangs past the card's box, and the panel above hangs
@@ -223,51 +491,146 @@ body.hub #hud p{text-align:left;max-width:64ch;margin-left:auto;margin-right:aut
    station text is meant to always wrap to the card's width, so nothing here should ever
    need a horizontal scrollbar; if some content ever does overflow sideways it should be
    clipped, not made scrollable. */
-#hud.scrolls{max-height:var(--hudmax, calc(100dvh - 44px));overflow-y:auto;overflow-x:hidden;
-  overscroll-behavior:contain}
-#hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
-#hud.scrolls .bubble::before{display:none}
+#hud.scrolls {
+  max-height: var(--hudmax, calc(100dvh - 44px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+#hud.scrolls .bubble {
+  position: static;
+  max-height: none;
+  margin-top: 12px;
+  box-shadow: none;
+}
+#hud.scrolls .bubble::before {
+  display: none;
+}
 /* The hub card has no ↑ button to keep clear of, so it only needs symmetric top/bottom
    breathing room — this should be rare in practice now that `syncHudScroll` no longer
    applies the (journey-only) floating-panel headroom check to the hub. */
 /* the hub bar sets its own fixed height above, so the journey card's scroll clamp is moot */
-body.hub #hud.scrolls{max-height:none}
+body.hub #hud.scrolls {
+  max-height: none;
+}
 
 /* inline concept link in the body text (dashed underline); its explanation opens as a
    footnote panel (.bubble) at the foot of the card. display:inline so the link sits on
    the text baseline and never nudges the line (no "text jump"). */
-.termbtn{font:inherit;display:inline;color:var(--amber);background:none;border:none;
-  padding:0;margin:0;cursor:pointer;border-bottom:1px dashed currentColor}
-.termbtn:hover,.termbtn[aria-expanded="true"]{color:var(--coral)}
-.termbtn:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:2px}
+.termbtn {
+  font: inherit;
+  display: inline;
+  color: var(--amber);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  border-bottom: 1px dashed currentColor;
+}
+.termbtn:hover,
+.termbtn[aria-expanded="true"] {
+  color: var(--coral);
+}
+.termbtn:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 
 /* "What next" — the link block engine.js appends to a journey's LAST card, built from
    the descriptor's `seq`. Separated from the running text by a rule rather than boxed:
    it is the end of the card, not a dialog like .bubble. Lives inside #bo so the card's
    own scroll measurement counts its height. */
-.whatnext{margin:22px 0 0;padding-top:14px;border-top:1px solid var(--line)}
-.whatnext .wnrow{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin:0 0 9px}
-.whatnext .wnrow:last-child{margin-bottom:0}
-.whatnext .wnlab{flex:none;color:var(--faint);font-size:.78em;letter-spacing:.07em;text-transform:uppercase}
-.whatnext a{text-decoration:none;border-bottom:1px solid currentColor;padding-bottom:1px}
-.whatnext a.wngo{color:var(--teal)}
-.whatnext a.wnalso{color:var(--muted);border-bottom-color:var(--line)}
-.whatnext a:hover{color:var(--coral)}
-.whatnext a:focus-visible{outline:2px solid var(--amber);outline-offset:3px;border-radius:2px}
+.whatnext {
+  margin: 22px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.whatnext .wnrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: 0 0 9px;
+}
+.whatnext .wnrow:last-child {
+  margin-bottom: 0;
+}
+.whatnext .wnlab {
+  flex: none;
+  color: var(--faint);
+  font-size: 0.78em;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.whatnext a {
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+  padding-bottom: 1px;
+}
+.whatnext a.wngo {
+  color: var(--teal);
+}
+.whatnext a.wnalso {
+  color: var(--muted);
+  border-bottom-color: var(--line);
+}
+.whatnext a:hover {
+  color: var(--coral);
+}
+.whatnext a:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
 
-.acts{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-.act{font-family:ui-monospace,Menlo,monospace;font-size:calc(clamp(17px, calc(15px + 0.556vw), 20px) * var(--text-scale));
-  color:var(--ink);
-  background:color-mix(in srgb, var(--amber) 12%, transparent);border:1px solid color-mix(in srgb, var(--amber) 45%, transparent);
-  border-radius:9px;padding:8px 14px;cursor:pointer;transition:background .15s}
-.act:hover{background:color-mix(in srgb, var(--amber) 22%, transparent)}
-.ro{font-family:ui-monospace,Menlo,monospace;font-size:calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));
-  color:var(--faint);margin-top:10px}
-.ro b{color:var(--ink);font-weight:500}
-.slrow{display:flex;align-items:center;gap:10px;margin-top:12px}
-.slrow input[type=range]{flex:1;accent-color:var(--amber)}
-.slrow label{font-family:ui-monospace,Menlo,monospace;
-  font-size:calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));color:var(--muted);min-width:62px}
+.acts {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+.act {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: calc(clamp(17px, calc(15px + 0.556vw), 20px) * var(--text-scale));
+  color: var(--ink);
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent);
+  border-radius: 9px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.act:hover {
+  background: color-mix(in srgb, var(--amber) 22%, transparent);
+}
+.ro {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));
+  color: var(--faint);
+  margin-top: 10px;
+}
+.ro b {
+  color: var(--ink);
+  font-weight: 500;
+}
+.slrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.slrow input[type="range"] {
+  flex: 1;
+  accent-color: var(--amber);
+}
+.slrow label {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: calc(clamp(15.5px, calc(13.5px + 0.556vw), 18.5px) * var(--text-scale));
+  color: var(--muted);
+  min-width: 62px;
+}
 
 /* ---- the console rail -------------------------------------------------
    Docked across the foot of the HUD instead of floating over the scene. `sticky` so a
@@ -276,183 +639,548 @@ body.hub #hud.scrolls{max-height:none}
    rail out to the card's inner edges so its rule reads as a division of the panel rather
    than a box drawn inside one — the same trick the hub bar's corner brackets use to sit on
    the frame instead of within it. */
-#nav{position:sticky;bottom:0;z-index:6;
-  display:flex;align-items:center;gap:14px;
-  margin:18px -24px 0;padding:12px 24px 16px;
-  border-top:1px solid var(--line);
-  background:linear-gradient(to top, var(--card) 72%, transparent);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border-radius:0 0 14px 14px}
+#nav {
+  position: sticky;
+  bottom: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px -24px 0;
+  padding: 12px 24px 16px;
+  border-top: 1px solid var(--line);
+  background: linear-gradient(to top, var(--card) 72%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 0 0 14px 14px;
+}
 /* amber tick marks riding the rule, echoing the hub frame's corner brackets */
-#nav::before,#nav::after{content:'';position:absolute;top:-1px;width:16px;height:2px;
-  background:var(--amber);opacity:.55;pointer-events:none}
-#nav::before{left:24px}
-#nav::after{right:24px}
+#nav::before,
+#nav::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  width: 16px;
+  height: 2px;
+  background: var(--amber);
+  opacity: 0.55;
+  pointer-events: none;
+}
+#nav::before {
+  left: 24px;
+}
+#nav::after {
+  right: 24px;
+}
 /* the exit sits at the far left; the travel cluster is always hard right, whether or not
    the exit is currently shown (it is hidden on the hub's map level) */
-#navmain{display:flex;align-items:center;gap:16px;margin-left:auto}
-.nbtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);
-  background:var(--panel);color:var(--ink);font-size:22.5px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:border-color .15s,background .15s;
-  -webkit-user-select:none;user-select:none}
-.nbtn:not(:disabled):hover{border-color:var(--amber);background:var(--panel-strong)}
-.nbtn:not(:disabled):active{transform:scale(.92)}
+#navmain {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+}
+.nbtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 22.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.nbtn:not(:disabled):hover {
+  border-color: var(--amber);
+  background: var(--panel-strong);
+}
+.nbtn:not(:disabled):active {
+  transform: scale(0.92);
+}
 /* :hover matches disabled buttons too, so the end-of-journey prev/next used to light up
    amber under the cursor while doing nothing — hence the :not(:disabled) guards above. */
-.nbtn:disabled{opacity:.3;cursor:default}
-.nbtn[hidden]{display:none}
+.nbtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.nbtn[hidden] {
+  display: none;
+}
 /* Every control's icon is an inline SVG from LIE.icons (see icons.js), drawn on one 24x24
    grid with a 2px `currentColor` stroke — so the size is set here, per context, rather
    than in the markup, and `color`/`:hover`/`:disabled` keep working unchanged. `#speak`
    needed a hand-tuned smaller font-size back when it was a ▶︎ character next to arrow
    characters of a different optical weight; drawn icons need no such per-glyph correction. */
-.svgic{display:block;flex:none}
-.nbtn .svgic{width:22px;height:22px}
+.svgic {
+  display: block;
+  flex: none;
+}
+.nbtn .svgic {
+  width: 22px;
+  height: 22px;
+}
 /* while speaking, the button holds the amber the others only take on hover */
-#speak.speaking{border-color:var(--amber);color:var(--amber);background:var(--panel-strong)}
-#dots{display:flex;gap:9px}
-.dot{position:relative;width:9px;height:9px;border-radius:50%;background:var(--dot);border:0;
-  padding:0;cursor:pointer;transition:background .2s,transform .2s,opacity .2s}
+#speak.speaking {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--panel-strong);
+}
+#dots {
+  display: flex;
+  gap: 9px;
+}
+.dot {
+  position: relative;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--dot);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.2s,
+    opacity 0.2s;
+}
 /* A 9px target is a decoration, not a control — and these dots are the only way to jump
    straight to a station. The visual box stays 9px (the strip's density is deliberate);
    an invisible pseudo-element carries the real hit area, sized to the *pitch* (dot + gap)
    so neighbouring targets meet without overlapping — overlapping ones would send an edge
    click to the wrong station. Coarse pointers get a wider gap so the pitch clears 24px. */
-.dot::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:18px;height:28px}
+.dot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 28px;
+}
 /* not on .locked: filling an unbuilt stop amber would advertise it as landable */
-.dot:not(.locked):hover{background:var(--amber)}
-.dot.on{background:var(--amber);transform:scale(1.25)}
-@media (pointer:coarse){
-  #dots{gap:15px}
-  .dot::after{width:24px;height:34px}
+.dot:not(.locked):hover {
+  background: var(--amber);
+}
+.dot.on {
+  background: var(--amber);
+  transform: scale(1.25);
+}
+@media (pointer: coarse) {
+  #dots {
+    gap: 15px;
+  }
+  .dot::after {
+    width: 24px;
+    height: 34px;
+  }
 }
 /* a stop that exists on the map but is not built yet — visible, obviously not landable */
-.dot.locked{opacity:.34;background:transparent;box-shadow:inset 0 0 0 1.5px var(--dot)}
-.dot.locked.on{background:transparent;box-shadow:inset 0 0 0 1.5px var(--amber);opacity:.75}
+.dot.locked {
+  opacity: 0.34;
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--dot);
+}
+.dot.locked.on {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--amber);
+  opacity: 0.75;
+}
 /* Numeric stand-in for the dot row, swapped in on narrow phones (see the mobile media
    query below) where a strip of up to ten dots — each needing a coarse-pointer hit area
    per `@media (pointer:coarse)` above — does not fit next to prev/next without crowding
    or wrapping. `aria-hidden`: purely a visual convenience for sighted mobile users: the
    position is already announced through each button's own aria-label and the eyebrow
    ("station 3 / 10"), so this would just double that up for a screen reader. */
-.dotctr{display:none;font-family:ui-monospace,Menlo,monospace;font-size:15px;
-  color:var(--muted);white-space:nowrap;letter-spacing:.02em}
+.dotctr {
+  display: none;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 15px;
+  color: var(--muted);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
 
 /* In the hub the rail is the last flex item of the fixed-height bar, so it pins itself to
    the bar's foot with no offsets to maintain — the reason the old lifts (which chased
    the bar height by hand) are gone. Wider padding to match the bar's roomier gutters. */
-body.hub #nav{margin:16px -40px 0;padding:12px 40px 20px}
-body.hub #nav::before{left:40px}
-body.hub #nav::after{right:40px}
+body.hub #nav {
+  margin: 16px -40px 0;
+  padding: 12px 40px 20px;
+}
+body.hub #nav::before {
+  left: 40px;
+}
+body.hub #nav::after {
+  right: 40px;
+}
 
 /* Top-right: one hamburger, everything else folded inside it. The corner used to carry a
    theme button, a language dropdown and a permanently visible control legend, which is
    three pieces of chrome competing with the scene. Now the button is the only thing
    drawn until you ask for the rest. */
-#topctl{position:fixed;top:18px;left:22px;z-index:7}
-#menubtn{display:flex;align-items:center;justify-content:center;cursor:pointer;
-  width:38px;height:38px;padding:0;color:var(--ink);
-  background:var(--panel);border:1px solid var(--line);border-radius:10px;
-  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);transition:border-color .15s}
-#menubtn:hover{border-color:var(--amber)}
-#menubtn .bars{display:flex;flex-direction:column;gap:4px;width:16px}
-#menubtn .bars i{display:block;height:1.5px;background:currentColor;border-radius:1px;
-  transition:transform .22s ease, opacity .18s ease}
+#topctl {
+  position: fixed;
+  top: 18px;
+  left: 22px;
+  z-index: 7;
+}
+#menubtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color 0.15s;
+}
+#menubtn:hover {
+  border-color: var(--amber);
+}
+#menubtn .bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 16px;
+}
+#menubtn .bars i {
+  display: block;
+  height: 1.5px;
+  background: currentColor;
+  border-radius: 1px;
+  transition:
+    transform 0.22s ease,
+    opacity 0.18s ease;
+}
 /* the three bars fold into an × while the panel is open */
-#menubtn[aria-expanded="true"] .bars i:nth-child(1){transform:translateY(5.5px) rotate(45deg)}
-#menubtn[aria-expanded="true"] .bars i:nth-child(2){opacity:0}
-#menubtn[aria-expanded="true"] .bars i:nth-child(3){transform:translateY(-5.5px) rotate(-45deg)}
+#menubtn[aria-expanded="true"] .bars i:nth-child(1) {
+  transform: translateY(5.5px) rotate(45deg);
+}
+#menubtn[aria-expanded="true"] .bars i:nth-child(2) {
+  opacity: 0;
+}
+#menubtn[aria-expanded="true"] .bars i:nth-child(3) {
+  transform: translateY(-5.5px) rotate(-45deg);
+}
 
-#menupanel{position:absolute;top:46px;left:0;min-width:236px;padding:4px;
-  background:var(--panel-strong);border:1px solid var(--line);border-radius:12px;
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  box-shadow:0 14px 38px rgba(0,0,0,0.45)}
-#menupanel[hidden]{display:none}
-.msec{padding:10px 12px 12px}
-.msec+.msec{border-top:1px solid var(--line)}
-.msec h2{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;font-weight:400;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin:0 0 9px}
+#menupanel {
+  position: absolute;
+  top: 46px;
+  left: 0;
+  min-width: 236px;
+  padding: 4px;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.45);
+}
+#menupanel[hidden] {
+  display: none;
+}
+.msec {
+  padding: 10px 12px 12px;
+}
+.msec + .msec {
+  border-top: 1px solid var(--line);
+}
+.msec h2 {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 0 0 9px;
+}
 
 /* theme: a full-width row that cycles, showing where it currently stands rather than
    needing to be opened to find out */
-#themebtn,#speechbtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;
-  color:var(--muted);
-  background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
-  font-family:ui-monospace,Menlo,monospace;font-size:17.5px;text-align:left;
-  transition:border-color .15s,color .15s}
-#themebtn:hover,#speechbtn:hover{border-color:var(--amber);color:var(--ink)}
-#themebtn .ticon,#speechbtn .ticon{display:flex;align-items:center;justify-content:center;
-  flex:none;width:18px}
-#themebtn .svgic,#speechbtn .svgic{width:18px;height:18px}
+#themebtn,
+#speechbtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  cursor: pointer;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 17.5px;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+#themebtn:hover,
+#speechbtn:hover {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+#themebtn .ticon,
+#speechbtn .ticon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 18px;
+}
+#themebtn .svgic,
+#speechbtn .svgic {
+  width: 18px;
+  height: 18px;
+}
 
 /* dev switch: same row shape as the theme/speech toggles above, kept as its own rule
    rather than joined into their selector lists — it's the one row with no content-pack
    string, and every other rule sharing #themebtn's selectors is reader-facing chrome. */
-#devbtn{display:flex;align-items:center;gap:9px;width:100%;cursor:pointer;color:var(--muted);
-  background:none;border:1px solid var(--line);border-radius:8px;padding:7px 10px;
-  font-family:ui-monospace,Menlo,monospace;font-size:15px;text-align:left;
-  transition:border-color .15s,color .15s}
-#devbtn:hover{border-color:var(--amber);color:var(--ink)}
-#devbtn[aria-pressed="true"]{border-color:var(--amber);color:var(--ink)}
-#devbtn .devdot{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line)}
-#devbtn[aria-pressed="true"] .devdot{background:var(--amber)}
+#devbtn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  cursor: pointer;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 15px;
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+#devbtn:hover {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+#devbtn[aria-pressed="true"] {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+#devbtn .devdot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+}
+#devbtn[aria-pressed="true"] .devdot {
+  background: var(--amber);
+}
 
 /* voice picker: a plain <select>, matching the toggle button's row width and border
    language rather than trying to look like a custom dropdown — this is a system list
    (installed TTS engines/voices), so the native affordance is the honest one */
-#speechvoice{display:block;width:100%;margin-top:6px;cursor:pointer;
-  color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:8px;
-  padding:6px 9px;font-family:ui-monospace,Menlo,monospace;font-size:15px;
-  transition:border-color .15s,color .15s}
-#speechvoice:hover{border-color:var(--amber);color:var(--ink)}
-#speechvoice[hidden]{display:none}
+#speechvoice {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 9px;
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 15px;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+#speechvoice:hover {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+#speechvoice[hidden] {
+  display: none;
+}
 
 /* text size: a plus/minus slider over three steps, replacing the old cycling button.
    `default` sits at the *right/max* end deliberately — it is the largest step, not the
    middle one, so the control reads "shrink from here" rather than "pick a size". */
-#textsizectl{display:flex;align-items:center;gap:8px;width:100%}
-.tsbtn{flex:0 0 auto;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--line);border-radius:7px;background:none;color:var(--muted);
-  font-family:ui-monospace,Menlo,monospace;font-size:16px;line-height:1;cursor:pointer;
-  transition:border-color .15s,color .15s}
-.tsbtn .svgic{width:15px;height:15px}
-.tsbtn:hover:not(:disabled){border-color:var(--amber);color:var(--ink)}
-.tsbtn:disabled{opacity:.35;cursor:default}
-#tstrack{position:relative;flex:1 1 auto;height:28px;display:flex;align-items:center;
-  justify-content:space-between;cursor:pointer;outline-offset:4px}
-#tstrack::before{content:'';position:absolute;left:5px;right:5px;top:50%;height:2px;
-  transform:translateY(-50%);background:var(--line);border-radius:2px}
-#tstrack .tsfill{position:absolute;left:5px;top:50%;height:2px;transform:translateY(-50%);
-  border-radius:2px;background:var(--amber);
-  width:calc((100% - 10px) * var(--tsi,0) / 2);transition:width .15s ease}
-#tstrack .tsdot{position:relative;width:10px;height:10px;border-radius:50%;
-  background:var(--panel-strong);border:2px solid var(--line);transition:border-color .15s,background .15s}
-#tstrack .tsdot.on{border-color:var(--amber);background:var(--amber)}
-#tsname{flex:0 0 auto;min-width:52px;text-align:right;color:var(--muted);
-  font-family:ui-monospace,Menlo,monospace;font-size:14.5px}
+#textsizectl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.tsbtn {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.tsbtn .svgic {
+  width: 15px;
+  height: 15px;
+}
+.tsbtn:hover:not(:disabled) {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+.tsbtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+#tstrack {
+  position: relative;
+  flex: 1 1 auto;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  outline-offset: 4px;
+}
+#tstrack::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--line);
+  border-radius: 2px;
+}
+#tstrack .tsfill {
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  background: var(--amber);
+  width: calc((100% - 10px) * var(--tsi, 0) / 2);
+  transition: width 0.15s ease;
+}
+#tstrack .tsdot {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--panel-strong);
+  border: 2px solid var(--line);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+#tstrack .tsdot.on {
+  border-color: var(--amber);
+  background: var(--amber);
+}
+#tsname {
+  flex: 0 0 auto;
+  min-width: 52px;
+  text-align: right;
+  color: var(--muted);
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 14.5px;
+}
 
 /* language: no nested dropdown inside a dropdown — the list is simply shown */
-#lang{font-family:ui-monospace,Menlo,monospace;font-size:17.5px}
-#langmenu{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
-#langmenu a{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;
-  color:var(--muted);text-decoration:none;white-space:nowrap}
-#langmenu a:hover{background:color-mix(in srgb, var(--amber) 12%, transparent);color:var(--ink)}
-#langmenu a.on{color:var(--ink)}
+#lang {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 17.5px;
+}
+#langmenu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+#langmenu a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+#langmenu a:hover {
+  background: color-mix(in srgb, var(--amber) 12%, transparent);
+  color: var(--ink);
+}
+#langmenu a.on {
+  color: var(--ink);
+}
 /* The one icon that cannot come from icons.js: `content` holds text, not markup. Same
    path, same 24x24 grid and stroke weight as the rest of the set, re-encoded as a mask so
    `background` still colors it from the theme — keep it in step with LIE.icons. */
-#langmenu a.on::after{content:'';margin-left:auto;flex:none;width:15px;height:15px;
-  background:var(--amber);
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5l5 5 10-11'/%3E%3C/svg%3E") center/contain no-repeat;
-  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5l5 5 10-11'/%3E%3C/svg%3E") center/contain no-repeat}
-#langmenu .flag{font-size:21.5px;line-height:1}
+#langmenu a.on::after {
+  content: "";
+  margin-left: auto;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  background: var(--amber);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5l5 5 10-11'/%3E%3C/svg%3E")
+    center/contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4.5 12.5l5 5 10-11'/%3E%3C/svg%3E")
+    center/contain no-repeat;
+}
+#langmenu .flag {
+  font-size: 21.5px;
+  line-height: 1;
+}
 
-#hint{font-size:16px;color:var(--faint);line-height:1.75;
-  font-family:ui-monospace,Menlo,monospace}
+#hint {
+  font-size: 16px;
+  color: var(--faint);
+  line-height: 1.75;
+  font-family: ui-monospace, Menlo, monospace;
+}
 
-.noscript{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  padding:24px;text-align:center;font-size:20px;line-height:1.6;color:var(--muted)}
+.noscript {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--muted);
+}
 
 /* ---- shared control affordances ---------------------------------------
    Every control below used to style :hover only. That leaves keyboard users with no
@@ -460,26 +1188,78 @@ body.hub #nav::after{right:40px}
    backgrounds) and touch users with no feedback whatsoever, since a tap produces no
    hover state — the button appears dead until the scene happens to change. One ring,
    one press state, applied everywhere so a new control inherits both for free. */
-.nbtn:focus-visible,.dot:focus-visible,.act:focus-visible,.s5info:focus-visible,
-#menubtn:focus-visible,#themebtn:focus-visible,.tsbtn:focus-visible,#tstrack:focus-visible,
-#speechbtn:focus-visible,#langmenu a:focus-visible{
-  outline:2px solid var(--amber);outline-offset:3px}
-.dot:focus-visible{outline-offset:4px}
-.act:active,#themebtn:active,.tsbtn:not(:disabled):active,#speechbtn:active,#menubtn:active{transform:scale(.96)}
-.dot:not(.on):active{transform:scale(1.15)}
+.nbtn:focus-visible,
+.dot:focus-visible,
+.act:focus-visible,
+.s5info:focus-visible,
+#menubtn:focus-visible,
+#themebtn:focus-visible,
+.tsbtn:focus-visible,
+#tstrack:focus-visible,
+#speechbtn:focus-visible,
+#langmenu a:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 3px;
+}
+.dot:focus-visible {
+  outline-offset: 4px;
+}
+.act:active,
+#themebtn:active,
+.tsbtn:not(:disabled):active,
+#speechbtn:active,
+#menubtn:active {
+  transform: scale(0.96);
+}
+.dot:not(.on):active {
+  transform: scale(1.15);
+}
 /* kill the tap-highlight flash and the 300ms double-tap-zoom delay on every control */
-.nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,.tsbtn,#tstrack,#speechbtn,#langmenu a,.whatnext a{
-  touch-action:manipulation;-webkit-tap-highlight-color:transparent}
-
-@media (prefers-reduced-motion:reduce){
-  .nbtn,.dot,.act,.s5info,.termbtn,#menubtn,#themebtn,.tsbtn,#speechbtn,#langmenu a,#menubtn .bars i{
-    transition-duration:.01ms}
-  .nbtn:not(:disabled):active,.act:active,#themebtn:active,.tsbtn:not(:disabled):active,#speechbtn:active,#menubtn:active,
-  .dot:not(.on):active{transform:none}
-  #tstrack .tsfill{transition-duration:.01ms}
+.nbtn,
+.dot,
+.act,
+.s5info,
+.termbtn,
+#menubtn,
+#themebtn,
+.tsbtn,
+#tstrack,
+#speechbtn,
+#langmenu a,
+.whatnext a {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (max-width:640px){
+@media (prefers-reduced-motion: reduce) {
+  .nbtn,
+  .dot,
+  .act,
+  .s5info,
+  .termbtn,
+  #menubtn,
+  #themebtn,
+  .tsbtn,
+  #speechbtn,
+  #langmenu a,
+  #menubtn .bars i {
+    transition-duration: 0.01ms;
+  }
+  .nbtn:not(:disabled):active,
+  .act:active,
+  #themebtn:active,
+  .tsbtn:not(:disabled):active,
+  #speechbtn:active,
+  #menubtn:active,
+  .dot:not(.on):active {
+    transform: none;
+  }
+  #tstrack .tsfill {
+    transition-duration: 0.01ms;
+  }
+}
+
+@media (max-width: 640px) {
   /* backdrop-filter dropped here (unlike the desktop rule it otherwise inherits from):
      a `position:fixed` element that is ALSO its own scroll container (`.scrolls` adds
      `overflow-y:auto`, and a phone card hits that far more often than a wide desktop one)
@@ -508,42 +1288,107 @@ body.hub #nav::after{right:40px}
      on a narrow phone every horizontal pixel buys a meaningfully longer line, and there is
      no scene visible to either side of it here for the margin to reveal anyway (the card
      is already the full-width bottom sheet). */
-  #hud, #hud.scrolls{top:auto;bottom:12px;left:0;width:100vw;max-width:100vw;
-    padding:0 17px 0;
-    max-height:50dvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
-    background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
+  #hud,
+  #hud.scrolls {
+    top: auto;
+    bottom: 12px;
+    left: 0;
+    width: 100vw;
+    max-width: 100vw;
+    padding: 0 17px 0;
+    max-height: 50dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    background: var(--panel-strong);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
   /* re-bleed the readout to the phone card's tighter gutters, and drop the blur/gradient
      for the same reason #hud itself does above: a fixed, self-scrolling element with
      backdrop-filter is a known no-paint trap on some mobile browsers. #hud is *always* a
      scroll box on this breakpoint (no `.scrolls` gate), so the sticky header is live here
      too, not just on the desktop's occasional long card. */
-  #hudhead{margin:0 -17px 12px;padding:15px 17px 12px;
-    background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
-  #hudhead::before{left:17px} #hudhead::after{right:17px}
+  #hudhead {
+    margin: 0 -17px 12px;
+    padding: 15px 17px 12px;
+    background: var(--panel-strong);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  #hudhead::before {
+    left: 17px;
+  }
+  #hudhead::after {
+    right: 17px;
+  }
   /* Desktop only inlines a footnote panel once `.scrolls` is toggled by JS, which is tuned
      to a much taller threshold than this 60vh cap — a card short enough to dodge that
      toggle can still be too tall for this cap, and its scroll container clips an
      absolutely-positioned `.bubble` that assumes it can float past the card's own edge.
      Unconditional here so it can never be caught out by that gap. */
-  #hud .bubble,#hud.scrolls .bubble{position:static;max-height:none;margin-top:12px;box-shadow:none}
-  #hud .bubble::before,#hud.scrolls .bubble::before{display:none}
+  #hud .bubble,
+  #hud.scrolls .bubble {
+    position: static;
+    max-height: none;
+    margin-top: 12px;
+    box-shadow: none;
+  }
+  #hud .bubble::before,
+  #hud.scrolls .bubble::before {
+    display: none;
+  }
   /* The hub bar was already bottom-anchored — same specificity as the desktop rule above,
      so this wins on source order alone — just narrower padding and smaller corner
      brackets for the tighter width. 40vh (vs. the journey card's 60) leaves the map,
      rather than reading content, most of the screen. */
-  body.hub #hud{top:auto;bottom:12px;width:calc(100vw - 24px);padding:16px 18px 0;height:40dvh;
-    background:var(--panel-strong);backdrop-filter:none;-webkit-backdrop-filter:none}
+  body.hub #hud {
+    top: auto;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    padding: 16px 18px 0;
+    height: 40dvh;
+    background: var(--panel-strong);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
   /* re-bleed the rail to the phone card's tighter gutters (17px sides, 15px foot) */
-  #nav{margin:14px -17px 0;padding:10px 17px 13px}
-  #nav::before{left:17px} #nav::after{right:17px}
-  body.hub #nav{margin:12px -18px 0;padding:10px 18px 13px}
-  body.hub #nav::before{left:18px} body.hub #nav::after{right:18px}
-  #navmain{gap:12px}
-  body.hub #hud::before,body.hub #hud::after{width:16px;height:16px}
+  #nav {
+    margin: 14px -17px 0;
+    padding: 10px 17px 13px;
+  }
+  #nav::before {
+    left: 17px;
+  }
+  #nav::after {
+    right: 17px;
+  }
+  body.hub #nav {
+    margin: 12px -18px 0;
+    padding: 10px 18px 13px;
+  }
+  body.hub #nav::before {
+    left: 18px;
+  }
+  body.hub #nav::after {
+    right: 18px;
+  }
+  #navmain {
+    gap: 12px;
+  }
+  body.hub #hud::before,
+  body.hub #hud::after {
+    width: 16px;
+    height: 16px;
+  }
   /* A phone-width rail has room for prev/next plus either the dot row or the exit/enter
      buttons, not comfortably both — up to ten dots (geometry-se3) each carrying a
      `pointer:coarse` hit area already crowds `#navmain` on its own. The numeric readout
      takes a fraction of the width for the same information. */
-  #dots{display:none}
-  .dotctr{display:inline-flex}
+  #dots {
+    display: none;
+  }
+  .dotctr {
+    display: inline-flex;
+  }
 }

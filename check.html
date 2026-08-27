@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Manifold Atlas — journey check</title>
-<!--
+  <head>
+    <meta charset="UTF-8" />
+    <title>Manifold Atlas — journey check</title>
+    <!--
   Release gate for the journey descriptors. Serve the site and open
 
       http://localhost:8000/check.html
@@ -22,322 +22,521 @@
   against the directory listing that `python3 -m http.server` serves for /journeys/, so
   a journey file that exists but was never wired into the page is reported too.
 -->
-<style>
-  :root { color-scheme: dark light; }
-  body { margin:0; padding:28px 30px; background:#0d1220; color:#E8E6DF;
-         font:14px/1.65 ui-monospace, SFMono-Regular, Menlo, monospace; }
-  h1 { font:600 20px/1.3 Georgia, serif; margin:0 0 4px; }
-  .sub { color:#8b93ad; margin-bottom:22px; }
-  #sum { display:inline-block; padding:7px 14px; border-radius:8px; font-weight:600;
-         margin-bottom:18px; }
-  .ok  { background:#1e3a2a; color:#97C459; }
-  .bad { background:#3a1e1e; color:#E24B4A; }
-  .run { background:#2a2f45; color:#8b93ad; }
-  pre { white-space:pre-wrap; margin:0; }
-  .FAIL { color:#E24B4A; } .note { color:#FAC775; } .pass { color:#5DCAA5; }
-  .dim { color:#6c7492; }
-  @media (prefers-color-scheme: light) {
-    body { background:#E7ECF3; color:#1A2233; }
-    .sub, .dim { color:#5a627a; }
-    .ok { background:#dcefd2; color:#3f6b1c; } .bad { background:#f6d9d7; color:#a32b23; }
-    .run { background:#dde3ee; color:#5a627a; }
-    .FAIL { color:#CE382F; } .note { color:#8a6300; } .pass { color:#2E9A78; }
-  }
-</style>
-</head>
-<body>
-<h1>Journey check</h1>
-<div class="sub">station / card / element-id invariants across every registered journey</div>
-<div id="sum" class="run">running…</div>
-<pre id="out"></pre>
-
-<script>
-'use strict';
-(function(){
-  const LANGS = ['hu','en','ja'];
-  const out = document.getElementById('out'), sum = document.getElementById('sum');
-  const problems = [], notes = [], lines = [];
-  const fail = (who,msg)=>{ problems.push(who+': '+msg); };
-  const note = (who,msg)=>{ notes.push(who+': '+msg); };
-  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  const say = (cls,txt)=> lines.push('<span class="'+cls+'">'+esc(txt)+'</span>');
-
-  const idsIn      = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(m=>m[1]);
-  const controlsIn = html => [...html.matchAll(/aria-controls="([^"]+)"/g)].map(m=>m[1]);
-
-  const idOwner = new Map();   // element id -> which journey/card claimed it first
-
-  function checkCards(id, cards, nStations){
-    const perLang = {};
-    LANGS.forEach(lang=>{
-      const arr = cards[lang];
-      if(!arr){ fail(id, 'no `'+lang+'` card array'); return; }
-      if(nStations !== null && arr.length !== nStations){
-        fail(id, 'cards.'+lang+' has '+arr.length+' entries but the journey builds '
-               + nStations+' stations — the engine would index OFF['+(arr.length-1)+']');
+    <style>
+      :root {
+        color-scheme: dark light;
       }
-      const seen = new Set(), all = [];
-      arr.forEach((card,i)=>{
-        const where = id+' card '+(i+1)+' ('+lang+')';
-        if(typeof card.t !== 'string' || !card.t) fail(where, 'missing title `t`');
-        if(typeof card.b !== 'string' || !card.b) fail(where, 'missing body `b`');
-        const ids = idsIn(card.b||'');
-        ids.forEach(x=>{
-          if(seen.has(x)) fail(where, 'duplicate element id "'+x+'" within this language');
-          seen.add(x); all.push(x);
-          // ids are global to the page: two journeys sharing one silently rewire each
-          // other's footnote toggles. Claimed once per journey, on the first language.
-          if(lang === LANGS[0]){
-            const owner = idOwner.get(x);
-            if(owner && owner.j !== id) fail(where, 'element id "'+x+'" is already used by '+owner.j+' card '+owner.i);
-            idOwner.set(x, {j:id, i:i+1});
+      body {
+        margin: 0;
+        padding: 28px 30px;
+        background: #0d1220;
+        color: #e8e6df;
+        font:
+          14px/1.65 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+      }
+      h1 {
+        font:
+          600 20px/1.3 Georgia,
+          serif;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: #8b93ad;
+        margin-bottom: 22px;
+      }
+      #sum {
+        display: inline-block;
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        margin-bottom: 18px;
+      }
+      .ok {
+        background: #1e3a2a;
+        color: #97c459;
+      }
+      .bad {
+        background: #3a1e1e;
+        color: #e24b4a;
+      }
+      .run {
+        background: #2a2f45;
+        color: #8b93ad;
+      }
+      pre {
+        white-space: pre-wrap;
+        margin: 0;
+      }
+      .FAIL {
+        color: #e24b4a;
+      }
+      .note {
+        color: #fac775;
+      }
+      .pass {
+        color: #5dcaa5;
+      }
+      .dim {
+        color: #6c7492;
+      }
+      @media (prefers-color-scheme: light) {
+        body {
+          background: #e7ecf3;
+          color: #1a2233;
+        }
+        .sub,
+        .dim {
+          color: #5a627a;
+        }
+        .ok {
+          background: #dcefd2;
+          color: #3f6b1c;
+        }
+        .bad {
+          background: #f6d9d7;
+          color: #a32b23;
+        }
+        .run {
+          background: #dde3ee;
+          color: #5a627a;
+        }
+        .FAIL {
+          color: #ce382f;
+        }
+        .note {
+          color: #8a6300;
+        }
+        .pass {
+          color: #2e9a78;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Journey check</h1>
+    <div class="sub">station / card / element-id invariants across every registered journey</div>
+    <div id="sum" class="run">running…</div>
+    <pre id="out"></pre>
+
+    <script>
+      'use strict';
+      (function () {
+        const LANGS = ['hu', 'en', 'ja'];
+        const out = document.getElementById('out'),
+          sum = document.getElementById('sum');
+        const problems = [],
+          notes = [],
+          lines = [];
+        const fail = (who, msg) => {
+          problems.push(who + ': ' + msg);
+        };
+        const note = (who, msg) => {
+          notes.push(who + ': ' + msg);
+        };
+        const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        const say = (cls, txt) => lines.push('<span class="' + cls + '">' + esc(txt) + '</span>');
+
+        const idsIn = html => [...html.matchAll(/\sid="([^"]+)"/g)].map(m => m[1]);
+        const controlsIn = html => [...html.matchAll(/aria-controls="([^"]+)"/g)].map(m => m[1]);
+
+        const idOwner = new Map(); // element id -> which journey/card claimed it first
+
+        function checkCards(id, cards, nStations) {
+          const perLang = {};
+          LANGS.forEach(lang => {
+            const arr = cards[lang];
+            if (!arr) {
+              fail(id, 'no `' + lang + '` card array');
+              return;
+            }
+            if (nStations !== null && arr.length !== nStations) {
+              fail(
+                id,
+                'cards.' +
+                  lang +
+                  ' has ' +
+                  arr.length +
+                  ' entries but the journey builds ' +
+                  nStations +
+                  ' stations — the engine would index OFF[' +
+                  (arr.length - 1) +
+                  ']'
+              );
+            }
+            const seen = new Set(),
+              all = [];
+            arr.forEach((card, i) => {
+              const where = id + ' card ' + (i + 1) + ' (' + lang + ')';
+              if (typeof card.t !== 'string' || !card.t) fail(where, 'missing title `t`');
+              if (typeof card.b !== 'string' || !card.b) fail(where, 'missing body `b`');
+              const ids = idsIn(card.b || '');
+              ids.forEach(x => {
+                if (seen.has(x)) fail(where, 'duplicate element id "' + x + '" within this language');
+                seen.add(x);
+                all.push(x);
+                // ids are global to the page: two journeys sharing one silently rewire each
+                // other's footnote toggles. Claimed once per journey, on the first language.
+                if (lang === LANGS[0]) {
+                  const owner = idOwner.get(x);
+                  if (owner && owner.j !== id)
+                    fail(where, 'element id "' + x + '" is already used by ' + owner.j + ' card ' + owner.i);
+                  idOwner.set(x, {j: id, i: i + 1});
+                }
+              });
+              controlsIn(card.b || '').forEach(t => {
+                if (!ids.includes(t)) fail(where, 'aria-controls="' + t + '" has no matching element in the same card');
+              });
+            });
+            perLang[lang] = all.slice().sort();
+          });
+          // the engine binds footnotes by id, so a language that renamed one is a dead toggle
+          const ls = Object.keys(perLang);
+          for (let i = 1; i < ls.length; i++) {
+            if (perLang[ls[0]].join('|') !== perLang[ls[i]].join('|')) {
+              fail(
+                id,
+                'element ids differ between ' +
+                  ls[0] +
+                  ' [' +
+                  perLang[ls[0]].join(', ') +
+                  '] and ' +
+                  ls[i] +
+                  ' [' +
+                  perLang[ls[i]].join(', ') +
+                  '] — bindCard wires ids, not positions'
+              );
+            }
           }
-        });
-        controlsIn(card.b||'').forEach(t=>{
-          if(!ids.includes(t)) fail(where, 'aria-controls="'+t+'" has no matching element in the same card');
-        });
-      });
-      perLang[lang] = all.slice().sort();
-    });
-    // the engine binds footnotes by id, so a language that renamed one is a dead toggle
-    const ls = Object.keys(perLang);
-    for(let i=1;i<ls.length;i++){
-      if(perLang[ls[0]].join('|') !== perLang[ls[i]].join('|')){
-        fail(id, 'element ids differ between '+ls[0]+' ['+perLang[ls[0]].join(', ')+'] and '
-               + ls[i]+' ['+perLang[ls[i]].join(', ')+'] — bindCard wires ids, not positions');
-      }
-    }
-  }
+        }
 
-  function checkJourney(id){
-    const j = LIE.journeys[id];
-    if(j.id !== id) fail(id, 'descriptor .id is "'+j.id+'" but it registered under "'+id+'"');
-    if(!j.tier) fail(id, 'no tier');
-    if(!j.threadKey) fail(id, 'no threadKey (the hub thread color)');
-    if(!LIE.kit.palette('dark')[j.threadKey]) fail(id, 'threadKey "'+j.threadKey+'" is not a palette color');
+        function checkJourney(id) {
+          const j = LIE.journeys[id];
+          if (j.id !== id) fail(id, 'descriptor .id is "' + j.id + '" but it registered under "' + id + '"');
+          if (!j.tier) fail(id, 'no tier');
+          if (!j.threadKey) fail(id, 'no threadKey (the hub thread color)');
+          if (!LIE.kit.palette('dark')[j.threadKey]) fail(id, 'threadKey "' + j.threadKey + '" is not a palette color');
 
-    /* The layout is no longer on the descriptor — it is layouts/<id>.json, so that it can
+          /* The layout is no longer on the descriptor — it is layouts/<id>.json, so that it can
        be edited as data in the repo. That makes its *absence* a real failure mode the
        descriptor can no longer rule out (engine.js only degrades to evenly spaced
        stations), which is precisely what this gate is for. */
-    const DEF = (DEFAULTS && DEFAULTS[id]) || null;
-    const SP = (DEF && Array.isArray(DEF.SP) && DEF.SP) || [];
-    const OFF = (DEF && Array.isArray(DEF.OFF) && DEF.OFF) || [];
-    if(j.layout)
-      fail(id, 'descriptor still carries a layout — the layout lives in layouts/'+id+'.json now');
-    if(!DEF) fail(id, 'no layouts/'+id+'.json — the journey has no camera layout');
-    else {
-      if(!SP.length) fail(id, 'layouts/'+id+'.json SP is empty');
-      if(SP.length !== OFF.length)
-        fail(id, 'layouts/'+id+'.json SP has '+SP.length+' entries, OFF has '+OFF.length);
-    }
+          const DEF = (DEFAULTS && DEFAULTS[id]) || null;
+          const SP = (DEF && Array.isArray(DEF.SP) && DEF.SP) || [];
+          const OFF = (DEF && Array.isArray(DEF.OFF) && DEF.OFF) || [];
+          if (j.layout) fail(id, 'descriptor still carries a layout — the layout lives in layouts/' + id + '.json now');
+          if (!DEF) fail(id, 'no layouts/' + id + '.json — the journey has no camera layout');
+          else {
+            if (!SP.length) fail(id, 'layouts/' + id + '.json SP is empty');
+            if (SP.length !== OFF.length)
+              fail(id, 'layouts/' + id + '.json SP has ' + SP.length + ' entries, OFF has ' + OFF.length);
+          }
 
-    let nStations = null;
-    try {
-      const inst = j.build(window.LIE_CONTENT.hu, LIE.kit.palette('dark'));
-      if(!inst || !Array.isArray(inst.stations)){ fail(id, 'build() returned no stations array'); }
-      else {
-        nStations = inst.stations.length;
-        if(typeof inst.bindCard !== 'function')
-          fail(id, 'build() returned no bindCard — engine.js calls it on every card render');
-        if(DEF && nStations !== SP.length)
-          fail(id, 'builds '+nStations+' stations but layouts/'+id+'.json SP has '+SP.length+' positions');
-        inst.stations.forEach((b,i)=>{
+          let nStations = null;
           try {
-            const g = new THREE.Group();
-            const st = b(g) || {};
-            if(st.tick) st.tick(0.7);      // one frame, to catch a tick() that throws
-          } catch(e){ fail(id, 'station '+(i+1)+' builder threw: '+e.message); }
-        });
-      }
-    } catch(e){ fail(id, 'build() threw: '+e.message); }
+            const inst = j.build(window.LIE_CONTENT.hu, LIE.kit.palette('dark'));
+            if (!inst || !Array.isArray(inst.stations)) {
+              fail(id, 'build() returned no stations array');
+            } else {
+              nStations = inst.stations.length;
+              if (typeof inst.bindCard !== 'function')
+                fail(id, 'build() returned no bindCard — engine.js calls it on every card render');
+              if (DEF && nStations !== SP.length)
+                fail(
+                  id,
+                  'builds ' + nStations + ' stations but layouts/' + id + '.json SP has ' + SP.length + ' positions'
+                );
+              inst.stations.forEach((b, i) => {
+                try {
+                  const g = new THREE.Group();
+                  const st = b(g) || {};
+                  if (st.tick) st.tick(0.7); // one frame, to catch a tick() that throws
+                } catch (e) {
+                  fail(id, 'station ' + (i + 1) + ' builder threw: ' + e.message);
+                }
+              });
+            }
+          } catch (e) {
+            fail(id, 'build() threw: ' + e.message);
+          }
 
-    checkLayout(id, nStations === null ? SP.length : nStations);
-    checkSeq(id, j);
+          checkLayout(id, nStations === null ? SP.length : nStations);
+          checkSeq(id, j);
 
-    if(j.cards) checkCards(id, j.cards, nStations);
-    else note(id, 'ships no own cards — falls back to the shared content pack');
-    return nStations;
-  }
+          if (j.cards) checkCards(id, j.cards, nStations);
+          else note(id, 'ships no own cards — falls back to the shared content pack');
+          return nStations;
+        }
 
-  /* Both layout layers: layouts/<id>.json (the default, DEFAULTS) and the optional
+        /* Both layout layers: layouts/<id>.json (the default, DEFAULTS) and the optional
      whole-repo layouts.json override (LAYOUTS). engine.js applies each per key and skips
      anything malformed — deliberately silent, so that droppable authoring data can never
      crash the page. Silent is exactly why it has to be checked here instead: a wrong-length
      SP/OFF is the same defect as a card array one entry too long, and without this the only
      symptom is a journey quietly ignoring the tuning you thought you had applied. */
-  let LAYOUTS = null, DEFAULTS = null;
-  function checkLayoutSource(id, nStations, label, o){
-    if(!o) return;
-    if(typeof o !== 'object' || Array.isArray(o)){ fail(id, label+' is not an object'); return; }
-    /* CARD is pixel widths for the HUD text card, not [x, y, z] triples: one number for the
+        let LAYOUTS = null,
+          DEFAULTS = null;
+        function checkLayoutSource(id, nStations, label, o) {
+          if (!o) return;
+          if (typeof o !== 'object' || Array.isArray(o)) {
+            fail(id, label + ' is not an object');
+            return;
+          }
+          /* CARD is pixel widths for the HUD text card, not [x, y, z] triples: one number for the
        whole journey, or one per station. Checked here rather than folded into the loop
        below because every rule differs. */
-    if(o.CARD !== undefined){
-      const num = v => typeof v === 'number' && isFinite(v) && v > 0;
-      const c = o.CARD;
-      if(!num(c) && !(Array.isArray(c) && c.length === nStations && c.every(num)))
-        fail(id, label+' CARD must be one positive number, or '+nStations
-               + ' of them to match the station count — ignored at runtime');
-    }
-    ['SP','OFF','PAN'].forEach(key=>{
-      const a = o[key];
-      if(a === undefined) return;
-      if(!Array.isArray(a)){ fail(id, label+' '+key+' is not an array — ignored at runtime'); return; }
-      if(a.length !== nStations)
-        fail(id, label+' '+key+' has '+a.length+' entries but the journey builds '
-               + nStations+' stations — ignored at runtime');
-      const bad = a.findIndex(p=>!Array.isArray(p) || p.length!==3
-                                || !p.every(v=>typeof v==='number' && isFinite(v)));
-      if(bad !== -1)
-        fail(id, label+' '+key+'['+bad+'] is not an [x, y, z] number triple — ignored at runtime');
-    });
-    Object.keys(o).forEach(k=>{
-      if(!['SP','OFF','PAN','CARD'].includes(k)) note(id, label+' has an unused "'+k+'" key');
-    });
-  }
-  function checkLayout(id, nStations){
-    checkLayoutSource(id, nStations, 'layouts/'+id+'.json', DEFAULTS && DEFAULTS[id]);
-    checkLayoutSource(id, nStations, 'layouts.json', LAYOUTS && LAYOUTS[id]);
-  }
+          if (o.CARD !== undefined) {
+            const num = v => typeof v === 'number' && isFinite(v) && v > 0;
+            const c = o.CARD;
+            if (!num(c) && !(Array.isArray(c) && c.length === nStations && c.every(num)))
+              fail(
+                id,
+                label +
+                  ' CARD must be one positive number, or ' +
+                  nStations +
+                  ' of them to match the station count — ignored at runtime'
+              );
+          }
+          ['SP', 'OFF', 'PAN'].forEach(key => {
+            const a = o[key];
+            if (a === undefined) return;
+            if (!Array.isArray(a)) {
+              fail(id, label + ' ' + key + ' is not an array — ignored at runtime');
+              return;
+            }
+            if (a.length !== nStations)
+              fail(
+                id,
+                label +
+                  ' ' +
+                  key +
+                  ' has ' +
+                  a.length +
+                  ' entries but the journey builds ' +
+                  nStations +
+                  ' stations — ignored at runtime'
+              );
+            const bad = a.findIndex(
+              p => !Array.isArray(p) || p.length !== 3 || !p.every(v => typeof v === 'number' && isFinite(v))
+            );
+            if (bad !== -1)
+              fail(id, label + ' ' + key + '[' + bad + '] is not an [x, y, z] number triple — ignored at runtime');
+          });
+          Object.keys(o).forEach(k => {
+            if (!['SP', 'OFF', 'PAN', 'CARD'].includes(k)) note(id, label + ' has an unused "' + k + '" key');
+          });
+        }
+        function checkLayout(id, nStations) {
+          checkLayoutSource(id, nStations, 'layouts/' + id + '.json', DEFAULTS && DEFAULTS[id]);
+          checkLayoutSource(id, nStations, 'layouts.json', LAYOUTS && LAYOUTS[id]);
+        }
 
-  /* The curriculum sequence. engine.js renders `seq.next` and `seq.handoffs` as links on
+        /* The curriculum sequence. engine.js renders `seq.next` and `seq.handoffs` as links on
      a journey's last card, so a stale id there is a dead link rather than a wrong colour —
      and the failure it really guards is the one that already happened once in prose: the
      Geometry branch's cards named successors that disagreed with the branch's own order
      (SO(2) pointing at SO(3), SE(2) at SE(3), SE(3) at nothing), so a reader following the
      text skipped three of the six moons. `next` is checked against LIE.hub.order(), the
      flattened BRANCHES list, which keeps hub.js the single source of the ordering (D2). */
-  function checkSeq(id, j){
-    const known = LIE.journeys || {};
-    const seq = j.seq;
-    if(!seq){ fail(id, 'no seq — engine.js has nothing to build the last card’s links from'); return; }
+        function checkSeq(id, j) {
+          const known = LIE.journeys || {};
+          const seq = j.seq;
+          if (!seq) {
+            fail(id, 'no seq — engine.js has nothing to build the last card’s links from');
+            return;
+          }
 
-    const resolve = (key, val) => {
-      if(!Array.isArray(val)){ fail(id, 'seq.'+key+' is not an array'); return; }
-      val.forEach(x=>{
-        if(!known[x]) fail(id, 'seq.'+key+' names "'+x+'", which is not a registered journey');
-        if(x === id)  fail(id, 'seq.'+key+' names itself');
-      });
-    };
-    resolve('requires', seq.requires || []);
-    resolve('handoffs', seq.handoffs || []);
+          const resolve = (key, val) => {
+            if (!Array.isArray(val)) {
+              fail(id, 'seq.' + key + ' is not an array');
+              return;
+            }
+            val.forEach(x => {
+              if (!known[x]) fail(id, 'seq.' + key + ' names "' + x + '", which is not a registered journey');
+              if (x === id) fail(id, 'seq.' + key + ' names itself');
+            });
+          };
+          resolve('requires', seq.requires || []);
+          resolve('handoffs', seq.handoffs || []);
 
-    if(seq.next != null){
-      if(!known[seq.next]) fail(id, 'seq.next is "'+seq.next+'", which is not a registered journey');
-      if(seq.next === id)  fail(id, 'seq.next points at itself');
-    }
+          if (seq.next != null) {
+            if (!known[seq.next]) fail(id, 'seq.next is "' + seq.next + '", which is not a registered journey');
+            if (seq.next === id) fail(id, 'seq.next points at itself');
+          }
 
-    // …and that it still matches the map. A moon reordered in BRANCHES, or a new one
-    // spliced into a branch, has to move the chain with it.
-    const order = (LIE.hub && LIE.hub.order) ? LIE.hub.order() : null;
-    if(!order){ note(id, 'LIE.hub.order() unavailable — next-chain not checked against BRANCHES'); return; }
-    const at = order.indexOf(id);
-    if(at < 0){ note(id, 'registered but not on any BRANCHES moon — next-chain not checked'); return; }
-    const want = at+1 < order.length ? order[at+1] : null;
-    const got  = seq.next == null ? null : seq.next;
-    if(want !== got)
-      fail(id, 'seq.next is '+(got?'"'+got+'"':'null')+' but BRANCHES puts '
-             + (want?'"'+want+'"':'nothing')+' after it');
-  }
+          // …and that it still matches the map. A moon reordered in BRANCHES, or a new one
+          // spliced into a branch, has to move the chain with it.
+          const order = LIE.hub && LIE.hub.order ? LIE.hub.order() : null;
+          if (!order) {
+            note(id, 'LIE.hub.order() unavailable — next-chain not checked against BRANCHES');
+            return;
+          }
+          const at = order.indexOf(id);
+          if (at < 0) {
+            note(id, 'registered but not on any BRANCHES moon — next-chain not checked');
+            return;
+          }
+          const want = at + 1 < order.length ? order[at + 1] : null;
+          const got = seq.next == null ? null : seq.next;
+          if (want !== got)
+            fail(
+              id,
+              'seq.next is ' +
+                (got ? '"' + got + '"' : 'null') +
+                ' but BRANCHES puts ' +
+                (want ? '"' + want + '"' : 'nothing') +
+                ' after it'
+            );
+        }
 
-  function report(){
-    const ids = Object.keys(LIE.journeys||{}).sort();
-    if(!ids.length) fail('registry', 'no journeys registered');
-    ids.forEach(id=>{
-      const n = checkJourney(id);
-      const bad = problems.some(p=>p.startsWith(id+':')||p.startsWith(id+' '));
-      say(bad?'FAIL':'pass', (bad?'  ✗  ':'  ✓  ')+id.padEnd(22)+(n===null?'?':n)+' stations · '
-        + LANGS.map(l=>l+':'+((LIE.journeys[id].cards&&LIE.journeys[id].cards[l]||[]).length)).join(' '));
-    });
-    // an entry keyed to a journey that is not registered does nothing at all at runtime —
-    // most often a typo'd or renamed id, which otherwise looks like "the tuning didn't take"
-    if(LAYOUTS) Object.keys(LAYOUTS).forEach(id=>{
-      if(!LIE.journeys[id])
-        fail('layouts.json', '"'+id+'" is not a registered journey — that entry is ignored');
-    });
-    if(notes.length){ say('dim',''); notes.forEach(n=>say('note','  note  '+n)); }
-    if(problems.length){
-      say('dim','');
-      problems.forEach(p=>say('FAIL','  FAIL  '+p));
-      sum.className='bad'; sum.textContent=problems.length+' problem(s)';
-      document.title='FAIL — journey check';
-    } else {
-      sum.className='ok'; sum.textContent='ok — '+ids.length+' journeys';
-      document.title='ok — journey check';
-    }
-    out.innerHTML = lines.join('\n');
-  }
+        function report() {
+          const ids = Object.keys(LIE.journeys || {}).sort();
+          if (!ids.length) fail('registry', 'no journeys registered');
+          ids.forEach(id => {
+            const n = checkJourney(id);
+            const bad = problems.some(p => p.startsWith(id + ':') || p.startsWith(id + ' '));
+            say(
+              bad ? 'FAIL' : 'pass',
+              (bad ? '  ✗  ' : '  ✓  ') +
+                id.padEnd(22) +
+                (n === null ? '?' : n) +
+                ' stations · ' +
+                LANGS.map(l => l + ':' + ((LIE.journeys[id].cards && LIE.journeys[id].cards[l]) || []).length).join(' ')
+            );
+          });
+          // an entry keyed to a journey that is not registered does nothing at all at runtime —
+          // most often a typo'd or renamed id, which otherwise looks like "the tuning didn't take"
+          if (LAYOUTS)
+            Object.keys(LAYOUTS).forEach(id => {
+              if (!LIE.journeys[id])
+                fail('layouts.json', '"' + id + '" is not a registered journey — that entry is ignored');
+            });
+          if (notes.length) {
+            say('dim', '');
+            notes.forEach(n => say('note', '  note  ' + n));
+          }
+          if (problems.length) {
+            say('dim', '');
+            problems.forEach(p => say('FAIL', '  FAIL  ' + p));
+            sum.className = 'bad';
+            sum.textContent = problems.length + ' problem(s)';
+            document.title = 'FAIL — journey check';
+          } else {
+            sum.className = 'ok';
+            sum.textContent = 'ok — ' + ids.length + ' journeys';
+            document.title = 'ok — journey check';
+          }
+          out.innerHTML = lines.join('\n');
+        }
 
-  /* Everything is loaded dynamically, in index.html's own order and with a cache-buster:
+        /* Everything is loaded dynamically, in index.html's own order and with a cache-buster:
      `python3 -m http.server` serves Last-Modified, and a checker that reports on the
      previous version of the file you just edited is worse than no checker at all. */
-  const BUST = '?_=' + Date.now();
-  const loadScript = src => new Promise(res=>{
-    const s = document.createElement('script'); s.src = src + BUST;
-    s.onload = res;
-    s.onerror = ()=>{ fail('load', 'failed to load '+src); res(); };
-    document.head.appendChild(s);
-  });
-  const inOrder = list => list.reduce((p,src)=>p.then(()=>loadScript(src)), Promise.resolve());
+        const BUST = '?_=' + Date.now();
+        const loadScript = src =>
+          new Promise(res => {
+            const s = document.createElement('script');
+            s.src = src + BUST;
+            s.onload = res;
+            s.onerror = () => {
+              fail('load', 'failed to load ' + src);
+              res();
+            };
+            document.head.appendChild(s);
+          });
+        const inOrder = list => list.reduce((p, src) => p.then(() => loadScript(src)), Promise.resolve());
 
-  // Discover what the page actually loads, and compare with what is on disk.
-  Promise.all([
-    fetch('index.html'+BUST).then(r=>r.text()),
-    fetch('journeys/'+BUST).then(r=>r.ok?r.text():'').catch(()=>''),
-    // optional: absent is the normal case. A present-but-unparseable file is not, though —
-    // engine.js would fall back to every built-in layout and give no hint why.
-    fetch('layouts.json'+BUST).then(r=>{
-      if(!r.ok) return null;
-      return r.json().catch(e=>{ fail('layouts.json','is not valid JSON: '+e.message); return null; });
-    }).catch(()=>null)
-  ]).then(([html, listing, layouts])=>{
-    LAYOUTS = layouts;
-    // comments first: index.html carries a commented-out `content/de.js` as the
-    // "add a language here" example, and it is not a script the page loads
-    const srcs   = [...html.replace(/<!--[\s\S]*?-->/g,'').matchAll(/src="([^"]+\.js)"/g)].map(m=>m[1]);
-    const wired  = srcs.filter(s=>s.startsWith('journeys/'));
-    /* hub.js IS loaded: it only registers a module (BRANCHES is a static literal and
+        // Discover what the page actually loads, and compare with what is on disk.
+        Promise.all([
+          fetch('index.html' + BUST).then(r => r.text()),
+          fetch('journeys/' + BUST)
+            .then(r => (r.ok ? r.text() : ''))
+            .catch(() => ''),
+          // optional: absent is the normal case. A present-but-unparseable file is not, though —
+          // engine.js would fall back to every built-in layout and give no hint why.
+          fetch('layouts.json' + BUST)
+            .then(r => {
+              if (!r.ok) return null;
+              return r.json().catch(e => {
+                fail('layouts.json', 'is not valid JSON: ' + e.message);
+                return null;
+              });
+            })
+            .catch(() => null),
+        ])
+          .then(([html, listing, layouts]) => {
+            LAYOUTS = layouts;
+            // comments first: index.html carries a commented-out `content/de.js` as the
+            // "add a language here" example, and it is not a script the page loads
+            const srcs = [...html.replace(/<!--[\s\S]*?-->/g, '').matchAll(/src="([^"]+\.js)"/g)].map(m => m[1]);
+            const wired = srcs.filter(s => s.startsWith('journeys/'));
+            /* hub.js IS loaded: it only registers a module (BRANCHES is a static literal and
        run() is never called here), and checkSeq needs LIE.hub.order() to compare each
        descriptor's seq.next against the map's own moon order. engine.js stays out — that
        one builds a scene the moment it loads. */
-    const before = srcs.filter(s=>!s.startsWith('journeys/') && !s.endsWith('engine.js'));
-    const onDisk = [...new Set([...listing.matchAll(/href="[^"]*?([\w-]+\.js)"/g)].map(m=>'journeys/'+m[1]))];
-    onDisk.forEach(f=>{
-      if(!wired.includes(f)) fail('index.html', f+' exists but has no <script> tag — it never loads');
-    });
-    if(!wired.length){ fail('index.html','no journey <script> tags found'); report(); return; }
-    /* layouts/<id>.json can only be fetched once the journeys have registered — the ids
+            const before = srcs.filter(s => !s.startsWith('journeys/') && !s.endsWith('engine.js'));
+            const onDisk = [
+              ...new Set([...listing.matchAll(/href="[^"]*?([\w-]+\.js)"/g)].map(m => 'journeys/' + m[1])),
+            ];
+            onDisk.forEach(f => {
+              if (!wired.includes(f)) fail('index.html', f + ' exists but has no <script> tag — it never loads');
+            });
+            if (!wired.length) {
+              fail('index.html', 'no journey <script> tags found');
+              report();
+              return;
+            }
+            /* layouts/<id>.json can only be fetched once the journeys have registered — the ids
        are the registry's, not something index.html spells out. A layouts/ file naming no
        registered journey is reported the same way an unwired journeys/ file is: it looks
        like a tuning that is applied and is in fact dead. */
-    const loadDefaults = () => Promise.all(
-      Object.keys(LIE.journeys || {}).map(id =>
-        fetch('layouts/'+id+'.json'+BUST).then(r=>{
-          if(!r.ok) return [id, null];
-          return r.json().then(d=>[id, d]).catch(e=>{
-            fail(id, 'layouts/'+id+'.json is not valid JSON: '+e.message); return [id, null];
+            const loadDefaults = () =>
+              Promise.all(
+                Object.keys(LIE.journeys || {}).map(id =>
+                  fetch('layouts/' + id + '.json' + BUST)
+                    .then(r => {
+                      if (!r.ok) return [id, null];
+                      return r
+                        .json()
+                        .then(d => [id, d])
+                        .catch(e => {
+                          fail(id, 'layouts/' + id + '.json is not valid JSON: ' + e.message);
+                          return [id, null];
+                        });
+                    })
+                    .catch(() => [id, null])
+                )
+              ).then(pairs => {
+                DEFAULTS = {};
+                pairs.forEach(([id, d]) => {
+                  if (d) DEFAULTS[id] = d;
+                });
+                return fetch('layouts/' + BUST)
+                  .then(r => (r.ok ? r.text() : ''))
+                  .catch(() => '')
+                  .then(ls => {
+                    [...new Set([...ls.matchAll(/href="[^"]*?([\w-]+)\.json"/g)].map(m => m[1]))].forEach(f => {
+                      if (!LIE.journeys[f])
+                        fail('layouts/', f + '.json names no registered journey — nothing ever reads it');
+                    });
+                  });
+              });
+            // three + content packs + kit, then the journeys, exactly as index.html orders them
+            return inOrder(before)
+              .then(() => inOrder(wired))
+              .then(loadDefaults)
+              .then(report);
+          })
+          .catch(e => {
+            sum.className = 'bad';
+            sum.textContent =
+              'could not run: ' +
+              e.message +
+              ' — serve the site (python3 serve.py) rather than opening the file directly';
           });
-        }).catch(()=>[id, null])
-      )
-    ).then(pairs=>{
-      DEFAULTS = {};
-      pairs.forEach(([id, d])=>{ if(d) DEFAULTS[id] = d; });
-      return fetch('layouts/'+BUST).then(r=>r.ok?r.text():'').catch(()=>'').then(ls=>{
-        [...new Set([...ls.matchAll(/href="[^"]*?([\w-]+)\.json"/g)].map(m=>m[1]))]
-          .forEach(f=>{
-            if(!LIE.journeys[f])
-              fail('layouts/', f+'.json names no registered journey — nothing ever reads it');
-          });
-      });
-    });
-    // three + content packs + kit, then the journeys, exactly as index.html orders them
-    return inOrder(before).then(()=>inOrder(wired)).then(loadDefaults).then(report);
-  }).catch(e=>{
-    sum.className='bad'; sum.textContent='could not run: '+e.message
-      + ' — serve the site (python3 serve.py) rather than opening the file directly';
-  });
-})();
-</script>
-</body>
+      })();
+    </script>
+  </body>
 </html>

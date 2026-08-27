@@ -1,169 +1,212 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="hu">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Manifold Atlas — a lapos gradienstől az SE(3) pózig</title>
-<meta name="description" content="Interaktív 3D-utazás a lapos gradiensektől a Riemann-gradiensen és az exponenciális leképezésen át az SO(3)/SE(3) pózokig.">
-<meta name="color-scheme" content="dark light">
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="pwa-icons/favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="pwa-icons/apple-touch-icon.png">
-<meta name="theme-color" content="#0D1220">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Atlas">
-<script>
-/* set the theme before first paint to avoid a flash */
-(function(){try{var p=localStorage.getItem('lie-theme');
-  if(p!=='light'&&p!=='dark'&&p!=='system')p='system';
-  var dark=(p==='dark')||(p==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
-}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();
-</script>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<canvas id="c"></canvas>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manifold Atlas — a lapos gradienstől az SE(3) pózig</title>
+    <meta
+      name="description"
+      content="Interaktív 3D-utazás a lapos gradiensektől a Riemann-gradiensen és az exponenciális leképezésen át az SO(3)/SE(3) pózokig."
+    />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="pwa-icons/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="pwa-icons/apple-touch-icon.png" />
+    <meta name="theme-color" content="#0D1220" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Atlas" />
+    <script>
+      /* set the theme before first paint to avoid a flash */
+      (function () {
+        try {
+          var p = localStorage.getItem('lie-theme');
+          if (p !== 'light' && p !== 'dark' && p !== 'system') p = 'system';
+          var dark = p === 'dark' || (p === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="c"></canvas>
 
-<!-- The controls live *inside* the HUD, as a console rail across its foot, rather than
+    <!-- The controls live *inside* the HUD, as a console rail across its foot, rather than
      floating loose over the scene in three separate clusters (nav strip bottom-centre,
      exit orphaned bottom-right). One instrument panel: readout above, controls below.
      Ids are unchanged — engine.js/hub.js look them up by id, not by position. -->
-<div id="hud">
-  <!-- Sticky readout, mirroring #nav's sticky console rail at the card's foot: stays put
+    <div id="hud">
+      <!-- Sticky readout, mirroring #nav's sticky console rail at the card's foot: stays put
        at the top while a long card's body scrolls under it (see #hudhead in style.css). -->
-  <div id="hudhead">
-    <div class="eyebrow" id="eb"></div>
-    <h1 id="ti"></h1>
-  </div>
-  <div id="bo"></div>
-  <!-- The buttons ship empty: their icons come from LIE.icons (icons.js) as inline SVG,
+      <div id="hudhead">
+        <div class="eyebrow" id="eb"></div>
+        <h1 id="ti"></h1>
+      </div>
+      <div id="bo"></div>
+      <!-- The buttons ship empty: their icons come from LIE.icons (icons.js) as inline SVG,
        set by engine.js/hub.js, so every control in the app is drawn from one 24x24 grid
        instead of borrowing whatever glyph the platform's fallback font has for an arrow. -->
-  <div id="nav">
-    <button class="nbtn" id="tohub" type="button" hidden></button>
-    <button class="nbtn" id="toenter" type="button" hidden></button>
-    <button class="nbtn" id="speak" type="button" hidden></button>
-    <div id="navmain">
-      <button class="nbtn" id="prev" type="button"></button>
-      <div id="dots"></div>
-      <span id="dotctr" class="dotctr" aria-hidden="true"></span>
-      <button class="nbtn" id="next" type="button"></button>
+      <div id="nav">
+        <button class="nbtn" id="tohub" type="button" hidden></button>
+        <button class="nbtn" id="toenter" type="button" hidden></button>
+        <button class="nbtn" id="speak" type="button" hidden></button>
+        <div id="navmain">
+          <button class="nbtn" id="prev" type="button"></button>
+          <div id="dots"></div>
+          <span id="dotctr" class="dotctr" aria-hidden="true"></span>
+          <button class="nbtn" id="next" type="button"></button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
-<!-- Desktop-only drag handle on the card's right edge. A sibling of #hud rather than a
+    <!-- Desktop-only drag handle on the card's right edge. A sibling of #hud rather than a
      child: #hud is itself the scroll container on a long station (`.scrolls`), and a
      clipped/scrolling ancestor cuts off — and can swallow the clicks of — any child that
      pokes out past its box, which this handle deliberately does. engine.js positions it
      (fixed, tracking #hud's live rect) on every syncHudScroll() call; style.css hides it
      in hub mode and below the mobile breakpoint. -->
-<div id="hudresize" aria-hidden="true"></div>
+    <div id="hudresize" aria-hidden="true"></div>
 
-<!-- Single top-right affordance: a hamburger that opens theme, language and the
+    <!-- Single top-right affordance: a hamburger that opens theme, language and the
      control legend. Keeping them folded away means the corner stays clear of the
      scene, and the legend no longer has to be repeated inside a journey card. -->
-<div id="topctl">
-  <button id="menubtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menupanel">
-    <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
-  </button>
-  <div id="menupanel" hidden>
-    <div class="msec" id="msec-theme"><h2 id="mtheme-h"></h2><div id="theme"></div></div>
-    <div class="msec" id="msec-textsize"><h2 id="mtextsize-h"></h2><div id="textsize"></div></div>
-    <div class="msec" id="msec-speech" hidden><h2 id="mspeech-h"></h2><div id="speech"></div></div>
-    <div class="msec" id="msec-lang"><h2 id="mlang-h"></h2><nav id="lang" aria-label="Language"></nav></div>
-    <div class="msec" id="msec-hint"><h2 id="mhint-h"></h2><div id="hint"></div></div>
-    <!-- Not a reader-facing section — no content-pack string, no translation. It's the
+    <div id="topctl">
+      <button id="menubtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menupanel">
+        <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      </button>
+      <div id="menupanel" hidden>
+        <div class="msec" id="msec-theme">
+          <h2 id="mtheme-h"></h2>
+          <div id="theme"></div>
+        </div>
+        <div class="msec" id="msec-textsize">
+          <h2 id="mtextsize-h"></h2>
+          <div id="textsize"></div>
+        </div>
+        <div class="msec" id="msec-speech" hidden>
+          <h2 id="mspeech-h"></h2>
+          <div id="speech"></div>
+        </div>
+        <div class="msec" id="msec-lang">
+          <h2 id="mlang-h"></h2>
+          <nav id="lang" aria-label="Language"></nav>
+        </div>
+        <div class="msec" id="msec-hint">
+          <h2 id="mhint-h"></h2>
+          <div id="hint"></div>
+        </div>
+        <!-- Not a reader-facing section — no content-pack string, no translation. It's the
          one switch that reveals the station/camera tuning overlay (engine.js), which is
          scaffolding for editing journeys/*.js, not part of the visitor experience. -->
-    <div class="msec" id="msec-dev"><h2>Developer</h2><div id="dev"></div></div>
-  </div>
-</div>
+        <div class="msec" id="msec-dev">
+          <h2>Developer</h2>
+          <div id="dev"></div>
+        </div>
+      </div>
+    </div>
 
-<noscript>
-  <div class="noscript">Ehhez az interaktív ábrához JavaScript és WebGL kell. / This interactive visualization requires JavaScript and WebGL.</div>
-</noscript>
+    <noscript>
+      <div class="noscript">
+        Ehhez az interaktív ábrához JavaScript és WebGL kell. / This interactive visualization requires JavaScript and
+        WebGL.
+      </div>
+    </noscript>
 
-<!-- Three.js r128 (MIT), vendored locally so hub<->journey navigation (a full page
+    <!-- Three.js r128 (MIT), vendored locally so hub<->journey navigation (a full page
      reload) never depends on a third-party CDN round-trip. -->
-<script src="vendor/three.min.js"></script>
-<!-- Language packs. Add a new one here, e.g. <script src="content/de.js"></script> -->
-<script src="content/hu.js"></script>
-<script src="content/en.js"></script>
-<script src="content/ja.js"></script>
-<!-- Shared toolkit (math + Three.js helpers), then journeys, then the player. -->
-<script src="icons.js"></script>
-<script src="kit.js"></script>
-<script src="journeys/so3-optimization.js"></script>
-<script src="journeys/slam-factor-graph.js"></script>
-<script src="journeys/slam-pipeline.js"></script>
-<script src="journeys/geometry-flat.js"></script>
-<script src="journeys/geometry-so2.js"></script>
-<script src="journeys/geometry-se2.js"></script>
-<script src="journeys/geometry-so3.js"></script>
-<script src="journeys/geometry-sim3.js"></script>
-<script src="journeys/optimization-gd.js"></script>
-<script src="journeys/optimization-gn.js"></script>
-<script src="journeys/optimization-lm.js"></script>
-<script src="journeys/geometry-se3.js"></script>
-<script src="hub.js"></script>
-<!-- Rendering engine: journey player + hub mode. Injected only once the layout files have
+    <script src="vendor/three.min.js"></script>
+    <!-- Language packs. Add a new one here, e.g. <script src="content/de.js"></script> -->
+    <script src="content/hu.js"></script>
+    <script src="content/en.js"></script>
+    <script src="content/ja.js"></script>
+    <!-- Shared toolkit (math + Three.js helpers), then journeys, then the player. -->
+    <script src="icons.js"></script>
+    <script src="kit.js"></script>
+    <script src="journeys/so3-optimization.js"></script>
+    <script src="journeys/slam-factor-graph.js"></script>
+    <script src="journeys/slam-pipeline.js"></script>
+    <script src="journeys/geometry-flat.js"></script>
+    <script src="journeys/geometry-so2.js"></script>
+    <script src="journeys/geometry-se2.js"></script>
+    <script src="journeys/geometry-so3.js"></script>
+    <script src="journeys/geometry-sim3.js"></script>
+    <script src="journeys/optimization-gd.js"></script>
+    <script src="journeys/optimization-gn.js"></script>
+    <script src="journeys/optimization-lm.js"></script>
+    <script src="journeys/geometry-se3.js"></script>
+    <script src="hub.js"></script>
+    <!-- Rendering engine: journey player + hub mode. Injected only once the layout files have
      been read (or failed to read), because engine.js builds its scene the moment it runs —
      a layout arriving after that could only be applied as a visible jump. layouts/<id>.json
      is the journey's own layout; layouts.json is an optional override on top. Neither is
      fatal if unreadable: engine.js falls back to evenly spaced stations and says so. -->
-<script>
-(function(){
-  window.LIE = window.LIE || {};
-  var id = new URLSearchParams(location.search).get('journey');
-  var json = function(url){
-    return fetch(url).then(function(r){ return r.ok ? r.json() : null; })
-                     .catch(function(){ return null; });
-  };
-  // Only this journey's default is fetched, not all twelve — the id is in the URL, and the
-  // hub (no ?journey=, or ?journey=hub) needs no layout at all.
-  var wantDefault = id && id !== 'hub';
-  Promise.all([
-    wantDefault ? json('layouts/' + encodeURIComponent(id) + '.json') : null,
-    json('layouts.json')
-  ]).then(function(r){
-    LIE.layoutDefault = r[0];
-    LIE.layouts = r[1] || {};
-  }).catch(function(){
-    LIE.layoutDefault = null;
-    LIE.layouts = {};
-  }).then(function(){
-    var s = document.createElement('script');
-    s.src = 'engine.js';
-    document.body.appendChild(s);
-  });
-})();
-</script>
-<script>
-// Skipped on localhost/127.0.0.1: sw.js caches the app shell cache-first under a fixed
-// name (see its own header comment), so once installed it keeps serving whatever was on
-// disk at install time — every edit since is invisible behind it until CACHE is bumped by
-// hand. Fine for a real deploy (that's the whole point, offline + installable), but it
-// silently defeats `python3 serve.py` + reload as a dev loop, which is this project's only
-// dev loop (no build step). Real hosts never match this, so production is unaffected.
-const isLocalDev = ['localhost','127.0.0.1','[::1]'].includes(location.hostname);
-if(isLocalDev){
-  // Not registering is only half of it: a worker registered by an earlier visit — before
-  // this guard existed — keeps controlling the page and serving its frozen app-shell
-  // cache regardless. So tear any existing one down instead of just declining to add
-  // one. The current load is already controlled and stays stale; the next reload is
-  // clean, which is why this is a one-reload self-heal rather than instant.
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistrations()
-      .then(function(rs){ rs.forEach(function(r){ r.unregister(); }); });
-  }
-  if(window.caches){
-    caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); });
-  }
-} else if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});
-}
-</script>
-</body>
+    <script>
+      (function () {
+        window.LIE = window.LIE || {};
+        var id = new URLSearchParams(location.search).get('journey');
+        var json = function (url) {
+          return fetch(url)
+            .then(function (r) {
+              return r.ok ? r.json() : null;
+            })
+            .catch(function () {
+              return null;
+            });
+        };
+        // Only this journey's default is fetched, not all twelve — the id is in the URL, and the
+        // hub (no ?journey=, or ?journey=hub) needs no layout at all.
+        var wantDefault = id && id !== 'hub';
+        Promise.all([wantDefault ? json('layouts/' + encodeURIComponent(id) + '.json') : null, json('layouts.json')])
+          .then(function (r) {
+            LIE.layoutDefault = r[0];
+            LIE.layouts = r[1] || {};
+          })
+          .catch(function () {
+            LIE.layoutDefault = null;
+            LIE.layouts = {};
+          })
+          .then(function () {
+            var s = document.createElement('script');
+            s.src = 'engine.js';
+            document.body.appendChild(s);
+          });
+      })();
+    </script>
+    <script>
+      // Skipped on localhost/127.0.0.1: sw.js caches the app shell cache-first under a fixed
+      // name (see its own header comment), so once installed it keeps serving whatever was on
+      // disk at install time — every edit since is invisible behind it until CACHE is bumped by
+      // hand. Fine for a real deploy (that's the whole point, offline + installable), but it
+      // silently defeats `python3 serve.py` + reload as a dev loop, which is this project's only
+      // dev loop (no build step). Real hosts never match this, so production is unaffected.
+      const isLocalDev = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+      if (isLocalDev) {
+        // Not registering is only half of it: a worker registered by an earlier visit — before
+        // this guard existed — keeps controlling the page and serving its frozen app-shell
+        // cache regardless. So tear any existing one down instead of just declining to add
+        // one. The current load is already controlled and stays stale; the next reload is
+        // clean, which is why this is a one-reload self-heal rather than instant.
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (rs) {
+            rs.forEach(function (r) {
+              r.unregister();
+            });
+          });
+        }
+        if (window.caches) {
+          caches.keys().then(function (ks) {
+            ks.forEach(function (k) {
+              caches.delete(k);
+            });
+          });
+        }
+      } else if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('sw.js');
+        });
+      }
+    </script>
+  </body>
 </html>

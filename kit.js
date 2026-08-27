@@ -3,17 +3,20 @@
    Three.js primitive builders. Pure factories — no scene state — so any journey
    can use them. Requires THREE (global) to be loaded first. Exposes LIE.kit. */
 window.LIE = window.LIE || {};
-LIE.kit = (function(){
+LIE.kit = (function () {
   const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const V3 = (x,y,z)=>new THREE.Vector3(x,y,z);
-  const lerp=(a,b,t)=>a+(b-a)*t;
-  const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
-  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-  const UP = V3(0,1,0);
+  const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+  const UP = V3(0, 1, 0);
 
   // Two full scene palettes. `dark` holds the original values (pixel-identical).
   // `light` is a soft light-slate variant: marks are darkened/saturated so they
   // read on a light background, and surfaces/grids/stars are lightened.
+  // The two palettes are laid out to line up row for row: that pairing is how a
+  // retheme gets checked by eye, so it is held out of the formatter on purpose.
+  // prettier-ignore
   const PALETTES = {
     dark: {
       teal:0x5DCAA5, violet:0xAFA9EC, violet2:0x7F77DD, coral:0xF0997B,
@@ -35,27 +38,31 @@ LIE.kit = (function(){
     }
   };
   const palette = theme => PALETTES[theme] || PALETTES.dark;
-  const hexStr = n => '#'+((n>>>0) & 0xffffff).toString(16).padStart(6,'0');
+  const hexStr = n => '#' + ((n >>> 0) & 0xffffff).toString(16).padStart(6, '0');
 
-  function fatArrow(color, r){
-    r = r||0.05;
+  function fatArrow(color, r) {
+    r = r || 0.05;
     const g = new THREE.Group();
     const mat = new THREE.MeshBasicMaterial({color});
-    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r,r,1,10), mat);
-    cyl.geometry.translate(0,0.5,0);
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(r*2.6,0.24,14), mat);
-    g.add(cyl); g.add(cone);
-    g.userData={cyl,cone};
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 10), mat);
+    cyl.geometry.translate(0, 0.5, 0);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(r * 2.6, 0.24, 14), mat);
+    g.add(cyl);
+    g.add(cone);
+    g.userData = {cyl, cone};
     return g;
   }
-  function setArrow(g, origin, vec){
+  function setArrow(g, origin, vec) {
     const L = vec.length();
-    if(L < 1e-4){ g.visible=false; return; }
-    g.visible=true;
+    if (L < 1e-4) {
+      g.visible = false;
+      return;
+    }
+    g.visible = true;
     g.position.copy(origin);
-    g.quaternion.setFromUnitVectors(UP, vec.clone().multiplyScalar(1/L));
-    g.userData.cyl.scale.set(1, Math.max(L-0.22,0.02), 1);
-    g.userData.cone.position.y = L-0.12;
+    g.quaternion.setFromUnitVectors(UP, vec.clone().multiplyScalar(1 / L));
+    g.userData.cyl.scale.set(1, Math.max(L - 0.22, 0.02), 1);
+    g.userData.cone.position.y = L - 0.12;
   }
   /* ---- sprite labels ----------------------------------------------------
      A label is text rasterized by the browser's own font engine onto a canvas, then used
@@ -86,19 +93,21 @@ LIE.kit = (function(){
      a 3000px-tall device viewport at the hub's fixed planet-view distance, i.e. more than
      any current display asks for. It gives up a little only in system view zoomed to the
      `radius` floor, where a planet label can be magnified past it. */
-  const LABEL_DPR = Math.min(window.devicePixelRatio||1, 3);
-  const LABEL_PPU = 160;          // texture pixels per world unit (= the old 512/3.2)
-  const LABEL_MAXPX = 1536;       // widest canvas we will allocate (see above: a memory ceiling)
-  const labelScale = w => Math.max(LABEL_DPR,
-                            Math.min(LABEL_DPR * (w*LABEL_PPU)/512, LABEL_MAXPX/512));
-  function makeLabel(text, color, w, opts){
-    w = w||3.2;
+  const LABEL_DPR = Math.min(window.devicePixelRatio || 1, 3);
+  const LABEL_PPU = 160; // texture pixels per world unit (= the old 512/3.2)
+  const LABEL_MAXPX = 1536; // widest canvas we will allocate (see above: a memory ceiling)
+  const labelScale = w =>
+    Math.max(LABEL_DPR, Math.min((LABEL_DPR * (w * LABEL_PPU)) / 512, LABEL_MAXPX / 512));
+  function makeLabel(text, color, w, opts) {
+    w = w || 3.2;
     const S = labelScale(w);
     const cv = document.createElement('canvas');
-    cv.width=Math.round(512*S); cv.height=Math.round(128*S);
-    const sp = new THREE.Sprite(new THREE.SpriteMaterial({transparent:true, depthTest:false}));
-    sp.userData.cv=cv; sp.userData.labelScale=S;
-    sp.scale.set(w, w*0.25, 1);
+    cv.width = Math.round(512 * S);
+    cv.height = Math.round(128 * S);
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({transparent: true, depthTest: false}));
+    sp.userData.cv = cv;
+    sp.userData.labelScale = S;
+    sp.scale.set(w, w * 0.25, 1);
     updateLabel(sp, text, color, opts);
     return sp;
   }
@@ -106,28 +115,49 @@ LIE.kit = (function(){
      carries no CJK, so a Japanese label (the hub's moon titles, for one) fell through to
      whatever the platform picked by itself — usually a sans-serif, next to Georgia's serif
      in every other label. Naming the fallbacks keeps one typeface family across languages. */
-  const LABEL_FONT = 'Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",'+
-                     '"Noto Serif JP","Yu Mincho",serif';
-  const labelFont = px => 'italic '+Math.round(px)+'px '+LABEL_FONT;
-  function updateLabel(sp, text, color, opts){
-    const cv=sp.userData.cv, ctx=cv.getContext('2d');
-    const S=sp.userData.labelScale||LABEL_DPR;
-    ctx.setTransform(S,0,0,S,0,0);
-    ctx.clearRect(0,0,512,128);
-    const toks=[];
-    for(let i=0;i<text.length;i++){
-      if(text[i]==='^'){
-        if(text[i+1]==='{'){ const j=text.indexOf('}',i+2); toks.push({t:text.slice(i+2,j),s:1}); i=j; }
-        else { toks.push({t:text[i+1],s:1}); i++; }
-      } else toks.push({t:text[i],s:0});
+  const LABEL_FONT =
+    'Georgia,"STIX Two Text","Times New Roman","Hiragino Mincho ProN",' +
+    '"Noto Serif JP","Yu Mincho",serif';
+  const labelFont = px => 'italic ' + Math.round(px) + 'px ' + LABEL_FONT;
+  function updateLabel(sp, text, color, opts) {
+    const cv = sp.userData.cv,
+      ctx = cv.getContext('2d');
+    const S = sp.userData.labelScale || LABEL_DPR;
+    ctx.setTransform(S, 0, 0, S, 0, 0);
+    ctx.clearRect(0, 0, 512, 128);
+    const toks = [];
+    for (let i = 0; i < text.length; i++) {
+      if (text[i] === '^') {
+        if (text[i + 1] === '{') {
+          const j = text.indexOf('}', i + 2);
+          toks.push({t: text.slice(i + 2, j), s: 1});
+          i = j;
+        } else {
+          toks.push({t: text[i + 1], s: 1});
+          i++;
+        }
+      } else toks.push({t: text[i], s: 0});
     }
-    let F=46;
+    let F = 46;
     // give superscripts a little breathing room from their base (^ token => s:1),
     // counted in both the width pass and the draw pass so centering stays correct
-    const wOf=f=>{let w=0; toks.forEach(k=>{ctx.font=labelFont(k.s?f*0.62:f); if(k.s) w+=f*0.06; w+=ctx.measureText(k.t).width;}); return w;};
-    let W=wOf(F); if(W>470){ F=F*470/W; W=wOf(F); }
-    let x=(512-W)/2;
-    ctx.textAlign='left'; ctx.textBaseline='middle';
+    const wOf = f => {
+      let w = 0;
+      toks.forEach(k => {
+        ctx.font = labelFont(k.s ? f * 0.62 : f);
+        if (k.s) w += f * 0.06;
+        w += ctx.measureText(k.t).width;
+      });
+      return w;
+    };
+    let W = wOf(F);
+    if (W > 470) {
+      F = (F * 470) / W;
+      W = wOf(F);
+    }
+    let x = (512 - W) / 2;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
     // Optional halo behind the fill — the same stroke-then-fill technique numberBadge
     // (hub.js) already uses, generalized here so any label can opt in without changing
     // the ~30 call sites across the journeys that don't pass `opts`. Stronger and
@@ -139,48 +169,100 @@ LIE.kit = (function(){
     // the two, while the background color guarantees fill/halo stay distinguishable
     // in either theme, by the same logic that makes ink itself contrast with the bg.
     const halo = opts && opts.halo;
-    if(halo){ ctx.lineWidth=Math.max(3, F*0.13); ctx.strokeStyle=(opts.haloColor||'rgba(0,0,0,0.55)'); ctx.lineJoin='round'; }
-    ctx.fillStyle=color||'#FAC775';
-    toks.forEach(k=>{
-      ctx.font=labelFont(k.s?F*0.62:F);
-      if(k.s) x+=F*0.06;
-      const y = k.s?46:66;
-      if(halo) ctx.strokeText(k.t, x, y);
+    if (halo) {
+      ctx.lineWidth = Math.max(3, F * 0.13);
+      ctx.strokeStyle = opts.haloColor || 'rgba(0,0,0,0.55)';
+      ctx.lineJoin = 'round';
+    }
+    ctx.fillStyle = color || '#FAC775';
+    toks.forEach(k => {
+      ctx.font = labelFont(k.s ? F * 0.62 : F);
+      if (k.s) x += F * 0.06;
+      const y = k.s ? 46 : 66;
+      if (halo) ctx.strokeText(k.t, x, y);
       ctx.fillText(k.t, x, y);
-      x+=ctx.measureText(k.t).width;
+      x += ctx.measureText(k.t).width;
     });
-    const tex=new THREE.CanvasTexture(cv);
+    const tex = new THREE.CanvasTexture(cv);
     // no mipmap chain: minFilter is Linear, so it would never be sampled — it would only
     // cost a third again of the (now much larger) texture's memory to build and upload
-    tex.minFilter=THREE.LinearFilter; tex.generateMipmaps=false;
-    if(sp.material.map) sp.material.map.dispose();
-    sp.material.map=tex; sp.material.needsUpdate=true;
+    tex.minFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+    if (sp.material.map) sp.material.map.dispose();
+    sp.material.map = tex;
+    sp.material.needsUpdate = true;
   }
-  function baseSphere(R, PAL){
+  function baseSphere(R, PAL) {
     PAL = PAL || PALETTES.dark;
     const g = new THREE.Group();
-    const surf = new THREE.Mesh(new THREE.SphereGeometry(R, 48, 36),
-      new THREE.MeshStandardMaterial({color:PAL.sphereSurface, roughness:0.85, metalness:0.05,
-        transparent:true, opacity:0.94}));
-    const wire = new THREE.Mesh(new THREE.SphereGeometry(R*1.001, 24, 16),
-      new THREE.MeshBasicMaterial({color:PAL.teal, wireframe:true, transparent:true, opacity:0.07}));
-    g.add(surf); g.add(wire);
+    const surf = new THREE.Mesh(
+      new THREE.SphereGeometry(R, 48, 36),
+      new THREE.MeshStandardMaterial({
+        color: PAL.sphereSurface,
+        roughness: 0.85,
+        metalness: 0.05,
+        transparent: true,
+        opacity: 0.94,
+      })
+    );
+    const wire = new THREE.Mesh(
+      new THREE.SphereGeometry(R * 1.001, 24, 16),
+      new THREE.MeshBasicMaterial({
+        color: PAL.teal,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.07,
+      })
+    );
+    g.add(surf);
+    g.add(wire);
     return g;
   }
-  function dashedLine(a, b, color, dash){
-    const geo = new THREE.BufferGeometry().setFromPoints([a,b]);
-    const li = new THREE.Line(geo, new THREE.LineDashedMaterial({color, dashSize:dash||0.12, gapSize:(dash||0.12)*0.8, transparent:true, opacity:0.9}));
+  function dashedLine(a, b, color, dash) {
+    const geo = new THREE.BufferGeometry().setFromPoints([a, b]);
+    const li = new THREE.Line(
+      geo,
+      new THREE.LineDashedMaterial({
+        color,
+        dashSize: dash || 0.12,
+        gapSize: (dash || 0.12) * 0.8,
+        transparent: true,
+        opacity: 0.9,
+      })
+    );
     li.computeLineDistances();
     return li;
   }
-  function expSph(pu, v){
+  function expSph(pu, v) {
     const th = v.length();
-    if(th < 1e-9) return pu.clone();
-    const u = v.clone().multiplyScalar(1/th);
-    return pu.clone().multiplyScalar(Math.cos(th)).add(u.multiplyScalar(Math.sin(th))).normalize();
+    if (th < 1e-9) return pu.clone();
+    const u = v.clone().multiplyScalar(1 / th);
+    return pu
+      .clone()
+      .multiplyScalar(Math.cos(th))
+      .add(u.multiplyScalar(Math.sin(th)))
+      .normalize();
   }
-  function projT(g, pu){ return g.clone().sub(pu.clone().multiplyScalar(g.dot(pu))); }
+  function projT(g, pu) {
+    return g.clone().sub(pu.clone().multiplyScalar(g.dot(pu)));
+  }
 
-  return { RM, V3, lerp, ease, clamp, UP, palette, hexStr,
-           fatArrow, setArrow, makeLabel, updateLabel, baseSphere, dashedLine, expSph, projT };
+  return {
+    RM,
+    V3,
+    lerp,
+    ease,
+    clamp,
+    UP,
+    palette,
+    hexStr,
+    fatArrow,
+    setArrow,
+    makeLabel,
+    updateLabel,
+    baseSphere,
+    dashedLine,
+    expSph,
+    projT,
+  };
 })();

@@ -54,54 +54,59 @@ if (LOOPBACK) {
   self.addEventListener('install', () => self.skipWaiting());
   self.addEventListener('activate', e => {
     e.waitUntil(
-      caches.keys()
+      caches
+        .keys()
         .then(keys => Promise.all(keys.map(k => caches.delete(k))))
         .then(() => self.registration.unregister())
-        .then(() => self.clients.matchAll({ type: 'window' }))
+        .then(() => self.clients.matchAll({type: 'window'}))
         .then(clients => clients.forEach(c => c.navigate(c.url)))
     );
   });
 } else {
-
-/* Layout data is precached one file at a time with each failure swallowed, rather than
+  /* Layout data is precached one file at a time with each failure swallowed, rather than
    being listed in SHELL: addAll() rejects the whole install if any one entry 404s, so a
    single missing layout file would cost the site its service worker — and with it offline
    support for everything else. Journeys keep their layout in layouts/<id>.json, so these
    are needed offline; layouts.json is the optional override on top. The list is derived
    from SHELL's journey scripts rather than written out again, since a worker cannot read
    the journey registry and one hand-kept copy of those ids is enough. */
-const LAYOUTS = ['layouts.json'].concat(SHELL
-  .filter(p => p.startsWith('journeys/'))
-  .map(p => p.replace(/^journeys\/(.*)\.js$/, 'layouts/$1.json')));
-
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll(SHELL)
-        .then(() => Promise.all(LAYOUTS.map(u => c.add(u).catch(() => {})))))
-      .then(() => self.skipWaiting())
+  const LAYOUTS = ['layouts.json'].concat(
+    SHELL.filter(p => p.startsWith('journeys/')).map(p =>
+      p.replace(/^journeys\/(.*)\.js$/, 'layouts/$1.json')
+    )
   );
-});
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
+  self.addEventListener('install', e => {
+    e.waitUntil(
+      caches
+        .open(CACHE)
+        .then(c =>
+          c.addAll(SHELL).then(() => Promise.all(LAYOUTS.map(u => c.add(u).catch(() => {}))))
+        )
+        .then(() => self.skipWaiting())
+    );
+  });
 
-// The one URL every navigation resolves to. `'./'` in SHELL above precaches exactly this.
-const SHELL_URL = new URL('./', self.location).href;
+  self.addEventListener('activate', e => {
+    e.waitUntil(
+      caches
+        .keys()
+        .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+        .then(() => self.clients.claim())
+    );
+  });
 
-// Cache-first: everything here is a static, versioned-by-CACHE-name asset, so a hit is
-// always correct and a miss falls through to the network (and gets cached for next time).
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  if (url.origin !== self.location.origin) return;
+  // The one URL every navigation resolves to. `'./'` in SHELL above precaches exactly this.
+  const SHELL_URL = new URL('./', self.location).href;
 
-  /* Navigations are matched against SHELL_URL explicitly rather than against the request.
+  // Cache-first: everything here is a static, versioned-by-CACHE-name asset, so a hit is
+  // always correct and a miss falls through to the network (and gets cached for next time).
+  self.addEventListener('fetch', e => {
+    if (e.request.method !== 'GET') return;
+    const url = new URL(e.request.url);
+    if (url.origin !== self.location.origin) return;
+
+    /* Navigations are matched against SHELL_URL explicitly rather than against the request.
      They always carry a query here (`?journey=…&lang=…`), and caches.match() keys on the
      FULL url — query string included — so `/?journey=geometry-se3` does NOT match the
      precached `./`. The old code therefore treated every journey/language URL as a cache
@@ -114,20 +119,23 @@ self.addEventListener('fetch', e => {
      others. Collapsing every navigation onto the single precached shell restores what a
      version-named app-shell cache is for: one vintage, replaced atomically by a CACHE
      bump. Navigations are also never written back to the cache — `./` already is it. */
-  if (e.request.mode === 'navigate') {
-    e.respondWith(caches.match(SHELL_URL).then(hit => hit || fetch(e.request)));
-    return;
-  }
+    if (e.request.mode === 'navigate') {
+      e.respondWith(caches.match(SHELL_URL).then(hit => hit || fetch(e.request)));
+      return;
+    }
 
-  e.respondWith(
-    caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
-      if (res.ok) {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy));
-      }
-      return res;
-    }))
-  );
-});
-
-}   // end !LOOPBACK
+    e.respondWith(
+      caches.match(e.request).then(
+        hit =>
+          hit ||
+          fetch(e.request).then(res => {
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(CACHE).then(c => c.put(e.request, copy));
+            }
+            return res;
+          })
+      )
+    );
+  });
+} // end !LOOPBACK
