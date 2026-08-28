@@ -668,7 +668,7 @@ const hudEl = document.getElementById('hud');
    this same element's class, forcing a style recalc) fixes it on its own, which is why
    the bug is easy to miss testing past the first screen. #hud is the only fixed-position
    element here that is ALSO its own overflow:auto scroll container with content and a
-   custom property (`--bubmax`) set by JS before that first paint — a combination some
+   custom property (`--hudmax`) set by JS before that first paint — a combination some
    engines mishandle on the very first frame. Forcing an extra reflow right after that
    content lands closes the gap between "the DOM is correct" and "the browser actually
    painted it". */
@@ -716,6 +716,8 @@ const clampCardW = w => Math.max(HUD_MIN_W, Math.min(Math.min(HUD_MAX_W, innerWi
 let onCardDrag = null;
 // set by the journey player; re-clamps an authored CARD width on a window resize
 let reapplyCardWidth = null;
+// set by the journey player; re-tracks an open footnote panel onto #hud's live rect
+let syncOpenBubble = null;
 
 function resize() {
   camera.aspect = innerWidth / innerHeight;
@@ -732,16 +734,12 @@ function resize() {
   syncHudScroll();
 }
 /* The longest cards do not fit a short viewport. Those get `.scrolls`, which makes the
-   card a scroll box — and since a scroll box clips whatever hangs out of it, the CSS then
-   moves the footnote panels into the flow. A card that fits keeps `overflow:visible` and
-   with it the floating panel, whose height is clamped here to the room actually left below
-   the card; when even that is too small to read, the card takes the inline treatment too.
-   Measured off the flow content: `scrollHeight` counts an open floating panel, which hangs
-   below the card on purpose, and would report a card that fits as overflowing. */
+   card a scroll box. The footnote panels are a body-level drawer now (see dockBubbles),
+   not part of the card flow, so nothing here has to reserve room for them; measured off
+   the flow content because `scrollHeight` is unreliable under the sticky rail. */
 const boEl = document.getElementById('bo');
 const navEl = document.getElementById('nav');
 const resizeEl = document.getElementById('hudresize');
-const PANEL_MIN = 200; // a floating panel shorter than this is not worth reading
 /* The controls used to float *below* the card, so the card had to stop 78px short of the
    bottom to leave them room. They are inside it now (the console rail), so all that is
    still owed is the same breathing room the card keeps at the top. Mirrors `.scrolls`. */
@@ -767,8 +765,6 @@ function syncHudScroll() {
   // the hub card has no ↑ button competing for room below it, and is bottom-anchored
   // besides, so there is no bottom margin to reserve
   const avail = innerHeight - top - (hubMode ? 0 : BOTTOM_KEEP);
-  const room = innerHeight - (top + Math.min(need, avail)) - 24; // the 12px gap under the card, and as much again below
-  hudEl.style.setProperty('--bubmax', Math.max(0, room) + 'px');
   /* The `.scrolls` cap, published to the CSS rather than left to a `vh` expression there.
      On a phone or tablet browser with a retractable URL bar, `100vh` is the *large*
      viewport (as if the bar were hidden) while `innerHeight` — the number `avail` above is
@@ -781,10 +777,9 @@ function syncHudScroll() {
      the same `innerHeight` that decides `.scrolls` in the first place keeps the CSS and the
      JS from disagreeing about how tall the window is. */
   hudEl.style.setProperty('--hudmax', Math.max(0, avail) + 'px');
-  // the hub has no floating footnote panel to reserve room for — it never needs `room`
-  // (which is near-zero anyway: the hub card sits close to the bottom edge on purpose)
-  hudEl.classList.toggle('scrolls', need > avail || (!hubMode && room < PANEL_MIN));
+  hudEl.classList.toggle('scrolls', need > avail);
   syncHudResizeHandle();
+  if (syncOpenBubble) syncOpenBubble();
 }
 /* #hudresize is a sibling of #hud, not a child (see index.html's comment): #hud is
    itself the scroll container once `.scrolls` is on, and a clipped/scrolling ancestor
@@ -1224,9 +1219,95 @@ if (hubMode) {
     resize();
     if (tuneRefresh) tuneRefresh();
   }
+  /* Footnote panels: authored inline in each card body, but shown as a panel that takes the
+     reading card's own footprint and slides in over it. dockBubbles() lifts each one out of
+     #bo into the body-level #bubbledock (clear of #hud's scroll clipping and backdrop-filter
+     containing block) and gives it a close button; syncBubbleRect() then keeps whichever one
+     is open pinned to #hud's live rect. Every open/close path — the journeys' own triggers,
+     the close button, the engine's outside-click and Escape handlers — just toggles
+     [hidden], so a MutationObserver is what tracks the open panel across all of them. */
+  const bubbleDock = document.getElementById('bubbledock');
+  let openBub = null;
+  function syncBubbleRect() {
+    if (!openBub) return;
+    const r = hud.getBoundingClientRect(),
+      cs = getComputedStyle(hud),
+      s = openBub.style;
+    s.left = r.left + 'px';
+    s.top = r.top + 'px';
+    s.width = r.width + 'px';
+    s.height = r.height + 'px';
+    s.borderRadius = cs.borderRadius;
+    s.borderStyle = cs.borderStyle;
+    s.borderColor = cs.borderColor;
+    // per side: the docked desktop card shows only its right edge
+    s.borderTopWidth = cs.borderTopWidth;
+    s.borderRightWidth = cs.borderRightWidth;
+    s.borderBottomWidth = cs.borderBottomWidth;
+    s.borderLeftWidth = cs.borderLeftWidth;
+  }
+  syncOpenBubble = syncBubbleRect;
+  function closeBub(b) {
+    b.hidden = true;
+    const t = document.querySelector('[aria-controls="' + b.id + '"]');
+    if (t) t.setAttribute('aria-expanded', 'false');
+    return t;
+  }
+  const bubObs = new MutationObserver(ms => {
+    for (const m of ms) {
+      const b = m.target;
+      if (b.hidden) {
+        if (openBub === b) openBub = null;
+      } else {
+        openBub = b;
+        syncBubbleRect();
+      }
+    }
+  });
+  // pre-sync on the opening click, in capture — before the journey's own toggle runs — so
+  // the panel is already at the card's width when the slide-in transition starts
+  document.addEventListener(
+    'click',
+    e => {
+      const t = e.target.closest && e.target.closest('[aria-controls]');
+      if (!t) return;
+      const b = document.getElementById(t.getAttribute('aria-controls'));
+      if (b && b.parentElement === bubbleDock && b.hidden) {
+        openBub = b;
+        syncBubbleRect();
+      }
+    },
+    true
+  );
+  function dockBubbles() {
+    if (!bubbleDock) return;
+    bubObs.disconnect();
+    openBub = null;
+    bubbleDock.textContent = '';
+    bo.querySelectorAll('.bubble').forEach(b => {
+      b.hidden = true;
+      if (!b.querySelector('.bubclose')) {
+        const x = document.createElement('button');
+        x.type = 'button';
+        x.className = 'bubclose';
+        x.setAttribute('aria-label', (C.ui && C.ui.close) || 'Close');
+        x.innerHTML = ICON.close || '×';
+        x.addEventListener('click', e => {
+          e.stopPropagation();
+          const t = closeBub(b);
+          if (t) t.focus();
+        });
+        b.insertBefore(x, b.firstChild);
+      }
+      bubbleDock.appendChild(b);
+      bubObs.observe(b, {attributes: true, attributeFilter: ['hidden']});
+    });
+  }
+
   function renderCard(i) {
     updateNav(i);
     bo.innerHTML = CARDS[i].b + (i === CARDS.length - 1 ? whatNext() : '');
+    dockBubbles(); // move the footnote panels to the body-level drawer host, pre-bindCard
     if (reader) reader.onCard(); // stop the previous station mid-sentence; auto-read this one
     hud.scrollTop = 0; // a long previous card may have left the box scrolled down
     syncHudScroll(); // the card's own length decides whether it scrolls — measure it now
@@ -1260,6 +1341,7 @@ if (hubMode) {
   function go(i) {
     if (i < 0 || i >= CARDS.length) return;
     if (travel ? i === travel.target : i === cur) return;
+    if (openBub) closeBub(openBub); // let the panel slide out before the card re-renders
     const from = travel ? travelPose() : camPose(cur);
     yaw = 0;
     pitch = 0;
@@ -1307,25 +1389,6 @@ if (hubMode) {
       if (info) info.setAttribute('aria-expanded', 'false');
     }
   });
-  /* In a scrolling card the panel is in the flow at the very bottom (see `.scrolls` in the
-     CSS), so opening one from a term near the top would look like nothing happened. The
-     journeys' own toggles stop propagation, so this listens in the capture phase — and
-     reads the resulting state one frame later, once they have run. */
-  document.addEventListener(
-    'click',
-    e => {
-      if (!e.target.closest) return;
-      const trig = e.target.closest('[aria-controls]');
-      if (!trig) return;
-      const bub = document.getElementById(trig.getAttribute('aria-controls'));
-      if (!bub) return;
-      requestAnimationFrame(() => {
-        if (!bub.hidden && hud.classList.contains('scrolls'))
-          bub.scrollIntoView({block: 'nearest', behavior: 'smooth'});
-      });
-    },
-    true
-  );
   addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     const bub = openBubble();

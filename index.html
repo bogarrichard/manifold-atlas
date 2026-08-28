@@ -69,6 +69,13 @@
      in hub mode and below the mobile breakpoint. -->
     <div id="hudresize" aria-hidden="true"></div>
 
+    <!-- Body-level host for the footnote panels. They are authored inline in each card, but
+     present as a left-edge drawer (the mirror of the menu drawer on the right), so
+     engine.js's dockBubbles() lifts them out of #hud on every card render: a drawer pinned
+     to the window edge has to escape both #hud's scroll clipping and its backdrop-filter
+     containing block. -->
+    <div id="bubbledock"></div>
+
     <!-- Top-right corner: the menu trigger and the drawer it opens. The button floats over
      the scene (out of the docked card's way, costing it no vertical space); the panel is a
      right-edge drawer with its own scroll, so a long list of sections no longer runs off

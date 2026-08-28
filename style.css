@@ -189,8 +189,7 @@ body.hub #hudhead::after {
 /* Manual card-width resize (journeys, desktop only). A custom handle rather than the
    native CSS `resize` property: the native corner grip lands bottom-right, exactly where
    the sticky console rail's ← → cluster sits, and native `resize` also demands
-   `overflow: hidden`, which would clip the footnote `.bubble` that deliberately hangs
-   below the card. engine.js already reads the card's *live* width on every resize() call
+   `overflow: hidden`. engine.js already reads the card's *live* width on every resize() call
    (`viewShift()` → `hudEl.getBoundingClientRect().right`), so dragging this and setting
    an inline width is most of the fix. `top`/`height`/`left` are unset here on purpose —
    this is a sibling of #hud, not a child (see index.html's comment on why), so it has no
@@ -331,7 +330,10 @@ body.hub #hud p {
   color: var(--amber);
   margin-bottom: 9px;
 }
-#hud h1 {
+/* #bubbledock is joined to each of these so a footnote panel's prose, headings, matrices
+   and sub/superscripts set exactly as the card body does — see the .bubble block below */
+#hud h1,
+#bubbledock h1 {
   font-family: Georgia, "STIX Two Text", "Times New Roman", "Hiragino Mincho ProN", "Noto Serif JP",
     "Yu Mincho", serif;
   font-weight: 500;
@@ -340,12 +342,14 @@ body.hub #hud p {
   margin-bottom: 13px;
   color: var(--ink);
 }
-#hud p {
+#hud p,
+#bubbledock p {
   font-size: calc(clamp(19.5px, calc(17.5px + 0.556vw), 22.5px) * var(--text-scale));
   line-height: 1.7;
   color: var(--muted);
 }
-#hud p + p {
+#hud p + p,
+#bubbledock p + p {
   margin-top: 10px;
 }
 .m {
@@ -381,7 +385,8 @@ body.hub #hud p {
   padding: 0 4px;
 }
 /* bracketed math matrix (a CSS grid flanked by two border-drawn brackets) */
-#hud .matline {
+#hud .matline,
+#bubbledock .matline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -394,7 +399,9 @@ body.hub #hud p {
   font-size: calc(clamp(20px, calc(17px + 0.833vw), 24.5px) * var(--text-scale));
 }
 #hud .matline sub,
-#hud .matline sup {
+#hud .matline sup,
+#bubbledock .matline sub,
+#bubbledock .matline sup {
   font-size: 0.66em;
 }
 .matrix {
@@ -425,7 +432,7 @@ body.hub #hud p {
   white-space: nowrap;
 }
 
-/* station 6: live per-phase formula, "what is δ" trigger, and floating bubble */
+/* station 6: live per-phase formula, "what is δ" trigger, and its drawer panel */
 .s5math {
   margin-top: 12px;
   padding: 8px 12px;
@@ -473,47 +480,84 @@ body.hub #hud p {
 .s5info .ic {
   font-size: calc(clamp(14.5px, calc(12.5px + 0.556vw), 17.5px) * var(--text-scale));
 }
-/* The panel hangs under the card. Under a tall card that would drop it below the fold —
-   and the page never scrolls — so clamp the top to whatever still leaves room for a
-   full-height panel. It then overlaps the foot of the card, which is fine: it is opaque.
-   `--bubmax` is the room the engine measured below the card; past that the panel would
-   run off the bottom of the window, and it scrolls internally instead. */
+/* A footnote reads as a continuation of the page, not a separate dialog, so its panel
+   takes the reading card's own footprint, chrome and typography and slides in over it from
+   the left. engine.js's dockBubbles() lifts each panel out of #bo into #bubbledock (a
+   body-level host — the panel has to clear #hud's scroll clipping and its backdrop-filter
+   containing block) and syncBubbleRect() tracks #hud's live rect onto whichever panel is
+   open, so a card the user has resized (or the mobile bottom sheet) carries across exactly.
+   The rules below are the pre-JS defaults: the desktop journey card's geometry, matched to
+   `body:not(.hub) #hud` + `#bo`. Kept in the layout while closed (transform + visibility,
+   not display:none) so it can animate back out, the same pattern as #menupanel. */
+#bubbledock {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
 .bubble {
-  position: absolute;
-  top: min(calc(100% + 12px), calc(100dvh - min(56dvh, 440px) - 40px));
+  position: fixed;
+  top: 0;
   left: 0;
-  right: 0;
-  z-index: 8;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: var(--panel-strong);
-  border: 1px solid var(--line);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  max-height: min(56dvh, 440px, var(--bubmax, 440px));
+  height: 100dvh;
+  width: clamp(460px, 43.75vw, 900px);
+  pointer-events: auto;
+  /* 40px sides = #hud's 24px + #bo's 16px reading gutter; 44px top clears .bubclose */
+  padding: 44px 40px 30px;
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-width: 0 1px 0 0;
+  border-radius: 0;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.28s;
 }
+.bubble:not([hidden]) {
+  transform: translateX(0);
+  visibility: visible;
+}
+/* kept in layout while closed (see #menupanel[hidden] for the same pattern) */
 .bubble[hidden] {
-  display: none;
+  display: block;
 }
-.bubble::before {
-  content: "";
+/* injected by dockBubbles(); mirrors #menuclose */
+.bubclose {
   position: absolute;
-  top: -7px;
-  left: 26px;
-  width: 12px;
-  height: 12px;
-  background: var(--panel-strong);
-  border-left: 1px solid var(--line);
-  border-top: 1px solid var(--line);
-  transform: rotate(45deg);
+  top: 13px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.bubclose:hover {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+.bubclose svg {
+  width: 16px;
+  height: 16px;
 }
 /* A card taller than the viewport scrolls instead of running off the bottom — the engine
-   sets `.scrolls` for that (and when the room under the card is too small for a floating
-   panel). Scrolling clips whatever hangs past the card's box, and the panel above hangs
-   below the foot, so there it drops into the flow instead and the engine scrolls it into
-   view on open. Cards that fit keep `overflow:visible`, and with it the floating panel. */
+   sets `.scrolls` for that. The footnote panel is no longer part of the card flow (it is a
+   body-level drawer now), so nothing here has to make room for it. */
 /* 44px = the 22px top offset + the same again below; `BOTTOM_KEEP` in engine.js is that
    bottom 22 (keep the two in step). It used to be 78 to clear a floating exit button that
    now rides inside the card. */
@@ -530,15 +574,6 @@ body.hub #hud p {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-}
-#hud.scrolls .bubble {
-  position: static;
-  max-height: none;
-  margin-top: 12px;
-  box-shadow: none;
-}
-#hud.scrolls .bubble::before {
-  display: none;
 }
 /* The hub card has no ↑ button to keep clear of, so it only needs symmetric top/bottom
    breathing room — this should be rare in practice now that `syncHudScroll` no longer
@@ -1390,6 +1425,21 @@ body.hub #nav::after {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
+  /* the footnote panel follows the card onto the bottom sheet: same box, flat opaque fill
+     and full border (syncBubbleRect still tracks #hud's live rect), tighter 17px gutter */
+  .bubble {
+    top: auto;
+    bottom: 12px;
+    left: 0;
+    width: 100vw;
+    height: 50dvh;
+    padding: 44px 17px 24px;
+    background: var(--panel-strong);
+    border-width: 1px;
+    border-radius: 14px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
   /* re-bleed the readout to the phone card's tighter gutters, and drop the blur/gradient
      for the same reason #hud itself does above: a fixed, self-scrolling element with
      backdrop-filter is a known no-paint trap on some mobile browsers. #hud is *always* a
@@ -1407,22 +1457,6 @@ body.hub #nav::after {
   }
   #hudhead::after {
     right: 17px;
-  }
-  /* Desktop only inlines a footnote panel once `.scrolls` is toggled by JS, which is tuned
-     to a much taller threshold than this 60vh cap — a card short enough to dodge that
-     toggle can still be too tall for this cap, and its scroll container clips an
-     absolutely-positioned `.bubble` that assumes it can float past the card's own edge.
-     Unconditional here so it can never be caught out by that gap. */
-  #hud .bubble,
-  #hud.scrolls .bubble {
-    position: static;
-    max-height: none;
-    margin-top: 12px;
-    box-shadow: none;
-  }
-  #hud .bubble::before,
-  #hud.scrolls .bubble::before {
-    display: none;
   }
   /* The hub bar was already bottom-anchored — same specificity as the desktop rule above,
      so this wins on source order alone — just narrower padding and smaller corner
