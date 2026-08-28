@@ -14,6 +14,15 @@ LIE.hub = (function () {
   // orbit A/B are chosen so consecutive shells never overlap even at closest approach:
   // B(outer) - A(inner) > ringR(inner) + ringR(outer) + a ~2-unit margin — otherwise, since
   // the shells are periodic with different speeds, an exact collision is only a matter of time.
+  // ringR is derived from the moon count (see MOON_PITCH below), so ADDING A MOON WIDENS THE
+  // RING and eats into these margins. The inner planet has two of them to satisfy, and it is
+  // B — the periapsis — that decides the one against the central gizmo, since that is where
+  // the orbit passes closest to the origin:
+  //
+  //   clearance          rule                                          now
+  //   gizmo -> geometry  B_geo - ringR(6) - 2.4                        1.14
+  //   geometry -> opt    B_opt - A_geo - ringR(6) - ringR(3)           2.53
+  //   opt -> slam        B_slam - A_opt - ringR(3) - ringR(3)          2.49
   // Kept as an aligned table: the columns are what make the orbit constraint above
   // checkable at a glance, so it is held out of the formatter on purpose.
   // prettier-ignore
@@ -38,6 +47,32 @@ LIE.hub = (function () {
     ['geometry:sim3', 'slam:slam'],
     ['optimization:gn', 'slam:slam'],
   ];
+
+  /* ---- the moon ring, derived rather than tuned ------------------------------
+     Two numbers decide a ring, and both are stated as what they mean on screen:
+
+       MOON_PITCH  the arc distance between adjacent moons, in world units. The SAME on
+                   every planet, so a branch with seven stops reads at the same visual
+                   density as one with three — the ring grows with the count instead of
+                   the moons closing up on each other.
+       RING_GAP    the unused arc, measured in pitches. It is the ring's seam: what tells
+                   you where the sequence starts and ends. It has to stay WIDER than the
+                   pitch, or the last moon looks like the first one's neighbour.
+
+     Both replace hand-fitted constants that had drifted into being wrong. `ringR` was
+     `1.9 + n * 0.28`, which grew too slowly to hold the spacing, so every moon added to a
+     branch pulled its neighbours CLOSER rather than widening the ring under them. And the
+     spread was a fixed 1.55π whatever n was, so on a three-moon planet the pitch came to
+     139.5° against a closing gap of 81° — the gap was smaller than the pitch, and moons 1
+     and 3 read as neighbours instead of as the two ends of a sequence.
+
+     `moonPitch` needs no n === 1 guard the way the old spread did: the denominator is
+     n - 1 + RING_GAP, which is 1.8 at n = 1, and a lone moon then sits at the top. */
+  const MOON_PITCH = 3.2;
+  const RING_GAP = 1.8;
+  const moonPitch = n => (Math.PI * 2) / (n - 1 + RING_GAP);
+  // …and never so tight that the ring crowds the planet's own halo (coreR * 1.35)
+  const ringRadius = (n, coreR) => Math.max(MOON_PITCH / moonPitch(n), coreR * 1.35 + 1.1);
 
   function run(ctx) {
     const {THREE, kit, scene, camera, renderer, canvas, C} = ctx;
@@ -172,7 +207,7 @@ LIE.hub = (function () {
         const col = PAL[ROOT_COL[br.root]],
           n = br.journeys.length;
         const coreR = 0.8 + n * 0.08,
-          ringR = 1.9 + n * 0.28;
+          ringR = ringRadius(n, coreR);
         const planet = new THREE.Group();
         planet.position.copy(orbitPos(br.orbit, br.orbit.ph));
         planet.userData = {orbit: br.orbit, spin: br.spin || 0.2, tilt: br.tilt, branch: br};
@@ -200,10 +235,14 @@ LIE.hub = (function () {
           halo: true,
           haloColor: hexStr(PAL.bg) + '8c',
         });
-        // Lifted well clear of coreR+1.7: in planet view the selected moon's label swells
-        // and sits low-and-near under PRESENT_TILT (see the moon loop below), and at the
-        // old offset the two collided on screen at the default focus camera distance.
-        blabel.position.set(0, coreR + 2.6, 0);
+        /* Lifted clear of the RING, not of the core, because the ring is what it collides
+           with: in planet view PRESENT_TILT stands the ring up, and the moon on its far
+           side projects close to the planet's name however far away it actually is (at
+           seven moons that moon sat 6 world units off and still landed 38px under the
+           name). Tying the height to ringR means the next moon count carries the name
+           with it instead of re-opening this. The coreR term still wins on a small ring,
+           which is what keeps the three-moon planets exactly where they were. */
+        blabel.position.set(0, Math.max(coreR + 2.6, ringR + 1.0), 0);
         blabel.material.opacity = 0.9;
         blabel.userData.isPlanetLabel = true; // dropped outright in another planet's view
         planet.add(blabel);
@@ -219,8 +258,8 @@ LIE.hub = (function () {
           )
         );
         br.journeys.forEach((j, idx) => {
-          const a =
-            n === 1 ? Math.PI * 0.5 : Math.PI * 0.5 + (idx / (n - 1) - 0.5) * Math.PI * 1.55;
+          // centred on the top of the ring, one MOON_PITCH apart, gap at the bottom
+          const a = Math.PI * 0.5 + (idx - (n - 1) / 2) * moonPitch(n);
           const anchor = new THREE.Group();
           anchor.position.set(Math.cos(a) * ringR, Math.sin(a) * ringR, 0);
           ringG.add(anchor);
