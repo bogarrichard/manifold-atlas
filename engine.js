@@ -582,13 +582,14 @@ const reader = (function () {
   };
 })();
 
-/* ---- top-right menu: theme + language + the control legend ------------- */
+/* ---- menu (rail button + left drawer): theme + language + the control legend -------- */
 (function () {
   const ui = C.ui || {},
     tl = ui.theme || {};
   const btn = document.getElementById('menubtn');
   const panel = document.getElementById('menupanel');
-  const cluster = document.getElementById('topctl');
+  const closeBtn = document.getElementById('menuclose');
+  closeBtn.innerHTML = ICON.close || '×';
   btn.setAttribute('aria-label', ui.menuLabel || 'Menu');
   btn.title = ui.menuLabel || 'Menu';
   document.getElementById('mtheme-h').textContent = tl.label || 'Theme';
@@ -629,8 +630,13 @@ const reader = (function () {
     e.stopPropagation();
     setOpen(panel.hidden);
   });
+  closeBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    setOpen(false);
+    btn.focus();
+  });
   document.addEventListener('click', e => {
-    if (!panel.hidden && !cluster.contains(e.target)) setOpen(false);
+    if (!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target)) setOpen(false);
   });
   // Escape closes the menu first and stops there — the journey's own Escape handler backs
   // out to the hub, which would be a surprise when you only meant to dismiss this panel.
@@ -752,7 +758,11 @@ function syncHudScroll() {
      rail's contribution is added explicitly. No padding term appears here because the card
      now has *no* bottom padding — the rail carries that gutter itself, which is what lets
      it stick flush to the card's bottom edge instead of floating a padding's width above it. */
-  const navMt = parseFloat(getComputedStyle(navEl).marginTop) || 0;
+  // Clamped: the docked desktop card pins the rail with `margin-top:auto`, and
+  // getComputedStyle resolves that to the (large) used value when the station text is
+  // short — which is slack, not content the card `need`s room for. The real design gap is
+  // never more than ~24px (hub 16, phone 14), so cap it there.
+  const navMt = Math.min(parseFloat(getComputedStyle(navEl).marginTop) || 0, 24);
   const need = boEl.offsetTop + boEl.offsetHeight + navMt + navEl.offsetHeight;
   // the hub card has no ↑ button competing for room below it, and is bottom-anchored
   // besides, so there is no bottom margin to reserve

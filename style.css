@@ -83,6 +83,40 @@ body {
     opacity 0.35s ease,
     transform 0.35s ease;
 }
+/* Docked, not floating: on a wide viewport the journey card sits flush to the left edge
+   at full height and butts against the left-drawer menu, rather than floating with a
+   margin all round. Purely visual — the `.scrolls` / `--hudmax` / frustum-shift logic is
+   untouched (the width is the same, so viewShift()'s centering still holds). Scoped away
+   from the hub (its card stays a centered bottom bar) and from the <=640px breakpoint
+   (there the card is already a full-width bottom sheet, and this rule would outweigh it on
+   specificity). Flex column + `margin-top:auto` on the rail keeps the controls pinned to
+   the bottom of the window even when the station text is short — without stretching #bo,
+   so syncHudScroll()'s content measurement stays honest. */
+@media (min-width: 641px) {
+  body:not(.hub) #hud {
+    top: 0;
+    left: 0;
+    height: 100dvh;
+    /* left offset folded into the width so the card's right edge — the thing viewShift()
+       centers the scene against — stays at 43.75vw and the free area stays square at 16:9
+       (see the width comment above; the middle term loses its `- 82px` now that left = 0). */
+    width: clamp(460px, 43.75vw, 900px);
+    border-width: 0 1px 0 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  body:not(.hub) #nav {
+    margin-top: auto;
+  }
+  /* The card sits flush to the window edge now, so the reading column gets a wider inner
+     gutter than the card's own 24px — enough that the prose does not feel boxed in against
+     the border. Only #bo (the body copy); the sticky readout and rail keep the tighter
+     24px so their tick marks stay aligned to the card frame. */
+  body:not(.hub) #bo {
+    padding: 0 16px;
+  }
+}
 /* Only the *body* fades while the camera flies between stations — #hudhead (the readout)
    and the console rail both stay solid. #hudhead now updates the instant a nav press
    retarget the flight (see updateNav() in engine.js), so fading it would blink the new
@@ -822,15 +856,15 @@ body.hub #nav::after {
   right: 40px;
 }
 
-/* Top-right: one hamburger, everything else folded inside it. The corner used to carry a
-   theme button, a language dropdown and a permanently visible control legend, which is
-   three pieces of chrome competing with the scene. Now the button is the only thing
-   drawn until you ask for the rest. */
+/* One menu, everything folded inside it — theme, text size, read aloud, language and the
+   control legend. The trigger floats in the top-right corner (paired with the right-edge
+   drawer, and out of the docked card's way so it costs the reading column no height); the
+   z-index lifts both the button and the fixed panel above the card's stacking context. */
 #topctl {
   position: fixed;
-  top: 18px;
-  left: 22px;
-  z-index: 7;
+  top: 14px;
+  right: 14px;
+  z-index: 9;
 }
 #menubtn {
   display: flex;
@@ -877,21 +911,72 @@ body.hub #nav::after {
   transform: translateY(-5.5px) rotate(-45deg);
 }
 
+/* Left-edge drawer rather than a dropdown: the sections (theme, text size, read aloud,
+   language, the control legend, the dev switch) had grown tall enough that the floating
+   panel ran to the bottom of the window on a short viewport. As a full-height sidebar it
+   owns its own scroll instead, and slides in from the right on open. The drawer covers its
+   own corner trigger while open, so it carries its own close button (#menuclose) — placed
+   in the same top-right corner the menu button sits in, so the same spot toggles it.
+   Escape and a click on the scene close it too. */
 #menupanel {
-  position: absolute;
-  top: 46px;
-  left: 0;
-  min-width: 236px;
-  padding: 4px;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100dvh;
+  width: 300px;
+  max-width: 86vw;
+  padding: 52px 4px 14px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   background: var(--panel-strong);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: none;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.45);
+  box-shadow: -8px 0 38px rgba(0, 0, 0, 0.45);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition:
+    transform 0.26s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.26s;
 }
+#menupanel:not([hidden]) {
+  transform: translateX(0);
+  visibility: visible;
+}
+/* kept in the layout while closed (not display:none) so it can animate back out;
+   transform + visibility do the hiding, and visibility:hidden also takes it out of the
+   tab order. */
 #menupanel[hidden] {
-  display: none;
+  display: block;
+}
+#menuclose {
+  position: absolute;
+  top: 13px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+#menuclose:hover {
+  border-color: var(--amber);
+  color: var(--ink);
+}
+#menuclose .svgic {
+  width: 16px;
+  height: 16px;
 }
 .msec {
   padding: 10px 12px 12px;
@@ -1242,7 +1327,8 @@ body.hub #nav::after {
   .tsbtn,
   #speechbtn,
   #langmenu a,
-  #menubtn .bars i {
+  #menubtn .bars i,
+  #menupanel {
     transition-duration: 0.01ms;
   }
   .nbtn:not(:disabled):active,

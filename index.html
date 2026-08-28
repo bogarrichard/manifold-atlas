@@ -69,14 +69,16 @@
      in hub mode and below the mobile breakpoint. -->
     <div id="hudresize" aria-hidden="true"></div>
 
-    <!-- Single top-right affordance: a hamburger that opens theme, language and the
-     control legend. Keeping them folded away means the corner stays clear of the
-     scene, and the legend no longer has to be repeated inside a journey card. -->
+    <!-- Top-right corner: the menu trigger and the drawer it opens. The button floats over
+     the scene (out of the docked card's way, costing it no vertical space); the panel is a
+     right-edge drawer with its own scroll, so a long list of sections no longer runs off
+     the bottom of the window. -->
     <div id="topctl">
       <button id="menubtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="menupanel">
         <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
       </button>
       <div id="menupanel" hidden>
+        <button id="menuclose" type="button" aria-label="Close"></button>
         <div class="msec" id="msec-theme">
           <h2 id="mtheme-h"></h2>
           <div id="theme"></div>

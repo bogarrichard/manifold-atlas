@@ -79,5 +79,8 @@ LIE.icons = (function () {
     // ---- text size stepper
     minus: S(p('M5.5 12h13')),
     plus: S(p('M12 5.5v13') + p('M5.5 12h13')),
+
+    // ---- menu drawer close (the drawer covers its own rail trigger when open)
+    close: S(p('M6 6l12 12') + p('M18 6l-12 12')),
   };
 })();
