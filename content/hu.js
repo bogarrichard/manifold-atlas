@@ -116,7 +116,7 @@ window.LIE_CONTENT.hu = {
     branchWord: 'szektor',
     title: 'Manifold Atlas',
     intro:
-      '<p>Üdv a fedélzeten! Egy naprendszer kering a központi referenciakeret körül, bolygóin sorban bejárható világokkal. Kezdd a <b>Geometriával</b> és az <b>Optimalizálással</b>, majd kövesd a pályákat oda, ahol találkoznak — ott bontakozik ki az igazi tanulság.</p><p>Vidd az egeret egy bolygó fölé, hogy megnézd, mit rejt, vagy tekerd oda a <b>← →</b> gombokkal. A <b>↑</b> beléptet: közelebb repülsz, és a holdgyűrűje körhintává rendeződik, ugyanazokkal a gombokkal tovább tekerhető, a kiválasztott hold ismertetője pedig itt jelenik meg. Az elöl álló holdra kattintva vagy ismét <b>↑</b>-vel landolsz; a <b>↓</b> mindig egy szinttel visszább visz — a térképig.</p><p>Mind a tizenkét hold bejárható. A rövidebbek három állomásosak: inkább kevesebbet mondanak, de azt hiánytalanul — ahol egy téma mélyebbre nyúlik, az utolsó kártya megmondja, hol áll meg, és melyik hold viszi tovább.</p>',
+      '<p>Üdv a fedélzeten! Egy naprendszer kering a központi referenciakeret körül, bolygóin sorban bejárható világokkal. Kezdd a <b>Geometriával</b> és az <b>Optimalizálással</b>, majd kövesd a pályákat oda, ahol találkoznak — ott bontakozik ki az igazi tanulság.</p><p>Vidd az egeret egy bolygó fölé, hogy megnézd, mit rejt, vagy tekerd oda a <b>← →</b> gombokkal. A <b>↑</b> beléptet: közelebb repülsz, és a holdgyűrűje körhintává rendeződik, ugyanazokkal a gombokkal tovább tekerhető, a kiválasztott hold ismertetője pedig itt jelenik meg. Az elöl álló holdra kattintva vagy ismét <b>↑</b>-vel landolsz; a <b>↓</b> mindig egy szinttel visszább visz — a térképig.</p><p>Mind a tizenhárom hold bejárható. A rövidebbek három állomásosak: inkább kevesebbet mondanak, de azt hiánytalanul — ahol egy téma mélyebbre nyúlik, az utolsó kártya megmondja, hol áll meg, és melyik hold viszi tovább.</p>',
     hintSystem: [
       'húzd: körbeforgás',
       'görgő: közelítés',
@@ -135,7 +135,7 @@ window.LIE_CONTENT.hu = {
       geometry: {
         title: 'Geometria',
         summary:
-          '<p>A terek, amikben a dolgok élnek — forgatások, pózok, hasonlóságok — és ahogy mozognak. Hat utazás a lapos ℝ<sup>n</sup>-től a Sim(3)-ig: érintőterek, exp/log, és (az SO(3)-nál) topológia. Költségfüggvény sehol.</p>',
+          '<p>A terek, amikben a dolgok élnek — forgatások, pózok, hasonlóságok — és ahogy mozognak. Hét utazás a lapos ℝ<sup>n</sup>-től a Sim(3)-ig: érintőterek, exp/log, és (az SO(3)-nál) topológia. Költségfüggvény sehol.</p>',
         moons: {
           flat: {
             title: 'ℝⁿ — a lapos tér',
@@ -156,6 +156,11 @@ window.LIE_CONTENT.hu = {
             title: 'SO(3) — forgatások 3D-ben',
             summary:
               '<p>A tér, ami az egész elméletet indokolja. Nem-kommutatív, kompakt, és a valódi alakja nem gömb, hanem ℝP<sup>3</sup>.</p><p>Itt van a lehetetlenségi tétel is: nincs globális, szingularitásmentes háromszámos koordináta — a gimbal lock nem bosszúság, hanem következmény.</p>',
+          },
+          quat: {
+            title: 'S³ — a kvaternió',
+            summary:
+              '<p>Az SO(3) tétele szerint három szám nem elég. A kvaternió négyet ad, plusz egy kényszert — és cserébe se gimbal lock, se varrat.</p><p>Hat állomás: a felezett szög, a három írásmód egymás mellett (mátrix, tengely–szög, kvaternió), a kettős fedés (q és −q ugyanaz), amit a görbületből <em>nem</em> vesz le, a szorzat egyetlen vektoriális tagja, és a végén a mérnöki tanulság: tárolni négyben, lépni háromban.</p>',
           },
           se3: {
             title: 'SE(3) — a póz',

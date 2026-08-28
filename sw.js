@@ -1,7 +1,7 @@
 // App-shell cache for offline + installability. Bump CACHE on every release that
 // touches a precached file — it's the only invalidation signal there is with no build
 // step to fingerprint filenames.
-const CACHE = 'atlas-shell-v3';
+const CACHE = 'atlas-shell-v4';
 
 const SHELL = [
   './',
@@ -16,6 +16,7 @@ const SHELL = [
   'content/en.js',
   'content/ja.js',
   'journeys/geometry-flat.js',
+  'journeys/geometry-quaternion.js',
   'journeys/geometry-se2.js',
   'journeys/geometry-se3.js',
   'journeys/geometry-sim3.js',

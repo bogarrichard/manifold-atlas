@@ -10,11 +10,11 @@ each one a scene plus a card of text and interactive controls.
 
 ## The journeys
 
-| Branch                                                       | Journeys                                                  |
-| ------------------------------------------------------------ | --------------------------------------------------------- |
-| **Geometry** — the spaces things live in, and how they move  | **ℝⁿ** ✅ · SO(2) · SE(2) · SO(3) · **SE(3)** ✅ · Sim(3) |
-| **Optimization** — how a cost gets minimized, all in flat ℝⁿ | **gradient descent** ✅ · Gauss–Newton · LM · robust      |
-| **SLAM** — where the two meet                                | **Riemannian GD** ✅ · factor graphs · SLAM               |
+| Branch                                                       | Journeys                                                       |
+| ------------------------------------------------------------ | -------------------------------------------------------------- |
+| **Geometry** — the spaces things live in, and how they move  | **ℝⁿ** ✅ · SO(2) · SE(2) · SO(3) · S³ · **SE(3)** ✅ · Sim(3) |
+| **Optimization** — how a cost gets minimized, all in flat ℝⁿ | **gradient descent** ✅ · Gauss–Newton · LM · robust           |
+| **SLAM** — where the two meet                                | **Riemannian GD** ✅ · factor graphs · SLAM                    |
 
 ✅ = built and playable. The rest are on the hub as moons you cannot click yet.
 

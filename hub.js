@@ -15,21 +15,25 @@ LIE.hub = (function () {
   // B(outer) - A(inner) > ringR(inner) + ringR(outer) + a ~2-unit margin — otherwise, since
   // the shells are periodic with different speeds, an exact collision is only a matter of time.
   // ringR is derived from the moon count (see MOON_PITCH below), so ADDING A MOON WIDENS THE
-  // RING and eats into these margins. The inner planet has two of them to satisfy, and it is
-  // B — the periapsis — that decides the one against the central gizmo, since that is where
-  // the orbit passes closest to the origin:
+  // RING and eats into that margin. Geometry's seventh moon took its ring to 3.97, which is
+  // what fixes B here at 7.4 rather than the 7.0 it was at six moons: B is the periapsis, so
+  // it is B that decides how close the ring swings to the central gizmo (2.4 + 1.0 of air).
+  // A stays 9.0 — with Optimization's ring down to 2.50 the outer margin is 2.0 at that A.
+  // The outermost orbit is untouched, so the map's framing — which hubLift() derives from
+  // the bar, not from the orbits — is unchanged.
   //
   //   clearance          rule                                          now
-  //   gizmo -> geometry  B_geo - ringR(6) - 2.4                        1.14
-  //   geometry -> opt    B_opt - A_geo - ringR(6) - ringR(3)           2.53
+  //   gizmo -> geometry  B_geo - ringR(7) - 2.4                        1.03
+  //   geometry -> opt    B_opt - A_geo - ringR(7) - ringR(3)           2.02
   //   opt -> slam        B_slam - A_opt - ringR(3) - ringR(3)          2.49
   // Kept as an aligned table: the columns are what make the orbit constraint above
   // checkable at a glance, so it is held out of the formatter on purpose.
   // prettier-ignore
   const BRANCHES = [
-    {id:'geometry', title:'Geometry', root:'geo', orbit:{A:9.0,  B:7.0,  ph:2.4, w:0.130}, spin:0.22, tilt:[1.05,0.45],
+    {id:'geometry', title:'Geometry', root:'geo', orbit:{A:9.0,  B:7.4,  ph:2.4, w:0.130}, spin:0.22, tilt:[1.05,0.45],
      journeys:[{k:'flat',title:'ℝⁿ',journey:'geometry-flat'},{k:'so2',title:'SO(2)',journey:'geometry-so2'},
                {k:'se2',title:'SE(2)',journey:'geometry-se2'},{k:'so3',title:'SO(3)',journey:'geometry-so3'},
+               {k:'quat',title:'S³ · kvaternió',journey:'geometry-quaternion'},
                {k:'se3',title:'SE(3)',journey:'geometry-se3'},{k:'sim3',title:'Sim(3)',journey:'geometry-sim3'}]},
     {id:'optimization', title:'Optimization', root:'opt', orbit:{A:20.0, B:17.5, ph:3.8, w:0.070}, spin:0.28, tilt:[1.30,-0.5],
      journeys:[{k:'gd',title:'gradient descent',journey:'optimization-gd'},
@@ -42,6 +46,7 @@ LIE.hub = (function () {
   ];
   const CROSS = [
     ['geometry:so3', 'slam:riemann'],
+    ['geometry:quat', 'slam:riemann'],
     ['optimization:gd', 'slam:riemann'],
     ['geometry:se3', 'slam:slam'],
     ['geometry:sim3', 'slam:slam'],
@@ -60,11 +65,11 @@ LIE.hub = (function () {
                    pitch, or the last moon looks like the first one's neighbour.
 
      Both replace hand-fitted constants that had drifted into being wrong. `ringR` was
-     `1.9 + n * 0.28`, which grew too slowly to hold the spacing, so every moon added to a
-     branch pulled its neighbours CLOSER rather than widening the ring under them. And the
-     spread was a fixed 1.55π whatever n was, so on a three-moon planet the pitch came to
-     139.5° against a closing gap of 81° — the gap was smaller than the pitch, and moons 1
-     and 3 read as neighbours instead of as the two ends of a sequence.
+     `1.9 + n * 0.28`, which grew too slowly to hold the spacing: taking Geometry from six
+     moons to seven pulled its neighbours from 3.49 world units apart to 3.13, i.e. adding
+     a stop made the ring TIGHTER. And the spread was a fixed 1.55π regardless of n, so on
+     a three-moon planet the pitch was 139.5° while the closing gap was 81° — the gap was
+     smaller than the pitch, and moons 1 and 3 read as neighbours.
 
      `moonPitch` needs no n === 1 guard the way the old spread did: the denominator is
      n - 1 + RING_GAP, which is 1.8 at n = 1, and a lone moon then sits at the top. */

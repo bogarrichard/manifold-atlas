@@ -116,7 +116,7 @@ window.LIE_CONTENT.en = {
     branchWord: 'sector',
     title: 'Manifold Atlas',
     intro:
-      '<p>Welcome aboard. One solar system orbits the central reference frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to see what it holds, or wind to one with <b>← →</b>. <b>↑</b> enters: you fly closer and its moons line up as a carousel, wound the same way, with the selected moon’s abstract appearing here. Click the moon at the front, or press <b>↑</b> again, to land; <b>↓</b> always backs out one level — all the way to the map.</p><p>All twelve moons are open. The shorter ones run to three stations: they say less, but they say it completely — where a subject runs deeper, the last card says where it stops and which moon carries it on.</p>',
+      '<p>Welcome aboard. One solar system orbits the central reference frame, its planets strung with worlds to land on in order. Start with <b>Geometry</b> and <b>Optimization</b>, then follow their paths to where they converge — that’s where the real payoff kicks in.</p><p>Hover a planet to see what it holds, or wind to one with <b>← →</b>. <b>↑</b> enters: you fly closer and its moons line up as a carousel, wound the same way, with the selected moon’s abstract appearing here. Click the moon at the front, or press <b>↑</b> again, to land; <b>↓</b> always backs out one level — all the way to the map.</p><p>All thirteen moons are open. The shorter ones run to three stations: they say less, but they say it completely — where a subject runs deeper, the last card says where it stops and which moon carries it on.</p>',
     hintSystem: ['drag: orbit', 'scroll: zoom', '← → : planets', '↑ ⏎ : enter · ↓ Esc : deselect'],
     hintPlanet: ['drag: orbit', 'scroll: zoom', '← → : moon ring', '↑ ⏎ : enter · ↓ Esc : exit'],
     moonWord: 'destination',
@@ -125,7 +125,7 @@ window.LIE_CONTENT.en = {
       geometry: {
         title: 'Geometry',
         summary:
-          '<p>The spaces things live in — rotations, poses, similarities — and how they move. Six journeys from flat ℝ<sup>n</sup> up to Sim(3): tangent spaces, exp/log, and (for SO(3)) topology. No cost function in sight.</p>',
+          '<p>The spaces things live in — rotations, poses, similarities — and how they move. Seven journeys from flat ℝ<sup>n</sup> up to Sim(3): tangent spaces, exp/log, and (for SO(3)) topology. No cost function in sight.</p>',
         moons: {
           flat: {
             title: 'ℝⁿ — the flat space',
@@ -146,6 +146,11 @@ window.LIE_CONTENT.en = {
             title: 'SO(3) — rotations in 3D',
             summary:
               '<p>The space that justifies the whole theory. Non-commutative, compact, and its true shape is not a sphere but ℝP<sup>3</sup>.</p><p>The impossibility theorem lives here too: there is no global, singularity-free three-number coordinate — gimbal lock is a consequence, not an annoyance.</p>',
+          },
+          quat: {
+            title: 'S³ — the quaternion',
+            summary:
+              '<p>SO(3)’s theorem says three numbers cannot work. The quaternion offers four plus one constraint — and in exchange, no gimbal lock and no seam.</p><p>Six stations: the halved angle, the three notations side by side (matrix, axis-angle, quaternion), the double cover (q and −q are one rotation), what it does <em>not</em> take off the curvature, the single cross product the order lives in, and the engineering upshot — store in four, step in three.</p>',
           },
           se3: {
             title: 'SE(3) — the pose',

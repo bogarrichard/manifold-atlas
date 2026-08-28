@@ -131,6 +131,7 @@
     <script src="journeys/geometry-so2.js"></script>
     <script src="journeys/geometry-se2.js"></script>
     <script src="journeys/geometry-so3.js"></script>
+    <script src="journeys/geometry-quaternion.js"></script>
     <script src="journeys/geometry-sim3.js"></script>
     <script src="journeys/optimization-gd.js"></script>
     <script src="journeys/optimization-gn.js"></script>
@@ -155,7 +156,7 @@
               return null;
             });
         };
-        // Only this journey's default is fetched, not all twelve — the id is in the URL, and the
+        // Only this journey's default is fetched, not all thirteen — the id is in the URL, and the
         // hub (no ?journey=, or ?journey=hub) needs no layout at all.
         var wantDefault = id && id !== 'hub';
         Promise.all([wantDefault ? json('layouts/' + encodeURIComponent(id) + '.json') : null, json('layouts.json')])

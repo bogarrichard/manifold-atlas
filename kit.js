@@ -84,11 +84,11 @@ LIE.kit = (function () {
      than a stretched one.
 
      The cap is the one real constraint, and it is memory, not the GL limit: a label costs
-     w*h*4 bytes of GPU texture, so the hub's fifteen labels alone would run to ~60MB if
+     w*h*4 bytes of GPU texture, so the hub's sixteen labels alone would run to ~65MB if
      they were allowed the 2048 every WebGL implementation is required to support. The
-     11.5-unit moon labels are the worst offenders and mostly *empty* — eleven of the twelve
-     show a bare number in a box sized for a full title — so the ceiling is set at 1536,
-     which puts the hub at ~35MB, about what a journey page already spends on its own
+     11.5-unit moon labels are the worst offenders and mostly *empty* — twelve of the
+     thirteen show a bare number in a box sized for a full title — so the ceiling is set at
+     1536, which puts the hub at ~37MB, about what a journey page already spends on its own
      labels. That still resolves ~134 device px per world unit for a moon label: enough for
      a 3000px-tall device viewport at the hub's fixed planet-view distance, i.e. more than
      any current display asks for. It gives up a little only in system view zoomed to the

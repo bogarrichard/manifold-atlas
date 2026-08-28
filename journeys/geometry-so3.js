@@ -449,7 +449,7 @@ LIE.journeys['geometry-so3'] = (function () {
     // back-references its opening card makes. engine.js renders next+handoffs as links
     // on the last station; check.html verifies every id resolves and that the next-chain
     // still agrees with BRANCHES.
-    seq: {next: 'geometry-se3', requires: ['geometry-so2'], handoffs: ['so3-optimization']},
+    seq: {next: 'geometry-quaternion', requires: ['geometry-so2'], handoffs: ['so3-optimization']},
     build,
     cards: {
       hu: [
