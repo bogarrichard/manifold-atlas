@@ -33,7 +33,7 @@ LIE.hub = (function () {
     {id:'geometry', title:'Geometry', root:'geo', orbit:{A:9.0,  B:7.4,  ph:2.4, w:0.130}, spin:0.22, tilt:[1.05,0.45],
      journeys:[{k:'flat',title:'ℝⁿ',journey:'geometry-flat'},{k:'so2',title:'SO(2)',journey:'geometry-so2'},
                {k:'se2',title:'SE(2)',journey:'geometry-se2'},{k:'so3',title:'SO(3)',journey:'geometry-so3'},
-               {k:'quat',title:'S³ · kvaternió',journey:'geometry-quaternion'},
+               {k:'quat',title:'S³',journey:'geometry-quaternion'},
                {k:'se3',title:'SE(3)',journey:'geometry-se3'},{k:'sim3',title:'Sim(3)',journey:'geometry-sim3'}]},
     {id:'optimization', title:'Optimization', root:'opt', orbit:{A:20.0, B:17.5, ph:3.8, w:0.070}, spin:0.28, tilt:[1.30,-0.5],
      journeys:[{k:'gd',title:'gradient descent',journey:'optimization-gd'},
