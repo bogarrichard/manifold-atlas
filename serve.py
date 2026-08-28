@@ -9,13 +9,14 @@ symptom is an edit that silently does not take effect — and, because the heuri
 on how long ago the file last changed, it strikes some files and some reloads but not
 others. Same server, caching turned off.
 
-    python3 serve.py [port]        # default 8000
+    python3 serve.py [port]        # port: CLI arg, else $PORT, else 8000
 
 Note this only covers the HTTP cache. The service worker is the *other* caching layer;
 sw.js disables and uninstalls itself on loopback hostnames for the same reason.
 """
 
 import http.server
+import os
 import sys
 
 
@@ -28,5 +29,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
+    # Precedence: explicit CLI arg, then $PORT (how a launcher passes one), then 8000.
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get('PORT') or 8000)
     http.server.test(HandlerClass=Handler, port=port)
