@@ -352,6 +352,69 @@ body.hub #hud p {
 #bubbledock p + p {
   margin-top: 10px;
 }
+
+/* Numbered list — for the places where the prose announces a count before the items
+   ("Ebből két dolog következik azonnal", "(1) Bayes … (5) Előjelfordítás"). The items then
+   *are* a list instead of a paragraph pretending to be one, and the reader can count them
+   without parsing the sentence. Only for a foreshadowed enumeration: a card is running
+   prose, and a list that nothing announced reads as an outline dropped into an essay.
+
+   An item sets exactly as a paragraph does — same clamp, same line-height, same --muted —
+   so the only ink the list adds is the number itself. That number takes the mono face
+   every other small label in a card already uses (.eyebrow, .wnlab, .ro, .act) and the
+   amber accent, which puts it in the same visual class as those: chrome that marks the
+   item, not a word in the sentence.
+
+   Mechanics worth knowing before changing them:
+   - `list-style: none` + a counter, not the native marker. `::marker` still cannot be
+     given a font-family in every engine we target, and `list-style-position: outside`
+     would hang the number in #bo's reading gutter — which a `.scrolls` card clips.
+   - The marker is an *inline-block that hangs*, not `position: absolute`. An inline-block
+     sits in the item's own first line box, so its baseline lines up with the text for
+     free; an absolutely positioned marker at a smaller font-size lands on a different
+     baseline (half-leading scales with the font, the line-height does not) and has to be
+     nudged back by hand at every text-scale setting.
+   - Because the marker is smaller than the item, its `em` is smaller too. --stepgut is
+     written in the *item's* em, so the marker divides it back out by --stepmark to hang
+     exactly the width the item is indented by. Change one of the two and the number
+     drifts out of the gutter; change both together and nothing else has to move. */
+#hud .steps,
+#bubbledock .steps {
+  --stepgut: 2.1em;
+  --stepmark: 0.78;
+  list-style: none;
+  counter-reset: step;
+  margin-top: 12px;
+}
+#hud .steps > li,
+#bubbledock .steps > li {
+  counter-increment: step;
+  padding-left: var(--stepgut);
+  font-size: calc(clamp(19.5px, calc(17.5px + 0.556vw), 22.5px) * var(--text-scale));
+  line-height: 1.7;
+  color: var(--muted);
+}
+#hud .steps > li + li,
+#bubbledock .steps > li + li {
+  margin-top: 10px; /* the same rhythm as `p + p`, so a list reads as continuous copy */
+}
+#hud .steps > li::before,
+#bubbledock .steps > li::before {
+  content: counter(step) ".";
+  display: inline-block;
+  width: calc(var(--stepgut) / var(--stepmark));
+  margin-left: calc(-1 * var(--stepgut) / var(--stepmark));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: calc(1em * var(--stepmark));
+  color: var(--amber);
+}
+/* A formula inside an item belongs to that item, so it lines up with the item's text
+   instead of centring on the card the way a standalone .matline does. */
+#hud .steps .matline,
+#bubbledock .steps .matline {
+  justify-content: flex-start;
+  margin: 8px 0 0;
+}
 .m {
   font-family: Georgia, serif;
   font-style: italic;
