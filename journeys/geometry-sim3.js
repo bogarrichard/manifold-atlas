@@ -266,7 +266,7 @@ LIE.journeys['geometry-sim3'] = (function () {
     // back-references its opening card makes. engine.js renders next+handoffs as links
     // on the last station; check.html verifies every id resolves and that the next-chain
     // still agrees with BRANCHES.
-    seq: {next: 'optimization-gd', requires: ['geometry-se3'], handoffs: ['slam-pipeline']},
+    seq: {next: 'geometry-ladder', requires: ['geometry-se3'], handoffs: ['slam-pipeline']},
     build,
     cards: {
       hu: [

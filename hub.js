@@ -15,26 +15,28 @@ LIE.hub = (function () {
   // B(outer) - A(inner) > ringR(inner) + ringR(outer) + a ~2-unit margin — otherwise, since
   // the shells are periodic with different speeds, an exact collision is only a matter of time.
   // ringR is derived from the moon count (see MOON_PITCH below), so ADDING A MOON WIDENS THE
-  // RING and eats into that margin. Geometry's seventh moon took its ring to 3.97, which is
-  // what fixes B here at 7.4 rather than the 7.0 it was at six moons: B is the periapsis, so
-  // it is B that decides how close the ring swings to the central gizmo (2.4 + 1.0 of air).
-  // A stays 9.0 — with Optimization's ring down to 2.50 the outer margin is 2.0 at that A.
-  // The outermost orbit is untouched, so the map's framing — which hubLift() derives from
-  // the bar, not from the orbits — is unchanged.
+  // RING and eats into that margin. Geometry's eighth moon took its ring from 3.97 to 4.48,
+  // and both of that branch's numbers moved to pay for it: B is the periapsis, so it is B
+  // that decides how close the ring swings to the central gizmo (2.4 + 1.0 of air), hence
+  // 7.9 rather than the 7.4 it was at seven moons. A is the apoapsis and so is what the
+  // Optimization shell has to clear, hence 8.6 rather than 9.0. The outermost two orbits
+  // are untouched, and the map's framing — which hubLift() derives from the bar, not from
+  // the orbits — is unchanged either way.
   //
   //   clearance          rule                                          now
-  //   gizmo -> geometry  B_geo - ringR(7) - 2.4                        1.03
-  //   geometry -> opt    B_opt - A_geo - ringR(7) - ringR(3)           2.02
+  //   gizmo -> geometry  B_geo - ringR(8) - 2.4                        1.02
+  //   geometry -> opt    B_opt - A_geo - ringR(8) - ringR(3)           1.92
   //   opt -> slam        B_slam - A_opt - ringR(3) - ringR(3)          2.49
   // Kept as an aligned table: the columns are what make the orbit constraint above
   // checkable at a glance, so it is held out of the formatter on purpose.
   // prettier-ignore
   const BRANCHES = [
-    {id:'geometry', title:'Geometry', root:'geo', orbit:{A:9.0,  B:7.4,  ph:2.4, w:0.130}, spin:0.22, tilt:[1.05,0.45],
+    {id:'geometry', title:'Geometry', root:'geo', orbit:{A:8.6,  B:7.9,  ph:2.4, w:0.130}, spin:0.22, tilt:[1.05,0.45],
      journeys:[{k:'flat',title:'ℝⁿ',journey:'geometry-flat'},{k:'so2',title:'SO(2)',journey:'geometry-so2'},
                {k:'se2',title:'SE(2)',journey:'geometry-se2'},{k:'so3',title:'SO(3)',journey:'geometry-so3'},
                {k:'quat',title:'S³',journey:'geometry-quaternion'},
-               {k:'se3',title:'SE(3)',journey:'geometry-se3'},{k:'sim3',title:'Sim(3)',journey:'geometry-sim3'}]},
+               {k:'se3',title:'SE(3)',journey:'geometry-se3'},{k:'sim3',title:'Sim(3)',journey:'geometry-sim3'},
+               {k:'ladder',title:'ℝⁿ → Sim(3)',journey:'geometry-ladder'}]},
     {id:'optimization', title:'Optimization', root:'opt', orbit:{A:20.0, B:17.5, ph:3.8, w:0.070}, spin:0.28, tilt:[1.30,-0.5],
      journeys:[{k:'gd',title:'gradient descent',journey:'optimization-gd'},
                {k:'gn',title:'Gauss–Newton',journey:'optimization-gn'},

@@ -172,6 +172,11 @@ window.LIE_CONTENT.hu = {
             summary:
               '<p>A póz mellé egy hetedik szabadsági fok: a skála.</p><p>Monokuláris SLAM-ben pontosan ennyi a bizonytalanság két rekonstrukció között — egy merev mozgás és egy ismeretlen nagyítás.</p>',
           },
+          ladder: {
+            title: 'ℝⁿ → Sim(3) — a létra',
+            summary:
+              '<p>Az ág zárása. Nem új csoport, hanem a hét eddigi egyetlen 2D ábrán, élenként azzal az <em>egy</em> dologgal felcímkézve, amit a lépés hozzáad.</p><p>Három állomás: a létra, a mindegyiken közös váz (csoport, algebra, exp/log), és hogy melyik csoport mire való a gyakorlatban.</p>',
+          },
         },
       },
       optimization: {

@@ -162,6 +162,11 @@ window.LIE_CONTENT.en = {
             summary:
               '<p>A seventh degree of freedom on top of the pose: scale.</p><p>In monocular SLAM this is exactly the uncertainty between two reconstructions — one rigid motion and one unknown magnification.</p>',
           },
+          ladder: {
+            title: 'ℝⁿ → Sim(3) — the ladder',
+            summary:
+              '<p>The branch closing on itself. No new group, but all seven on a single 2D diagram, each edge labelled with the <em>one</em> thing that step adds.</p><p>Three stations: the ladder, the skeleton every rung shares (group, algebra, exp/log), and which group is for what in practice.</p>',
+          },
         },
       },
       optimization: {
