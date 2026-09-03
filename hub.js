@@ -250,6 +250,7 @@ LIE.hub = (function () {
            with it instead of re-opening this. The coreR term still wins on a small ring,
            which is what keeps the three-moon planets exactly where they were. */
         blabel.position.set(0, Math.max(coreR + 2.6, ringR + 1.0), 0);
+        planet.userData.labelY = blabel.position.y; // camWant() tilts the focus look point by this
         blabel.material.opacity = 0.9;
         blabel.userData.isPlanetLabel = true; // dropped outright in another planet's view
         planet.add(blabel);
@@ -376,7 +377,7 @@ LIE.hub = (function () {
       lastActivity = performance.now();
     }
 
-    const FOCUS_OFF = V3(0, 4.5, 23); // where the camera sits relative to the focused planet
+    const FOCUS_OFF = V3(0, 4.9, 25.8); // where the camera sits relative to the focused planet
     // Ring lean in planet view: front moon low and near. Close to -π/2 (fully horizontal,
     // like a disc lying flat) without reaching it — at exactly -π/2 the ring's vertical
     // extent collapses to zero and, viewed from the shallow ~11° camera elevation FOCUS_OFF
@@ -412,7 +413,13 @@ LIE.hub = (function () {
     function camWant() {
       if (mode === 'planet' && focus) {
         focus.planet.getWorldPosition(_p);
-        return {pos: _p.clone().add(FOCUS_OFF), look: _p.clone()};
+        // Look a touch above the planet centre, not straight at it: the name label sits a
+        // full ringR + 1 above the core (so it clears the tilted ring — see build()), and
+        // on a seven-moon planet that put the name hard against the top of the frame once
+        // the hub bar's upward frustum shift is added in. Tilting the look point up drops
+        // the whole planet on screen; the ring's lower half has room to spare below it.
+        const lift = (focus.planet.userData.labelY || 3) * 0.24;
+        return {pos: _p.clone().add(FOCUS_OFF), look: _p.clone().add(V3(0, lift, 0))};
       }
       const s = new THREE.Spherical(radius, phi, theta);
       return {pos: target.clone().add(V3(0, 0, 0).setFromSpherical(s)), look: target.clone()};

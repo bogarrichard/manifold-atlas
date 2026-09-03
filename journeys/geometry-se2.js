@@ -175,7 +175,7 @@ LIE.journeys['geometry-se2'] = (function () {
         lth.position.copy(P(0, 0)).add(V3(-0.62, 0.82, 0));
         G.add(lth);
         const lbl = makeLabel('SE(2) = [R(θ), t]', HX.ink, 3.4);
-        lbl.position.set(0, 3.05, 0);
+        lbl.position.set(0, 2.7, 0);
         g.add(lbl);
 
         const T0 = 0.8,
@@ -290,7 +290,7 @@ LIE.journeys['geometry-se2'] = (function () {
         G.add(lc);
         const b = dart(G, COL.amber);
         const lbl = makeLabel('c = (I − R)^{−1} t', HX.ink, 3.6);
-        lbl.position.set(0, 3.05, 0);
+        lbl.position.set(0, 2.7, 0);
         g.add(lbl);
 
         const T0 = 0.9,

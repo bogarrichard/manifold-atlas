@@ -373,6 +373,19 @@ LIE.journeys['geometry-ladder'] = (function () {
       const tex = new THREE.CanvasTexture(cv);
       tex.minFilter = THREE.LinearFilter; // the canvas is not power-of-two: no mipmaps
       const inner = new THREE.Group();
+      /* An opaque backdrop the size of the canvas, sitting just behind it and writing depth:
+         the journey's connecting thread runs 2.5 units below each station anchor, i.e. right
+         through the plane this diagram is drawn on (the thread is a Y offset, not a Z one —
+         it is coplanar with the figure at every station). Rather than break the thread — an
+         engine-wide feature — this station-local panel simply occludes it where it would
+         otherwise show through the figure. `inner` is also nudged toward the camera below so
+         the thread is unambiguously behind this depth-writing quad. */
+      const backdrop = new THREE.Mesh(
+        new THREE.PlaneGeometry(W, H),
+        new THREE.MeshBasicMaterial({color: COL.bg})
+      );
+      backdrop.position.set((x0 + x1) / 2, (y0 + y1) / 2, -0.05);
+      inner.add(backdrop);
       const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(W, H),
         new THREE.MeshBasicMaterial({map: tex, transparent: true, depthWrite: false})
@@ -402,7 +415,7 @@ LIE.journeys['geometry-ladder'] = (function () {
         inner.add(m);
         return m;
       });
-      inner.position.set(-(x0 + x1) / 2, -(y0 + y1) / 2, 0);
+      inner.position.set(-(x0 + x1) / 2, -(y0 + y1) / 2, 0.7);
       return {inner, glows};
     }
 

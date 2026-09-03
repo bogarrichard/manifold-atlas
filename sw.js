@@ -1,7 +1,7 @@
 // App-shell cache for offline + installability. Bump CACHE on every release that
 // touches a precached file — it's the only invalidation signal there is with no build
 // step to fingerprint filenames.
-const CACHE = 'atlas-shell-v6';
+const CACHE = 'atlas-shell-v7';
 
 const SHELL = [
   './',
