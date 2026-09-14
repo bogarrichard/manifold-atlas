@@ -804,7 +804,7 @@ resize();
 
 /* Desktop-only manual card-width resize (see style.css's #hudresize comment for why this
    is a custom drag handle rather than the native `resize` property). Skipped entirely in
-   hub mode: the hub's card is a bottom-anchored bar sized by CSS (`48dvh` height, a
+   hub mode: the hub's card is a bottom-anchored bar sized by CSS (`43dvh` height, a
    viewport-relative width), not the side card this handle widens. Setting an inline
    `width` overrides the responsive `clamp()` in style.css on purpose — a deliberate
    user override — but the CSS `max-width` there still caps it on a later window shrink,
