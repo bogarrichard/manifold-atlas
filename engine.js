@@ -1326,18 +1326,40 @@ if (hubMode) {
     s.radius *= zoomF;
     return {pos: piv.clone().add(V3(0, 0, 0).setFromSpherical(s)), look: piv};
   }
-  // While a flight is in progress, camPose(cur) is stale — cur only updates on arrival.
-  // Re-deriving the in-flight camera pose (the same lerp the render loop applies) lets a
-  // second arrow/dot press retarget from wherever the camera actually is right now,
-  // instead of snapping back to the pose it left.
-  function travelPose() {
-    const u = clamp((performance.now() - travel.t0) / travel.dur, 0, 1),
-      e = ease(u);
-    return {
-      pos: travel.from.pos.clone().lerp(travel.to.pos, e),
-      look: travel.from.look.clone().lerp(travel.to.look, e),
-    };
+  // A flight turns to face the destination early and then stays locked on it, instead of
+  // gliding across in the orientation it left with. Two things make that work:
+  // - The camera orbits the destination pivot (azimuth/polar lerp, radius log-lerp) rather
+  //   than flying a straight line. Locked on a straight line, a station whose OFF points
+  //   back toward the one you came from makes the camera pass right by its own target and
+  //   whip round (SE(3) 1→0 came within 0.13·|OFF| of its pivot: a ~2000°/s swing). Around
+  //   the target the distance only ever shrinks from one radius toward the other.
+  // - The view direction slerps from where it looked at departure onto the lock over the
+  //   first LOCK_T of the flight. The departure turn is ~84° for a typical neighbour (the
+  //   next station sits off to the side), which a snap or a short ramp makes a jolt.
+  // At u = 1 this lands exactly on `to`, so arrival hands over to camPose() without a jump.
+  const LOCK_T = 0.5;
+  function flightPose(f, u) {
+    const e = ease(u),
+      s = new THREE.Spherical(
+        f.s0.radius * Math.pow(f.s1.radius / f.s0.radius, e),
+        f.s0.phi + (f.s1.phi - f.s0.phi) * e,
+        f.s0.theta + f.dTheta * e
+      ),
+      pos = f.to.look.clone().add(V3(0, 0, 0).setFromSpherical(s)),
+      lock = f.to.look.clone().sub(pos),
+      dist = lock.length(),
+      turn = new THREE.Quaternion().setFromUnitVectors(f.d0, lock.divideScalar(dist)),
+      w = ease(clamp(u / LOCK_T, 0, 1)),
+      dir = f.d0.clone().applyQuaternion(new THREE.Quaternion().slerp(turn, w));
+    return {pos, look: pos.clone().addScaledVector(dir, dist)};
   }
+  // While a flight is in progress, camPose(cur) is stale — cur only updates on arrival.
+  // Re-deriving the in-flight camera pose (the same one the render loop applies) lets a
+  // second arrow/dot press retarget from wherever the camera actually is right now,
+  // instead of snapping back to the pose it left. `look` is a point along the current view
+  // direction, so the next flight departs facing exactly where this one was facing.
+  const travelPose = () =>
+    flightPose(travel, clamp((performance.now() - travel.t0) / travel.dur, 0, 1));
   function go(i) {
     if (i < 0 || i >= CARDS.length) return;
     if (travel ? i === travel.target : i === cur) return;
@@ -1357,7 +1379,13 @@ if (hubMode) {
       hud.classList.remove('fade');
       return;
     }
-    travel = {t0: performance.now(), dur: 1900, from, to, target: i};
+    // Both ends in spherical coordinates around the destination pivot — see flightPose().
+    const s0 = new THREE.Spherical().setFromVector3(from.pos.clone().sub(to.look)),
+      s1 = new THREE.Spherical().setFromVector3(to.pos.clone().sub(to.look));
+    let dTheta = s1.theta - s0.theta;
+    dTheta -= 2 * Math.PI * Math.round(dTheta / (2 * Math.PI)); // the short way round
+    const d0 = from.look.clone().sub(from.pos).normalize();
+    travel = {t0: performance.now(), dur: 1900, from, to, target: i, s0, s1, dTheta, d0};
     updateNav(i); // move the dots/counters onto the new target now — see updateNav's note
   }
   document.getElementById('prev').onclick = () => go((travel ? travel.target : cur) - 1);
@@ -1776,10 +1804,9 @@ if (hubMode) {
     // like any other camPose() change (an SP/OFF field edit, a mouse drag, a nav press).
     if (travel) {
       const u = clamp((performance.now() - travel.t0) / travel.dur, 0, 1),
-        e = ease(u);
-      camera.position.lerpVectors(travel.from.pos, travel.to.pos, e);
-      const lk = travel.from.look.clone().lerp(travel.to.look, e);
-      camera.lookAt(lk);
+        p = flightPose(travel, u);
+      camera.position.copy(p.pos);
+      camera.lookAt(p.look);
       if (u >= 1) {
         cur = travel.target;
         travel = null;
