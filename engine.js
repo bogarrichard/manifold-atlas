@@ -1546,8 +1546,11 @@ if (hubMode) {
   const panKeys = {w: false, a: false, s: false, d: false, q: false, e: false};
   if (devMode) {
     const panel = document.createElement('div');
+    // top:60 clears #topctl (top:14 + 38px button + margin) — flush with it, this bar's
+    // same z-index and later DOM position let it paint over the hamburger button and
+    // swallow its clicks, so there was no way back to the menu to switch dev mode off.
     panel.style.cssText =
-      'position:fixed;top:12px;right:12px;z-index:9;' +
+      'position:fixed;top:60px;right:12px;z-index:9;' +
       'display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;' +
       'background:rgba(10,14,24,.92);border:1px solid #445566;border-radius:10px;' +
       'padding:7px 10px;font:12px ui-monospace,Menlo,monospace;color:#dde;' +
